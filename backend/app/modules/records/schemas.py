@@ -68,14 +68,16 @@ class EntryCreate(PulseSchema):
     """What a Provider files, or what a correction re-files (P2.5 / P2.7).
 
     Subtype fields are optional at the wire; the service validates the set
-    required for `entry_type` and rejects clinical values in `metadata`.
+    required for `entry_type`. There is deliberately no `metadata` field —
+    `medical_entry.metadata` is provenance only and set by the import
+    pipeline, never by an API caller (clinical-safety.md: no clinical value
+    in JSONB, "not temporarily").
     """
 
     entry_type: EntryType
     occurred_at: datetime
     is_critical: bool = False
     source_provider_id: UUID | None = None
-    metadata: dict[str, Any] = {}
     code_system: str | None = None
     code: str | None = None
     display_name: str | None = None

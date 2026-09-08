@@ -144,3 +144,14 @@ async def test_entry_type_filter_narrows_the_timeline(
     assert resp.status_code == 200
     kinds = {item["entryType"] for item in resp.json()["items"]}
     assert kinds == {"LAB_REPORT"}
+
+
+async def test_a_malformed_cursor_is_a_coded_400_not_a_500(
+    client: AsyncClient, register_and_login: RegisterAndLogin
+) -> None:
+    await register_and_login(email="tl-badcursor@example.com")
+    pid = await _patient_id(client)
+    # Valid base64, nonsense payload — must not reach an uncaught fromisoformat.
+    resp = await client.get(f"/api/v1/patients/{pid}/entries?cursor=eHl6")
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "VALIDATION_ERROR"

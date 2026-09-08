@@ -5,6 +5,7 @@ not-your-record reads surface from the service as 404, never 403.
 """
 
 from typing import Annotated
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
@@ -128,8 +129,12 @@ async def serve_document(
     doc, data = await service.get_document(
         session, ctx.actor, document_id, storage=storage
     )
+    # RFC 5987: the filename can be non-Latin-1 (four Indian locales) and is
+    # attacker-supplied — an ASCII `filename="..."` param would crash on
+    # header encoding or allow parameter injection.
+    disposition = f"attachment; filename*=UTF-8''{quote(doc.filename)}"
     return Response(
         content=data,
         media_type=doc.mime_type,
-        headers={"Content-Disposition": f'attachment; filename="{doc.filename}"'},
+        headers={"Content-Disposition": disposition},
     )

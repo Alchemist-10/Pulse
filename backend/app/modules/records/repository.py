@@ -19,6 +19,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectin_polymorphic
 
 from app.core.actor import Actor
+from app.core.errors import ErrorCode
+from app.core.exceptions import PulseError
 from app.core.pagination import decode_cursor, encode_cursor
 from app.modules.records.models import (
     ClinicalNote,
@@ -54,8 +56,13 @@ def _pack_cursor(occurred_at: datetime, entry_id: UUID) -> str:
 
 def _unpack_cursor(cursor: str) -> tuple[datetime, UUID]:
     raw = decode_cursor(cursor)
-    ts, _, uid = raw.partition("|")
-    return datetime.fromisoformat(ts), UUID(uid)
+    ts, sep, uid = raw.partition("|")
+    try:
+        if not sep:
+            raise ValueError("missing separator")
+        return datetime.fromisoformat(ts), UUID(uid)
+    except ValueError as exc:
+        raise PulseError(ErrorCode.VALIDATION_ERROR, "Invalid cursor.") from exc
 
 
 async def list_timeline(
@@ -185,7 +192,7 @@ async def insert_entry(
         is_critical=payload.is_critical,
         source_provider_id=payload.source_provider_id,
         author_user_id=actor.user_id,
-        entry_metadata=payload.metadata or {},
+        entry_metadata={},  # provenance only, set by the import pipeline — never the wire
         **_subtype_kwargs(payload.entry_type, payload),
     )
     session.add(entry)

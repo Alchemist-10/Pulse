@@ -61,3 +61,27 @@ def test_only_patient_and_care_roles_read_records() -> None:
     for role in Role:
         reads = role_has_permission(role, Permission.RECORDS_READ)
         assert reads is (role in {Role.PATIENT, Role.CLINICIAN, Role.PROVIDER_STAFF})
+
+
+# Self-scoped consent/audit permissions belong to the Patient alone —
+# nobody else can manage or review another person's consent record.
+_PATIENT_ONLY_PERMISSIONS = (
+    Permission.PATIENT_PROFILE_READ_SELF,
+    Permission.CONSENT_READ_SELF,
+    Permission.CONSENT_MANAGE_SELF,
+    Permission.AUDIT_READ_SELF,
+)
+
+
+@pytest.mark.parametrize("permission", _PATIENT_ONLY_PERMISSIONS)
+def test_self_scoped_permission_is_held_by_patient_only(
+    permission: Permission,
+) -> None:
+    for role in Role:
+        assert role_has_permission(role, permission) is (role is Role.PATIENT)
+
+
+def test_only_provider_staff_writes_records() -> None:
+    for role in Role:
+        writes = role_has_permission(role, Permission.RECORDS_WRITE)
+        assert writes is (role is Role.PROVIDER_STAFF)

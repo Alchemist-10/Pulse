@@ -6,6 +6,7 @@ provider that writes onto the mounted upload volume; a checksum is the
 caller's job (records service), not the store's.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -28,9 +29,13 @@ class LocalStorageProvider(StorageProvider):
 
     async def put(self, key: str, data: bytes, content_type: str) -> str:
         dest = self._base / key
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
+
+        def _write() -> None:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+
+        await asyncio.to_thread(_write)
         return str(dest)
 
     async def get(self, path: str) -> bytes:
-        return Path(path).read_bytes()
+        return await asyncio.to_thread(Path(path).read_bytes)

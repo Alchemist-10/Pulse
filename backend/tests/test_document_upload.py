@@ -188,3 +188,22 @@ async def test_document_is_served_only_behind_the_entry_access_rule(
     await register_and_login(email="doc-clin@example.com", role="CLINICIAN")
     denied = await client.get(f"/api/v1/documents/{document_id}")
     assert denied.status_code == 404
+
+
+@pytest.mark.usefixtures("_storage_to_tmp")
+async def test_non_latin1_filename_is_served_not_a_500(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    pid, entry_id = await _patient_with_entry(client, register_and_login, app_database_url)
+    await _become_provider_staff(client, register_and_login, app_database_url)
+    up = await client.post(
+        f"/api/v1/patients/{pid}/entries/{entry_id}/documents",
+        files={"file": ("रिपोर्ट.pdf", _PDF, "application/pdf")},
+    )
+    assert up.status_code == 201
+
+    served = await client.get(f"/api/v1/documents/{up.json()['id']}")
+    assert served.status_code == 200
+    assert served.content == _PDF
+    # RFC 5987 extended form, not a latin-1 `filename="..."` that would 500.
+    assert "filename*=UTF-8''" in served.headers["content-disposition"]
