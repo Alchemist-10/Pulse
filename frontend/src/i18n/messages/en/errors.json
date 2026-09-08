@@ -1,0 +1,14 @@
+{
+  "GENERIC": "Something went wrong. Please try again.",
+  "NETWORK": "Could not reach the server. Check your connection and try again.",
+  "VALIDATION_ERROR": "Some details need fixing. Check the highlighted fields.",
+  "EMAIL_ALREADY_REGISTERED": "That email address is already registered. Try signing in instead.",
+  "INVALID_CREDENTIALS": "That email address and password do not match.",
+  "EMAIL_NOT_VERIFIED": "Confirm your email address before continuing.",
+  "VERIFICATION_TOKEN_INVALID": "This confirmation link is not valid.",
+  "VERIFICATION_TOKEN_EXPIRED": "This confirmation link has expired. Request a new one.",
+  "SESSION_EXPIRED": "Your session has ended. Sign in again.",
+  "STEP_UP_REQUIRED": "Re-enter your password to continue.",
+  "NOT_FOUND": "We could not find that.",
+  "UNAUTHENTICATED": "Sign in to continue."
+}

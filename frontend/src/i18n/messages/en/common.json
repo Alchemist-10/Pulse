@@ -1,6 +1,22 @@
 {
   "home": {
     "title": "Pulse",
-    "description": "A lifelong electronic health record."
+    "description": "A lifelong electronic health record.",
+    "registerCta": "Create an account",
+    "loginCta": "Sign in"
+  },
+  "app": {
+    "name": "Pulse",
+    "skipToContent": "Skip to content"
+  },
+  "locale": {
+    "label": "Language",
+    "en": "English",
+    "hi": "Hindi"
+  },
+  "actions": {
+    "submit": "Submit",
+    "retry": "Try again",
+    "loading": "Loading…"
   }
 }

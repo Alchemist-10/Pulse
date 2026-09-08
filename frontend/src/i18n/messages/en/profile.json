@@ -1,0 +1,22 @@
+{
+  "title": "Your profile",
+  "subtitle": "The identity details Pulse holds for you.",
+  "loading": "Loading your profile…",
+  "notFound": "We could not find a patient profile linked to your account.",
+  "fields": {
+    "fullName": "Full name",
+    "dateOfBirth": "Date of birth",
+    "sex": "Sex",
+    "phone": "Phone",
+    "addressLine": "Address",
+    "city": "City",
+    "state": "State",
+    "localePreference": "Preferred language"
+  },
+  "claimed": {
+    "label": "Account status",
+    "true": "Claimed",
+    "false": "Unclaimed"
+  },
+  "signOut": "Sign out"
+}
