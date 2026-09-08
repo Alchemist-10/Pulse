@@ -26,10 +26,17 @@ depends_on: str | Sequence[str] | None = None
 _APP_TABLES = ("user", "provider", "patient", "provider_staff")
 
 role_enum = postgresql.ENUM(
-    "PATIENT", "CLINICIAN", "PROVIDER_STAFF", "ADMINISTRATOR", name="role"
+    "PATIENT",
+    "CLINICIAN",
+    "PROVIDER_STAFF",
+    "ADMINISTRATOR",
+    name="role",
+    create_type=False,
 )
-sex_enum = postgresql.ENUM("MALE", "FEMALE", "OTHER", name="sex")
-provider_kind_enum = postgresql.ENUM("HOSPITAL", "CLINIC", "LAB", name="provider_kind")
+sex_enum = postgresql.ENUM("MALE", "FEMALE", "OTHER", name="sex", create_type=False)
+provider_kind_enum = postgresql.ENUM(
+    "HOSPITAL", "CLINIC", "LAB", name="provider_kind", create_type=False
+)
 
 
 def upgrade() -> None:
