@@ -14,7 +14,7 @@ from app.core.actor import Actor
 from app.core.authz import Role
 from app.modules.patients.schemas import PatientProfile
 from app.modules.users import repository
-from app.modules.users.models import Patient, User
+from app.modules.users.models import Patient, Provider, User
 
 
 def _to_profile(patient: Patient) -> PatientProfile:
@@ -38,6 +38,24 @@ async def get_user(session: AsyncSession, user_id: UUID) -> User | None:
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
     return await repository.get_user_by_email(session, email)
+
+
+async def get_patient(session: AsyncSession, patient_id: UUID) -> Patient | None:
+    """One Patient by id. Other modules use this to check record ownership
+    without importing the `users` tables."""
+    return await repository.get_patient_by_id(session, patient_id)
+
+
+async def get_provider_for_staff(session: AsyncSession, user_id: UUID) -> UUID | None:
+    """The `provider_id` the given Provider Staff user acts for, or None."""
+    staff = await repository.get_provider_staff_by_user_id(session, user_id)
+    return staff.provider_id if staff is not None else None
+
+
+async def get_provider(session: AsyncSession, provider_id: UUID) -> Provider | None:
+    """One Provider organisation by id. Public identity only — no clinical
+    data hangs off this."""
+    return await repository.get_provider_by_id(session, provider_id)
 
 
 async def register_identity(

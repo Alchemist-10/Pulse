@@ -31,6 +31,9 @@ class Permission(StrEnum):
     CONSENT_MANAGE_SELF = "CONSENT_MANAGE_SELF"
     # A Patient reading their own audit trail (filtered projection).
     AUDIT_READ_SELF = "AUDIT_READ_SELF"
+    # Reading a Provider organisation's public identity (name, kind, city).
+    # No clinical data — every signed-in role may hold it.
+    PROVIDER_READ = "PROVIDER_READ"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
@@ -42,17 +45,27 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.CONSENT_READ_SELF,
             Permission.CONSENT_MANAGE_SELF,
             Permission.AUDIT_READ_SELF,
+            Permission.PROVIDER_READ,
         }
     ),
-    Role.CLINICIAN: frozenset({Permission.USER_CREDENTIALS_CHANGE, Permission.RECORDS_READ}),
+    Role.CLINICIAN: frozenset(
+        {
+            Permission.USER_CREDENTIALS_CHANGE,
+            Permission.RECORDS_READ,
+            Permission.PROVIDER_READ,
+        }
+    ),
     Role.PROVIDER_STAFF: frozenset(
         {
             Permission.USER_CREDENTIALS_CHANGE,
             Permission.RECORDS_READ,
             Permission.RECORDS_WRITE,
+            Permission.PROVIDER_READ,
         }
     ),
-    Role.ADMINISTRATOR: frozenset({Permission.USER_CREDENTIALS_CHANGE}),
+    Role.ADMINISTRATOR: frozenset(
+        {Permission.USER_CREDENTIALS_CHANGE, Permission.PROVIDER_READ}
+    ),
 }
 
 

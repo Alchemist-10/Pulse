@@ -1,8 +1,12 @@
-"""P2.0 (#25) — the six records/consent/audit `@stub` endpoints.
+"""P2.0 (#25) — the consent + audit `@stub` endpoints.
 
 One test per stub: authenticated request -> 200, `x-pulse-stub: true`,
 body parses into the declared schema. Prior art:
 `test_patients_profile.py::test_patient_by_id_is_a_stub`.
+
+The records reads (`/patients/{id}/entries`, `/entries/{id}`) shipped as
+stubs here too, then became real in P2.5 (#30) — see
+`test_timeline_query.py`.
 """
 
 from __future__ import annotations
@@ -17,7 +21,6 @@ from httpx import AsyncClient
 from app.core.pagination import Page
 from app.modules.audit.schemas import AuditEventProjection
 from app.modules.consent.schemas import Consent
-from app.modules.records.schemas import EntryDetail, EntrySummary
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -28,26 +31,6 @@ async def _isolate(app_database_url: str) -> AsyncIterator[None]:
 
 async def _login(register_and_login: RegisterAndLogin, email: str) -> None:
     await register_and_login(email=email)
-
-
-async def test_list_patient_entries_is_a_stub(
-    client: AsyncClient, register_and_login: RegisterAndLogin
-) -> None:
-    await _login(register_and_login, "entries-stub@example.com")
-    resp = await client.get(f"/api/v1/patients/{uuid4()}/entries")
-    assert resp.status_code == 200
-    assert resp.headers["x-pulse-stub"] == "true"
-    Page[EntrySummary].model_validate(resp.json())
-
-
-async def test_entry_detail_is_a_stub(
-    client: AsyncClient, register_and_login: RegisterAndLogin
-) -> None:
-    await _login(register_and_login, "entry-detail-stub@example.com")
-    resp = await client.get(f"/api/v1/entries/{uuid4()}")
-    assert resp.status_code == 200
-    assert resp.headers["x-pulse-stub"] == "true"
-    EntryDetail.model_validate(resp.json())
 
 
 async def test_list_consents_is_a_stub(

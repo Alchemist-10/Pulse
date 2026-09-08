@@ -10,7 +10,6 @@ implementation; only the `@stub` fixtures behind them are throwaway.
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -32,18 +31,30 @@ class EntrySummary(PulseSchema):
     summary: str | None = None
 
 
+class Document(PulseSchema):
+    id: UUID
+    entry_id: UUID
+    filename: str
+    mime_type: str
+    size_bytes: int
+    checksum_sha256: str
+    uploaded_at: datetime
+
+
 class EntryDetail(EntrySummary):
     metadata: dict[str, Any] = {}
+    supersedes_id: UUID | None = None
+    documents: list[Document] = []
     # coded subtypes (diagnosis, procedure, lab_report, prescription)
     code_system: str | None = None
     code: str | None = None
     display_name: str | None = None
     # lab_report
-    value_numeric: Decimal | None = None
+    value_numeric: float | None = None
     value_text: str | None = None
     unit: str | None = None
-    reference_low: Decimal | None = None
-    reference_high: Decimal | None = None
+    reference_low: float | None = None
+    reference_high: float | None = None
     # prescription
     medication_name: str | None = None
     dosage: str | None = None
@@ -68,11 +79,11 @@ class EntryCreate(PulseSchema):
     code_system: str | None = None
     code: str | None = None
     display_name: str | None = None
-    value_numeric: Decimal | None = None
+    value_numeric: float | None = None
     value_text: str | None = None
     unit: str | None = None
-    reference_low: Decimal | None = None
-    reference_high: Decimal | None = None
+    reference_low: float | None = None
+    reference_high: float | None = None
     medication_name: str | None = None
     dosage: str | None = None
     frequency: str | None = None
@@ -89,13 +100,3 @@ class DocumentCreate(PulseSchema):
     size_bytes: int
     storage_path: str
     checksum_sha256: str
-
-
-class Document(PulseSchema):
-    id: UUID
-    entry_id: UUID
-    filename: str
-    mime_type: str
-    size_bytes: int
-    checksum_sha256: str
-    uploaded_at: datetime
