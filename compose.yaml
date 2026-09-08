@@ -18,6 +18,11 @@ services:
 
   backend:
     build: ./backend
+    volumes:
+      # Committed, deterministic identity dataset (seed/data/identity/*.csv).
+      # Read by the entrypoint's seed loader on first boot; kept out of the
+      # image so a regenerate does not force a rebuild. clinical/ is Phase 2.
+      - ./seed/data:/seed/data:ro
     environment:
       DATABASE_URL: postgresql+asyncpg://pulse_app:pulse_app@postgres:5432/pulse
       REDIS_URL: redis://redis:6379/0

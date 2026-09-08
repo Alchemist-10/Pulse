@@ -99,6 +99,16 @@ tmp/
 temp/
 
 # =========================================================
+# Seed pipeline
+# =========================================================
+
+# Raw Synthea output cache + the ~192 MiB pinned jar. Dev-time only;
+# the transformed dataset under seed/data/ IS committed (ADR-0015).
+seed/raw/
+seed/**/synthea-with-dependencies.jar
+*.jar
+
+# =========================================================
 # Alembic
 # =========================================================
 
