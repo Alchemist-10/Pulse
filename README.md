@@ -6,7 +6,7 @@ Built for an Indian demographic, in English, Hindi, Tamil and Malayalam. An acad
 
 ## Status
 
-Architecture and planning are complete. Phase 1 implementation has not started.
+**Phase 0 and Phase 1 complete.** Identity, auth, opaque Redis sessions, the seed pipeline, the patient profile, and the default-deny enforcement lints are on `main` and demoable. Phase 2 (the records spine) is next.
 
 | | |
 |---|---|
@@ -16,11 +16,11 @@ Architecture and planning are complete. Phase 1 implementation has not started.
 | Decisions | 15 ADRs in [`docs/adr/`](docs/adr/) |
 | Delivery plan | [`docs/delivery-plan.md`](docs/delivery-plan.md), tracked on [#17](https://github.com/moneytosms/Pulse/issues/17) |
 | Build order | [#22](https://github.com/moneytosms/Pulse/issues/22) — every step, its blocker, and who waits on it |
-| Code | Not yet scaffolded |
+| Code | `backend/` (FastAPI, 42 tests) · `frontend/` (Next.js) · `seed/` (Synthea + Indian overlay) |
 
 ## Quickstart
 
-Once the Phase 0 scaffold lands, the whole system comes up on any machine with Docker:
+The whole system comes up on any machine with Docker:
 
 ```bash
 git clone https://github.com/moneytosms/Pulse.git
@@ -28,7 +28,13 @@ cd Pulse
 docker compose up
 ```
 
-That must produce a working, **seeded** system — app on `:80`, Mailpit's inbox on `:8025`. It is the scaffold's acceptance test, not an aspiration.
+On first boot the backend runs migrations and seeds identity data. Then:
+
+- App: `http://localhost` — try `/en/register`, or `/en/login`
+- Mailpit inbox (verification emails): `http://localhost:8025`
+- Seeded patient login: `demo.patient.hi@example.com` / `Pulse@demo1` (also `demo.patient.en@example.com`; see [`seed/README.md`](seed/README.md))
+
+Demo journey: register → open the verification link in Mailpit → log in → the seeded profile → switch `/en` ↔ `/hi`.
 
 ## Shape
 
