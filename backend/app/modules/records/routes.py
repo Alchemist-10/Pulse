@@ -7,21 +7,24 @@ not-your-record reads surface from the service as 404, never 403.
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.storage import StorageProvider
 from app.core.authz import Permission
 from app.core.pagination import Page
 from app.db.session import get_session
 from app.modules.auth.dependencies import AuthContext, current_user, requires
 from app.modules.records import service
+from app.modules.records.dependencies import get_storage_provider
 from app.modules.records.models import EntryType
-from app.modules.records.schemas import EntryCreate, EntryDetail, EntrySummary
+from app.modules.records.schemas import Document, EntryCreate, EntryDetail, EntrySummary
 
 router = APIRouter(prefix="/api/v1", tags=["records"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[AuthContext, Depends(current_user)]
+StorageDep = Annotated[StorageProvider, Depends(get_storage_provider)]
 
 
 @router.get(
@@ -84,4 +87,49 @@ async def correct_entry(
 ) -> EntryDetail:
     return await service.supersede_entry(
         session, ctx.actor, patient_id, entry_id, payload
+    )
+
+
+@router.post(
+    "/patients/{patient_id}/entries/{entry_id}/documents",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[requires(Permission.RECORDS_WRITE)],
+)
+async def upload_document(
+    patient_id: UUID,
+    entry_id: UUID,
+    ctx: CurrentUser,
+    session: SessionDep,
+    storage: StorageDep,
+    file: Annotated[UploadFile, File()],
+) -> Document:
+    data = await file.read()
+    return await service.add_document(
+        session,
+        ctx.actor,
+        patient_id,
+        entry_id,
+        storage=storage,
+        data=data,
+        filename=file.filename or "upload",
+    )
+
+
+@router.get(
+    "/documents/{document_id}",
+    dependencies=[requires(Permission.RECORDS_READ)],
+)
+async def serve_document(
+    document_id: UUID,
+    ctx: CurrentUser,
+    session: SessionDep,
+    storage: StorageDep,
+) -> Response:
+    doc, data = await service.get_document(
+        session, ctx.actor, document_id, storage=storage
+    )
+    return Response(
+        content=data,
+        media_type=doc.mime_type,
+        headers={"Content-Disposition": f'attachment; filename="{doc.filename}"'},
     )

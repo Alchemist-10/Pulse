@@ -15,10 +15,13 @@ Phase 3; the read paths carry `# TODO(P3): emit ENTRY_VIEWED`.
 
 from __future__ import annotations
 
-from uuid import UUID
+import hashlib
+from pathlib import PurePosixPath
+from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.storage import StorageProvider
 from app.core.actor import Actor
 from app.core.authz import Role
 from app.core.errors import ErrorCode
@@ -26,8 +29,34 @@ from app.core.exceptions import PulseError
 from app.core.pagination import Page
 from app.modules.records import projections, repository
 from app.modules.records.models import EntryType
-from app.modules.records.schemas import EntryCreate, EntryDetail, EntrySummary
+from app.modules.records.schemas import (
+    Document,
+    DocumentCreate,
+    EntryCreate,
+    EntryDetail,
+    EntrySummary,
+)
 from app.modules.users import service as users_service
+
+# 25 MiB — larger than any scanned report; the Caddy body limit (P2.11)
+# is the outer guard, this is the app-level one.
+_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+
+# Server-side magic-byte sniff. The declared Content-Type and the file
+# extension are both attacker-controlled (backend.md), so the allowlist is
+# checked against the actual bytes.
+_MAGIC: tuple[tuple[bytes, str], ...] = (
+    (b"%PDF", "application/pdf"),
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+)
+
+
+def _sniff_mime(data: bytes) -> str | None:
+    for magic, mime in _MAGIC:
+        if data.startswith(magic):
+            return mime
+    return None
 
 _REQUIRED_FIELDS: dict[EntryType, tuple[str, ...]] = {
     EntryType.DIAGNOSIS: ("code_system", "code", "display_name"),
@@ -162,3 +191,68 @@ async def supersede_entry(
     if fresh is None:  # pragma: no cover - just inserted
         raise _not_found()
     return projections.to_detail(fresh, supersedes_id=original_id, documents=[])
+
+
+async def add_document(
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    entry_id: UUID,
+    *,
+    storage: StorageProvider,
+    data: bytes,
+    filename: str,
+) -> Document:
+    """Attach an uploaded file to an Entry. Size cap first (413), then a
+    server-side magic-byte sniff against the allowlist (422), then store
+    the bytes and record the checksum. Provider Staff only (route guard)."""
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise PulseError(
+            ErrorCode.PAYLOAD_TOO_LARGE,
+            "The file exceeds the upload size limit.",
+            http_status=413,
+        )
+    sniffed = _sniff_mime(data)
+    if sniffed is None:
+        raise PulseError(
+            ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+            "Only PDF, PNG and JPEG documents are accepted.",
+            http_status=422,
+        )
+    entry = await repository.get_entry(session, actor, entry_id)
+    if entry is None or entry.patient_id != patient_id:
+        raise _not_found()
+    await _authorize_entry_access(session, actor, entry.patient_id)
+    safe_name = PurePosixPath(filename).name or "upload"
+    key = f"{entry_id}/{uuid4()}-{safe_name}"
+    storage_path = await storage.put(key, data, sniffed)
+    meta = DocumentCreate(
+        filename=safe_name,
+        mime_type=sniffed,
+        size_bytes=len(data),
+        storage_path=storage_path,
+        checksum_sha256=hashlib.sha256(data).hexdigest(),
+    )
+    doc = await repository.add_document(session, actor, entry_id, meta)
+    await session.commit()
+    return projections.to_document(doc)
+
+
+async def get_document(
+    session: AsyncSession,
+    actor: Actor,
+    document_id: UUID,
+    *,
+    storage: StorageProvider,
+) -> tuple[Document, bytes]:
+    """Document metadata + bytes, behind the same access rule as its
+    Entry — a denied caller gets 404, never a hint that it exists."""
+    doc = await repository.get_document(session, actor, document_id)
+    if doc is None:
+        raise _not_found()
+    entry = await repository.get_entry(session, actor, doc.entry_id)
+    if entry is None:
+        raise _not_found()
+    await _authorize_entry_access(session, actor, entry.patient_id)
+    data = await storage.get(doc.storage_path)
+    return projections.to_document(doc), data

@@ -223,13 +223,23 @@ async def add_document(
     session: AsyncSession, actor: Actor, entry_id: UUID, meta: DocumentCreate
 ) -> MedicalDocument:
     """Record metadata for a file already stored behind the
-    StorageProvider. Implemented in P2.6."""
-    raise NotImplementedError
+    StorageProvider. The bytes and checksum are the service's concern."""
+    doc = MedicalDocument(
+        entry_id=entry_id,
+        filename=meta.filename,
+        mime_type=meta.mime_type,
+        size_bytes=meta.size_bytes,
+        storage_path=meta.storage_path,
+        checksum_sha256=meta.checksum_sha256,
+    )
+    session.add(doc)
+    await session.flush()
+    return doc
 
 
 async def get_document(
     session: AsyncSession, actor: Actor, document_id: UUID
 ) -> MedicalDocument | None:
-    """Document metadata, gated by the same access rule as its Entry.
-    Implemented in P2.6."""
-    raise NotImplementedError
+    """Document metadata by id. The caller gates access on the parent
+    Entry via `accessible_entries` before serving the bytes."""
+    return await session.get(MedicalDocument, document_id)
