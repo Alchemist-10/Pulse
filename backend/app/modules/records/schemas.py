@@ -51,3 +51,51 @@ class EntryDetail(EntrySummary):
     route: str | None = None
     # clinical_note
     text: str | None = None
+
+
+class EntryCreate(PulseSchema):
+    """What a Provider files, or what a correction re-files (P2.5 / P2.7).
+
+    Subtype fields are optional at the wire; the service validates the set
+    required for `entry_type` and rejects clinical values in `metadata`.
+    """
+
+    entry_type: EntryType
+    occurred_at: datetime
+    is_critical: bool = False
+    source_provider_id: UUID | None = None
+    metadata: dict[str, Any] = {}
+    code_system: str | None = None
+    code: str | None = None
+    display_name: str | None = None
+    value_numeric: Decimal | None = None
+    value_text: str | None = None
+    unit: str | None = None
+    reference_low: Decimal | None = None
+    reference_high: Decimal | None = None
+    medication_name: str | None = None
+    dosage: str | None = None
+    frequency: str | None = None
+    route: str | None = None
+    text: str | None = None
+
+
+class DocumentCreate(PulseSchema):
+    """Stored-file metadata handed to the repository after the bytes land
+    behind the StorageProvider (P2.6). No clinical content."""
+
+    filename: str
+    mime_type: str
+    size_bytes: int
+    storage_path: str
+    checksum_sha256: str
+
+
+class Document(PulseSchema):
+    id: UUID
+    entry_id: UUID
+    filename: str
+    mime_type: str
+    size_bytes: int
+    checksum_sha256: str
+    uploaded_at: datetime
