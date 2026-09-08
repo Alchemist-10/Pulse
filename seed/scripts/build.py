@@ -28,7 +28,6 @@ import random
 from dataclasses import asdict, dataclass, field
 
 from faker import Faker
-
 from seed.providers.ml_in import Provider as MlInPerson
 from seed.scripts import common
 
@@ -189,7 +188,7 @@ def overlay(bundle: Bundle) -> None:
             bundle.users.append(
                 UserRow(
                     id=uid,
-                    email=f"patient{user_ct:03d}@pulse.test",
+                    email=f"patient{user_ct:03d}@example.com",
                     role="PATIENT",
                     demo_login="",
                 )
@@ -219,7 +218,7 @@ def _mark_demo_logins(bundle: Bundle) -> None:
     Phase 1 demo journey (sign in, switch to Hindi) works against real rows."""
     by_id = {p.id: p for p in bundle.patients}
     users_by_id = {u.id: u for u in bundle.users}
-    want = {"en": "demo.patient.en@pulse.test", "hi": "demo.patient.hi@pulse.test"}
+    want = {"en": "demo.patient.en@example.com", "hi": "demo.patient.hi@example.com"}
     for pref, email in want.items():
         for p in bundle.patients:
             if p.user_id and p.locale_preference == pref and p.id in by_id:
@@ -243,7 +242,7 @@ def build_providers(bundle: Bundle) -> None:
             bundle.users.append(
                 UserRow(
                     id=u_id,
-                    email=f"staff{i:02d}{s}@pulse.test",
+                    email=f"staff{i:02d}{s}@example.com",
                     role="PROVIDER_STAFF",
                     demo_login="1" if (i, s) == (0, 0) else "",
                 )
@@ -259,7 +258,7 @@ def build_providers(bundle: Bundle) -> None:
         bundle.users.append(
             UserRow(
                 id=str(common.det_uuid("clinician", str(c))),
-                email=f"clinician{c}@pulse.test",
+                email=f"clinician{c}@example.com",
                 role="CLINICIAN",
                 demo_login="1" if c == 0 else "",
             )

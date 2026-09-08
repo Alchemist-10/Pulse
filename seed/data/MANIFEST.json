@@ -21,7 +21,7 @@
     "planted_pairs.csv": "28a9789f64104a70ebb7d9fa4faa5d62093ab335cff115965afa750f5952dd6c",
     "provider_staff.csv": "6d43e0f06e934b1378d89afccbfbd2dd1faa58a5c5ad53e56cbe134e794d74d7",
     "providers.csv": "6c932c2894d8ffce7d958488128d22afd3e0b409050434940bc0be6077ef2949",
-    "users.csv": "3e89654261fc401bcfb5ed3e682901b75be7199ea4cbec0de3e6a8fc90a8da6a"
+    "users.csv": "0ba6c38dac37e10767759de41aa2221cb48fc02eb675ab89b159301b175da187"
   },
   "note": "Phase 1 loads identity only. clinical/ is committed for Phase 2 and is not read by the first-boot loader.",
   "overlay_seed": 20260901,
