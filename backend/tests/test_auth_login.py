@@ -71,7 +71,10 @@ async def test_login_success_sets_hardened_session_cookie(
     assert "httponly" in raw
     assert "samesite=lax" in raw
     assert "path=/" in raw
-    assert "max-age=3600" in raw
+    # No Max-Age: a session cookie, real lifetime is the Redis record
+    # (sliding 60m idle / 12h cap, ADR-0003).
+    assert "max-age" not in raw
+    assert "expires" not in raw
     assert "secure" not in raw
 
 

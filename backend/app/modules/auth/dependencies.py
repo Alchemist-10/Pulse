@@ -86,9 +86,15 @@ async def current_user(
     )
 
 
-def requires(permission: Permission) -> params.Depends:
-    """Route guard: the actor's Role must hold `permission`, and (for any
-    permissioned route) the email must be verified."""
+def requires(permission: Permission, *, verified: bool = True) -> params.Depends:
+    """Route guard: the actor's Role must hold `permission`.
+
+    `verified=True` (the default) also rejects an unverified email with
+    EMAIL_NOT_VERIFIED — the gate for anything that reads or writes real data.
+    `verified=False` is for the session-management routes (logout, logout-all,
+    me, step-up): an unverified user holds a valid session and must be able to
+    end it and read their own state. Withdrawing access is the frictionless
+    direction (backend.md)."""
 
     async def guard(ctx: AuthContext = Depends(current_user)) -> AuthContext:
         if not role_has_permission(ctx.role, permission):
@@ -97,7 +103,7 @@ def requires(permission: Permission) -> params.Depends:
                 "You do not have permission to perform this action.",
                 http_status=status.HTTP_403_FORBIDDEN,
             )
-        if not ctx.email_verified:
+        if verified and not ctx.email_verified:
             raise PulseError(
                 ErrorCode.EMAIL_NOT_VERIFIED,
                 "Verify your email address to continue.",

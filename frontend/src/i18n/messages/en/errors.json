@@ -10,5 +10,6 @@
   "SESSION_EXPIRED": "Your session has ended. Sign in again.",
   "STEP_UP_REQUIRED": "Re-enter your password to continue.",
   "NOT_FOUND": "We could not find that.",
-  "UNAUTHENTICATED": "Sign in to continue."
+  "FORBIDDEN": "You do not have access to this.",
+  "UNAUTHORIZED": "Sign in to continue."
 }

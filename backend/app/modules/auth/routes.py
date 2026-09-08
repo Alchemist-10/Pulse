@@ -1,14 +1,19 @@
 """Auth HTTP surface. HTTP only — parse, validate, delegate to service.
 
-Endpoints (Wave 1, Agent A):
+Endpoints:
   POST /api/v1/auth/register         public
   POST /api/v1/auth/verify/resend    public
   POST /api/v1/auth/verify           public
   POST /api/v1/auth/login            public
-  POST /api/v1/auth/logout           requires(USER_CREDENTIALS_CHANGE) — any authed user
-  POST /api/v1/auth/logout-all       requires(USER_CREDENTIALS_CHANGE)
-  POST /api/v1/auth/step-up          requires(USER_CREDENTIALS_CHANGE)
-  GET  /api/v1/auth/me               requires(USER_CREDENTIALS_CHANGE)
+  POST /api/v1/auth/logout           requires(..., verified=False)
+  POST /api/v1/auth/logout-all       requires(..., verified=False)
+  POST /api/v1/auth/step-up          requires(..., verified=False)
+  GET  /api/v1/auth/me               requires(..., verified=False)
+
+The session-management routes pass `verified=False`: an unverified user holds
+a valid session and must be able to read their own state and end it. Every
+role holds USER_CREDENTIALS_CHANGE, so it stands in for "any authenticated
+user" until a dedicated marker is needed.
 
 Every route declares `public()` or `requires(...)` in its `dependencies=`.
 """
@@ -22,7 +27,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.identity import IdentityProvider
 from app.core.authz import Permission
 from app.core.redis import get_redis
-from app.core.sessions import SESSION_IDLE_TTL
 from app.db.session import get_session
 from app.modules.auth import service
 from app.modules.auth.dependencies import (
@@ -52,10 +56,13 @@ CurrentUser = Annotated[AuthContext, Depends(current_user)]
 
 
 def _set_session_cookie(response: Response, token: str) -> None:
+    # No Max-Age: a session cookie whose real lifetime is the server-side Redis
+    # record — sliding 60-minute idle, hard 12-hour cap (ADR-0003, sessions.py).
+    # A fixed Max-Age here would expire the cookie mid-session and never let the
+    # sliding refresh or the absolute cap be the binding limit.
     response.set_cookie(
         SESSION_COOKIE,
         token,
-        max_age=int(SESSION_IDLE_TTL.total_seconds()),
         path="/",
         httponly=True,
         samesite="lax",
@@ -120,7 +127,7 @@ async def login(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE, verified=False)],
 )
 async def logout(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
     await service.logout(redis, ctx.session_token)
@@ -130,7 +137,7 @@ async def logout(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
 @router.post(
     "/logout-all",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE, verified=False)],
 )
 async def logout_all(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
     await service.logout_all(redis, ctx.user_id)
@@ -139,7 +146,7 @@ async def logout_all(response: Response, ctx: CurrentUser, redis: RedisDep) -> N
 
 @router.post(
     "/step-up",
-    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE, verified=False)],
 )
 async def step_up(
     body: StepUpRequest, ctx: CurrentUser, session: SessionDep, redis: RedisDep
@@ -156,7 +163,7 @@ async def step_up(
 
 @router.get(
     "/me",
-    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE, verified=False)],
 )
 async def me(ctx: CurrentUser) -> MeResponse:
     return MeResponse(

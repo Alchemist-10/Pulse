@@ -9,8 +9,12 @@
 const DATE_LOCALE = "en-IN";
 const NUMBER_LOCALE = "en-IN";
 
-/** Day-first date, e.g. "12 Apr 1990". Accepts an ISO date string or Date. */
-export function formatDate(value: string | Date): string {
+/**
+ * Day-first date, e.g. "12 Apr 1990". Accepts an ISO date string, a Date, or
+ * null/undefined — a freshly registered Patient has no date of birth yet.
+ */
+export function formatDate(value: string | Date | null | undefined): string {
+  if (value == null || value === "") return "";
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return typeof value === "string" ? value : "";
   return new Intl.DateTimeFormat(DATE_LOCALE, {

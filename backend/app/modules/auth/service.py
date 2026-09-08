@@ -9,6 +9,7 @@ so the frontend can render a "resend verification" screen.
 from uuid import UUID
 
 from redis.asyncio import Redis
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.identity import IdentityProvider, VerificationOutcome
@@ -40,18 +41,25 @@ async def register(
 ) -> UUID:
     """Create the identity, start email verification. Raises on duplicate email."""
     email = _normalise_email(email)
-    if await users_service.get_user_by_email(session, email) is not None:
-        raise PulseError(
-            ErrorCode.EMAIL_ALREADY_REGISTERED,
-            "That email address is already registered.",
-            http_status=409,
-        )
-    user = await users_service.register_identity(
-        session,
-        email=email,
-        password_hash=hash_password(password),
-        role=Role(role),
+    _duplicate_email = PulseError(
+        ErrorCode.EMAIL_ALREADY_REGISTERED,
+        "That email address is already registered.",
+        http_status=409,
     )
+    if await users_service.get_user_by_email(session, email) is not None:
+        raise _duplicate_email
+    try:
+        user = await users_service.register_identity(
+            session,
+            email=email,
+            password_hash=hash_password(password),
+            role=Role(role),
+        )
+    except IntegrityError as exc:
+        # The check above lost a race to a concurrent registration; the unique
+        # index on user.email is the real guard. Surface the same 409.
+        await session.rollback()
+        raise _duplicate_email from exc
     await idp.start_verification(user.id, email, locale)
     return user.id
 

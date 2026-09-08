@@ -13,15 +13,19 @@ import { useApiErrorMessage } from "@/lib/errors";
 interface PatientProfile {
   id: string;
   fullName: string;
-  dateOfBirth: string;
-  sex: string;
-  phone: string;
-  addressLine: string;
-  city: string;
-  state: string;
+  // Nullable in the backend schema — an unclaimed or freshly registered
+  // Patient has only a name until identity data is filed.
+  dateOfBirth: string | null;
+  sex: string | null;
+  phone: string | null;
+  addressLine: string | null;
+  city: string | null;
+  state: string | null;
   localePreference: string;
   claimed: boolean;
 }
+
+const EMPTY = "—"; // em dash for a missing identity field
 
 type LoadState =
   | { status: "loading" }
@@ -86,14 +90,16 @@ export default function ProfilePage() {
       ? tLocale(profile.localePreference)
       : profile.localePreference;
 
+  const show = (value: string | null): string => value?.trim() || EMPTY;
+
   const rows: Array<[string, string]> = [
-    [t("fields.fullName"), profile.fullName],
-    [t("fields.dateOfBirth"), formatDate(profile.dateOfBirth)],
-    [t("fields.sex"), profile.sex],
-    [t("fields.phone"), profile.phone],
-    [t("fields.addressLine"), profile.addressLine],
-    [t("fields.city"), profile.city],
-    [t("fields.state"), profile.state],
+    [t("fields.fullName"), show(profile.fullName)],
+    [t("fields.dateOfBirth"), formatDate(profile.dateOfBirth) || EMPTY],
+    [t("fields.sex"), show(profile.sex)],
+    [t("fields.phone"), show(profile.phone)],
+    [t("fields.addressLine"), show(profile.addressLine)],
+    [t("fields.city"), show(profile.city)],
+    [t("fields.state"), show(profile.state)],
     [t("fields.localePreference"), localeLabel],
     [t("claimed.label"), profile.claimed ? t("claimed.true") : t("claimed.false")],
   ];

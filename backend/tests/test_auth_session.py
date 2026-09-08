@@ -24,6 +24,23 @@ async def test_me_without_cookie_is_401(client: AsyncClient) -> None:
     assert resp.json()["error"]["code"] in {"UNAUTHORIZED", "SESSION_EXPIRED"}
 
 
+async def test_unverified_user_can_read_own_state_and_log_out(
+    client: AsyncClient, register_and_login: RegisterAndLogin
+) -> None:
+    """The session-management routes pass verified=False. An unverified user
+    holds a valid session and must be able to see it is unverified and end it —
+    withdrawing access is the frictionless direction (backend.md)."""
+    await register_and_login(email="unverified-session@example.com", verify=False)
+
+    me = await client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert me.json()["emailVerified"] is False
+
+    out = await client.post("/api/v1/auth/logout")
+    assert out.status_code == 204
+    assert (await client.get("/api/v1/auth/me")).status_code == 401
+
+
 async def test_logout_destroys_the_current_session(
     client: AsyncClient, register_and_login: RegisterAndLogin
 ) -> None:

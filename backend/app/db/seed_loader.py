@@ -13,9 +13,10 @@ touching a table, so a second ``docker compose up`` is a no-op.
 The committed CSVs carry no password hashes -- argon2 output is
 non-deterministic and would break the "regenerate -> git diff empty"
 contract (ADR-0015). Instead, ``users.csv`` flags demo logins; this
-loader hashes the public dev password (`app.core.security.hash_password`)
-and stamps ``email_verified_at`` for those rows at load time. Every other
-seeded User gets a random, unusable hash.
+loader stamps a hash of the public dev password and ``email_verified_at``
+for those rows at load time. Every other seeded User shares one hash of a
+random secret -- a NOT NULL value no password can satisfy. Argon2 runs
+exactly twice per boot, not once per row.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ import asyncio
 import csv
 import hashlib
 import os
+import secrets
 import uuid
 from datetime import date, datetime
 from pathlib import Path
@@ -40,6 +42,12 @@ from app.modules.users.models import Patient, Provider, ProviderKind, ProviderSt
 # (clinical-safety.md). Mirrors seed/scripts/common.DEV_PASSWORD.
 DEV_PASSWORD = "Pulse@demo1"  # documented public demo credential
 VERIFIED_AT = datetime.fromisoformat("2026-01-01T00:00:00+00:00")
+
+# Argon2 is deliberately slow; hash exactly twice per boot, not once per row.
+# Every demo user shares DEV_PASSWORD, and every non-demo user just needs a
+# NOT NULL value that no password can satisfy.
+_DEMO_HASH = hash_password(DEV_PASSWORD)
+_UNUSABLE_HASH = hash_password(secrets.token_urlsafe(32))
 
 # Local dev: repo_root/seed/data. Container: /seed/data (compose bind mount).
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[3] / "seed" / "data"
@@ -102,9 +110,7 @@ def _build_objects(identity_dir: Path) -> tuple[list[object], dict[str, int]]:
             User(
                 id=uuid.UUID(r["id"]),
                 email=r["email"],
-                password_hash=hash_password(
-                    DEV_PASSWORD if demo else uuid.uuid4().hex
-                ),
+                password_hash=_DEMO_HASH if demo else _UNUSABLE_HASH,
                 role=Role(r["role"]),
                 email_verified_at=VERIFIED_AT if demo else None,
             )
