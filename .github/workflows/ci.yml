@@ -14,9 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync
+      # --group dev pulls pytest, httpx and the testcontainers extras.
+      - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run mypy .
+      # Enforcement lints (ADR-0004 / ADR-0006 / backend.md). Cheap now, unpayable at sixty routes.
+      - run: uv run python scripts/lint_cross_module_imports.py
+      - run: uv run python scripts/lint_entry_query.py
+      - run: uv run python scripts/stub_inventory.py
+      # ubuntu-latest ships a working Docker daemon; testcontainers starts real
+      # Postgres + Redis, so no services: block is needed.
+      - run: uv run pytest
 
   frontend:
     runs-on: ubuntu-latest
@@ -30,4 +38,23 @@ jobs:
           node-version: 24
       - run: npm ci
       - run: npm run lint
+      # typescript stays pinned at 6.0.3 in package.json — 7.x breaks type-aware ESLint.
       - run: npx tsc --noEmit
+      - run: npm run build
+
+  frontend-e2e:
+    runs-on: ubuntu-latest
+    # No-op until another agent commits the Playwright config; the guard skips
+    # the whole job while frontend/playwright.config.ts is absent.
+    if: hashFiles('frontend/playwright.config.ts') != ''
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test

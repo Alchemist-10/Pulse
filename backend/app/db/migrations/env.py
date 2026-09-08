@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from app.db.base import Base  # noqa: E402
+from app.modules.users import models as _users_models  # noqa: E402,F401  (phases append here)
 
 config = context.config
 
