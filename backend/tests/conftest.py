@@ -86,8 +86,21 @@ async def db_session(db_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         await conn.execute(text(f"TRUNCATE {_APP_TABLES} RESTART IDENTITY CASCADE"))
 
 
+# Tests that touch neither the app nor the database — the enforcement lints and
+# the route-coverage introspection — must not pay for a Postgres/Redis container.
+# They are recognised by requesting none of the infra fixtures below.
+_INFRA_FIXTURES = frozenset(
+    {"client", "db_session", "db_engine", "register_and_login", "fake_idp"}
+)
+
+
 @pytest_asyncio.fixture(autouse=True)
-async def _flush_redis(_environment: None) -> AsyncIterator[None]:
+async def _flush_redis(request: pytest.FixtureRequest) -> AsyncIterator[None]:
+    if _INFRA_FIXTURES.isdisjoint(request.fixturenames):
+        yield
+        return
+
+    request.getfixturevalue("_environment")
     from app.core.redis import close_redis, get_redis
 
     await close_redis()
