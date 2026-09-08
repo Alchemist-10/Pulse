@@ -5,11 +5,12 @@ takes an `Actor`; there are no "internal" helpers that skip it — the pure
 ORM->wire mappers live in `projections.py` precisely so they are not
 somewhere a filter could have been dropped.
 
-Phase 2 access is rule 1 only — a Patient reads their own history. A
-non-owner (Clinician, Administrator, another Patient) gets **404, never
-403**: a 403 would confirm the record exists (clinical-safety.md). Rules
-2–4 (Clinician consent, break-glass) land in Phase 3, and the read paths
-below carry `# TODO(P3): emit ENTRY_VIEWED` — no audit rows this phase.
+Phase 2 access — a Patient reads their own history, and a Provider Staff
+user reads/writes coarsely (any record; narrowed to the authoring
+Provider in Phase 3). A Clinician, an Administrator or another Patient
+gets **404, never 403**: a 403 would confirm the record exists
+(clinical-safety.md). Consent, break-glass and audit emission all land in
+Phase 3; the read paths carry `# TODO(P3): emit ENTRY_VIEWED`.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.actor import Actor
+from app.core.authz import Role
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
 from app.core.pagination import Page
@@ -40,9 +42,18 @@ def _not_found() -> PulseError:
     return PulseError(ErrorCode.NOT_FOUND, "No such record.", http_status=404)
 
 
-async def _require_owned_patient(
+async def _authorize_entry_access(
     session: AsyncSession, actor: Actor, patient_id: UUID
 ) -> None:
+    """Phase 2 access — rule 1 plus a coarse Provider Staff allowance.
+
+    The Patient reads their own history; a Provider Staff user reads any
+    record (narrowed to the authoring Provider, and to live Consent for
+    Clinicians, in Phase 3). Everyone else — Clinician, Administrator,
+    another Patient — gets 404, never 403 (clinical-safety.md).
+    """
+    if actor.role is Role.PROVIDER_STAFF:
+        return
     patient = await users_service.get_patient(session, patient_id)
     if patient is None or patient.user_id != actor.user_id:
         raise _not_found()
@@ -71,7 +82,7 @@ async def list_timeline(
     cursor: str | None = None,
     limit: int = 50,
 ) -> Page[EntrySummary]:
-    await _require_owned_patient(session, actor, patient_id)
+    await _authorize_entry_access(session, actor, patient_id)
     rows, next_cursor = await repository.list_timeline(
         session, actor, patient_id, entry_type=entry_type, cursor=cursor, limit=limit
     )
@@ -85,7 +96,7 @@ async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> Entr
     entry = await repository.get_entry(session, actor, entry_id)
     if entry is None:
         raise _not_found()
-    await _require_owned_patient(session, actor, entry.patient_id)
+    await _authorize_entry_access(session, actor, entry.patient_id)
     supersedes_id = await repository.get_superseding_original_id(session, entry_id)
     documents = await repository.list_documents(session, entry_id)
     # TODO(P3): emit ENTRY_VIEWED
@@ -123,6 +134,31 @@ async def supersede_entry(
     original_id: UUID,
     payload: EntryCreate,
 ) -> EntryDetail:
-    """Correction path — insert a replacement, stamp `superseded_by_id` on
-    the original. Implemented in P2.7."""
-    raise NotImplementedError
+    """Correction path (P2.7): insert a new Entry, stamp `superseded_by_id`
+    on the original. Never an in-place update of clinical data. The route
+    restricts this to Provider Staff (RECORDS_WRITE)."""
+    if await users_service.get_patient(session, patient_id) is None:
+        raise _not_found()
+    original = await repository.get_entry(session, actor, original_id)
+    if original is None or original.patient_id != patient_id:
+        raise _not_found()
+    _validate_payload(payload)
+    if payload.source_provider_id is None:
+        provider_id = await users_service.get_provider_for_staff(
+            session, actor.user_id
+        )
+        payload = payload.model_copy(update={"source_provider_id": provider_id})
+    replacement = await repository.supersede_entry(
+        session, actor, patient_id, original_id, payload
+    )
+    if replacement is None:
+        raise PulseError(
+            ErrorCode.ENTRY_ALREADY_SUPERSEDED,
+            "This entry has already been corrected.",
+            http_status=409,
+        )
+    await session.commit()
+    fresh = await repository.get_entry(session, actor, replacement.id)
+    if fresh is None:  # pragma: no cover - just inserted
+        raise _not_found()
+    return projections.to_detail(fresh, supersedes_id=original_id, documents=[])

@@ -68,3 +68,20 @@ async def file_entry(
     session: SessionDep,
 ) -> EntryDetail:
     return await service.insert_entry(session, ctx.actor, patient_id, payload)
+
+
+@router.post(
+    "/patients/{patient_id}/entries/{entry_id}/corrections",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[requires(Permission.RECORDS_WRITE)],
+)
+async def correct_entry(
+    patient_id: UUID,
+    entry_id: UUID,
+    payload: EntryCreate,
+    ctx: CurrentUser,
+    session: SessionDep,
+) -> EntryDetail:
+    return await service.supersede_entry(
+        session, ctx.actor, patient_id, entry_id, payload
+    )

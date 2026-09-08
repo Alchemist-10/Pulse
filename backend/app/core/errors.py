@@ -22,6 +22,7 @@ class ErrorCode(StrEnum):
     STEP_UP_REQUIRED = "STEP_UP_REQUIRED"
     # Phase 2 — records
     ENTRY_TYPE_MISMATCH = "ENTRY_TYPE_MISMATCH"
+    ENTRY_ALREADY_SUPERSEDED = "ENTRY_ALREADY_SUPERSEDED"
 
 
 class ErrorDetail(PulseSchema):

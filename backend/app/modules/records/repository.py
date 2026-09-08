@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Select, or_, select
+from sqlalchemy import CursorResult, Select, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectin_polymorphic
 
@@ -199,10 +199,24 @@ async def supersede_entry(
     patient_id: UUID,
     original_id: UUID,
     replacement_payload: EntryCreate,
-) -> MedicalEntry:
-    """Insert the replacement, stamp `superseded_by_id` on the original.
-    Implemented in P2.7."""
-    raise NotImplementedError
+) -> MedicalEntry | None:
+    """Insert the replacement, then the one permitted UPDATE on a clinical
+    row — `superseded_by_id` on the original, and only when it is still
+    NULL. Returns None when zero rows matched (already superseded); the
+    caller rolls the replacement insert back and answers 409."""
+    replacement = await insert_entry(session, actor, patient_id, replacement_payload)
+    result = await session.execute(
+        update(MedicalEntry)
+        .where(
+            (MedicalEntry.id == original_id)
+            & MedicalEntry.superseded_by_id.is_(None)
+        )
+        .values(superseded_by_id=replacement.id)
+        .execution_options(synchronize_session=False)
+    )
+    if not isinstance(result, CursorResult) or result.rowcount == 0:
+        return None
+    return replacement
 
 
 async def add_document(

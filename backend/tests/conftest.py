@@ -150,7 +150,11 @@ async def register_and_login(
     client: AsyncClient, fake_idp: object
 ) -> LoginFactory:
     """Register -> verify (via the fake) -> login. Returns the login Response
-    (its cookie jar is already on `client`)."""
+    (its cookie jar is already on `client`).
+
+    Idempotent on the email: a second call with an already-registered
+    address just re-logs-in, so a multi-actor test can switch back to an
+    earlier user by calling this again."""
 
     async def _make(
         *,
@@ -163,14 +167,15 @@ async def register_and_login(
             "/api/v1/auth/register",
             json={"email": email, "password": password, "role": role},
         )
-        reg.raise_for_status()
-        challenge_id, (token, _uid) = next(reversed(fake_idp.issued.items()))  # type: ignore[attr-defined]
-        if verify:
-            v = await client.post(
-                "/api/v1/auth/verify",
-                json={"challengeId": challenge_id, "token": token},
-            )
-            v.raise_for_status()
+        if reg.status_code != 409:
+            reg.raise_for_status()
+            challenge_id, (token, _uid) = next(reversed(fake_idp.issued.items()))  # type: ignore[attr-defined]
+            if verify:
+                v = await client.post(
+                    "/api/v1/auth/verify",
+                    json={"challengeId": challenge_id, "token": token},
+                )
+                v.raise_for_status()
         login = await client.post(
             "/api/v1/auth/login",
             json={"email": email, "password": password},
