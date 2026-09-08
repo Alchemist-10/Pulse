@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 import pytest_asyncio
 import records_helpers as rh
@@ -28,10 +29,10 @@ async def _isolate(app_database_url: str) -> AsyncIterator[None]:
     await wipe_identity(app_database_url)
 
 
-async def _patient_id(client: AsyncClient) -> str:
+async def _patient_id(client: AsyncClient) -> UUID:
     resp = await client.get("/api/v1/patients/me")
     resp.raise_for_status()
-    return str(resp.json()["id"])
+    return UUID(str(resp.json()["id"]))
 
 
 async def test_timeline_orders_by_occurred_at_desc(
@@ -43,7 +44,7 @@ async def test_timeline_orders_by_occurred_at_desc(
     for days in (0, 30, 10):
         await rh.insert_entry(
             app_database_url,
-            patient_id=pid,  # type: ignore[arg-type]
+            patient_id=pid,
             occurred_at=base + timedelta(days=days),
             recorded_at=base + timedelta(days=90),
         )
@@ -61,11 +62,13 @@ async def test_superseded_entry_is_absent_but_reachable_by_id(
     pid = await _patient_id(client)
     now = datetime(2025, 6, 1, tzinfo=UTC)
     correction = await rh.insert_entry(
-        app_database_url, patient_id=pid, occurred_at=now  # type: ignore[arg-type]
+        app_database_url,
+        patient_id=pid,
+        occurred_at=now,
     )
     original = await rh.insert_entry(
         app_database_url,
-        patient_id=pid,  # type: ignore[arg-type]
+        patient_id=pid,
         occurred_at=now,
         superseded_by_id=correction,
     )
@@ -90,7 +93,7 @@ async def test_cursor_pages_do_not_overlap_or_skip(
     for i in range(5):
         await rh.insert_entry(
             app_database_url,
-            patient_id=pid,  # type: ignore[arg-type]
+            patient_id=pid,
             occurred_at=base + timedelta(days=i),
         )
 
@@ -103,7 +106,7 @@ async def test_cursor_pages_do_not_overlap_or_skip(
     # An insert between pages must not shift the window.
     await rh.insert_entry(
         app_database_url,
-        patient_id=pid,  # type: ignore[arg-type]
+        patient_id=pid,
         occurred_at=base + timedelta(days=10),
     )
 
@@ -123,11 +126,14 @@ async def test_entry_type_filter_narrows_the_timeline(
     pid = await _patient_id(client)
     now = datetime(2025, 3, 1, tzinfo=UTC)
     await rh.insert_entry(
-        app_database_url, patient_id=pid, occurred_at=now, entry_type="CLINICAL_NOTE"  # type: ignore[arg-type]
+        app_database_url,
+        patient_id=pid,
+        occurred_at=now,
+        entry_type="CLINICAL_NOTE",
     )
     await rh.insert_entry(
         app_database_url,
-        patient_id=pid,  # type: ignore[arg-type]
+        patient_id=pid,
         occurred_at=now,
         entry_type="LAB_REPORT",
     )

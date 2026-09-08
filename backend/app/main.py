@@ -9,8 +9,11 @@ from fastapi.exceptions import RequestValidationError
 from app.core.exceptions import PulseError, pulse_error_handler, validation_error_handler
 from app.core.middleware import RequestIdMiddleware
 from app.core.redis import close_redis
+from app.modules.audit.routes import router as audit_router
 from app.modules.auth.routes import router as auth_router
+from app.modules.consent.routes import router as consent_router
 from app.modules.patients.routes import router as patients_router
+from app.modules.records.routes import router as records_router
 
 
 @asynccontextmanager
@@ -28,6 +31,9 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)  # t
 
 app.include_router(auth_router)
 app.include_router(patients_router)
+app.include_router(records_router)
+app.include_router(consent_router)
+app.include_router(audit_router)
 
 
 @app.get("/api/v1/health")

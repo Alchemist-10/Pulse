@@ -20,6 +20,17 @@ class Permission(StrEnum):
     PATIENT_PROFILE_READ_SELF = "PATIENT_PROFILE_READ_SELF"
     # Changing one's own credentials (password / email). Step-up guarded.
     USER_CREDENTIALS_CHANGE = "USER_CREDENTIALS_CHANGE"
+    # Reading Medical Entries. The route guard is coarse (a Role holds it or
+    # not); which entries the actor actually sees is decided per-request by
+    # `accessible_entries` (Phase 3). No Administrator holds it (ADR-0007).
+    RECORDS_READ = "RECORDS_READ"
+    # Filing Medical Entries / uploading Documents — Provider Staff only.
+    RECORDS_WRITE = "RECORDS_WRITE"
+    # A Patient managing and reviewing Consent over their own record.
+    CONSENT_READ_SELF = "CONSENT_READ_SELF"
+    CONSENT_MANAGE_SELF = "CONSENT_MANAGE_SELF"
+    # A Patient reading their own audit trail (filtered projection).
+    AUDIT_READ_SELF = "AUDIT_READ_SELF"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
@@ -27,10 +38,20 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         {
             Permission.PATIENT_PROFILE_READ_SELF,
             Permission.USER_CREDENTIALS_CHANGE,
+            Permission.RECORDS_READ,
+            Permission.CONSENT_READ_SELF,
+            Permission.CONSENT_MANAGE_SELF,
+            Permission.AUDIT_READ_SELF,
         }
     ),
-    Role.CLINICIAN: frozenset({Permission.USER_CREDENTIALS_CHANGE}),
-    Role.PROVIDER_STAFF: frozenset({Permission.USER_CREDENTIALS_CHANGE}),
+    Role.CLINICIAN: frozenset({Permission.USER_CREDENTIALS_CHANGE, Permission.RECORDS_READ}),
+    Role.PROVIDER_STAFF: frozenset(
+        {
+            Permission.USER_CREDENTIALS_CHANGE,
+            Permission.RECORDS_READ,
+            Permission.RECORDS_WRITE,
+        }
+    ),
     Role.ADMINISTRATOR: frozenset({Permission.USER_CREDENTIALS_CHANGE}),
 }
 
