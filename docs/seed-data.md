@@ -21,6 +21,15 @@ Committed dataset  ──▶  loader runs on first `docker compose up`
 
 Both the Synthea invocation and the overlay are seeded, so the dataset is reproducible. It is committed rather than regenerated because Synthea is Java and `git clone && docker compose up` must work without a JDK.
 
+**Phase 1 scope.** Phase 1 has no clinical tables, so the first-boot loader
+(`backend/app/db/seed_loader.py`, run from the backend container entrypoint)
+loads identity only — Provider, ProviderStaff, User, Patient — and is
+idempotent via a `seed_marker` row (migration `0003`). The transformed
+Synthea clinical rows are committed now under `seed/data/clinical/` but are
+**not** loaded until Phase 2. Pins, regenerate steps, demo credentials and
+the planted-pair catalogue live in [`seed/README.md`](../seed/README.md);
+the Synthea release + seeds are also in [`tech-stack.md`](./tech-stack.md).
+
 The near-miss non-duplicates matter as much as the planted duplicates: with only true pairs planted, duplicate detection can be *demonstrated* but its precision cannot be *measured*. Two siblings with the same surname and adjacent dates of birth are the interesting case.
 
 ## Identity sources

@@ -32,6 +32,10 @@ The stack itself was locked during planning — see [`architecture.md`](./archit
 | Redis | `redis:8.8.2` | |
 | Caddy | `caddy:2.11.4` | |
 | Mailpit | `axllent/mailpit:v1.31.0` | Not under Docker Hub's `library/` namespace. |
+| Synthea | `v4.0.0` (`synthea-with-dependencies.jar`, sha256 `ed43c20a…1e6ecc1`, 201 164 144 B) | Seed-data generator (ADR-0015). Dev-time only, Java 21; output is committed under `seed/data/`, so no JDK in any runtime image. Pins + checksum live in `seed/scripts/common.py`. |
+| Synthea patient seed | `424242` (`-s`) | Fixed. Drives which synthetic patients + clinical histories are generated. |
+| Synthea clinician seed | `20260901` (`-cs`) | Fixed and independent of the patient seed (ADR-0015). Reference date `-r 20260101`, population `-p 120`, base demographic `Massachusetts` (overlaid away). |
+| Indian identity overlay seed | `20260901` | `random` + `Faker.seed`; Faker `40.38.0` (`seed/requirements.txt`). Makes names / phones / addresses deterministic. |
 
 ## Landmines
 

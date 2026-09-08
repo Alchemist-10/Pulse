@@ -1,0 +1,6 @@
+kind,technique,patient_id_a,patient_id_b
+duplicate,token_order_swap,0a6215d4-97c0-5b10-b146-ea1fe1e23c0f,bb40773f-5761-55d9-826d-7960499aa9ad
+duplicate,initials_vs_expanded,0c96112a-1653-5403-999c-30ec1ef6dda8,caffc022-a538-56df-b604-99ad2fb2c6ed
+duplicate,dob_typo,100a55bc-6d03-5f60-8ecc-2441f18710af,876de177-1263-509b-b9cb-6b58a15a9ad0
+near_miss,sibling_same_surname_adjacent_dob,2544c3e6-001a-55c7-a034-422610976aed,9e18f7b8-e987-5ff3-8a46-e96d8bccc26e
+near_miss,sibling_same_surname_adjacent_dob,33038338-b5b3-5292-9c03-7b6207ae361c,a504cff1-985f-5a5e-8d01-eccb0be251b7

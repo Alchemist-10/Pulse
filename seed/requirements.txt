@@ -1,0 +1,8 @@
+# Generation-time only. NOT a backend runtime dependency and NOT in
+# backend/pyproject.toml -- Synthea + overlay run on a developer machine
+# and the transformed dataset is committed (ADR-0015).
+#
+#   python -m venv .venv && .venv/bin/pip install -r seed/requirements.txt
+#
+# Then see seed/README.md for the two-step regenerate.
+Faker==40.38.0
