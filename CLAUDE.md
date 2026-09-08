@@ -2,7 +2,7 @@
 
 > A lifelong electronic health record platform. Patients own their medical history; providers contribute to it; clinicians read it only with the patient's consent, and every access is recorded.
 
-Academic project, four-person team, Indian demographic, four locales. **Never touches real patient data.** Architecture is locked; Phase 1 implementation has not started.
+Academic project, four-person team, Indian demographic, four locales. **Never touches real patient data.** Architecture is locked. **Phase 0 and Phase 1 are complete** (identity, auth, sessions, seed pipeline, patient profile, enforcement lints, CI); Phase 2 (records spine) is next — see [`docs/delivery-plan.md`](docs/delivery-plan.md).
 
 Read [`CONTEXT.md`](CONTEXT.md) before using any domain term — Patient, Consent, Permission and Medical Entry all mean something specific here.
 
@@ -20,7 +20,7 @@ Versions are pinned in [`docs/tech-stack.md`](docs/tech-stack.md), including the
 - **Deploy:** `docker compose up`. The demo target is a laptop; there is no staging environment.
 - **RTK wrappers:** confirmed via `rtk help`. Backend → `rtk pip` / `rtk ruff` / `rtk pytest` / `rtk mypy`; frontend → `rtk npm` / `rtk npx` / `rtk next`.
 
-**No code is scaffolded yet.** The commands above are what Phase 0 sets up — see [`docs/delivery-plan.md`](docs/delivery-plan.md). Until then this repo is documentation only, and the correct response to "run the tests" is that there are none.
+The commands above are live as of Phase 1. `backend/` has 42 passing tests (real Postgres + Redis via testcontainers — Docker required); `frontend/` passes `tsc`, `eslint` and `next build`. `docker compose up` brings up the six-container stack, migrates, and seeds identity data on first boot.
 
 ## Canary
 

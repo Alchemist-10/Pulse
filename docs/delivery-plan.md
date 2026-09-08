@@ -70,6 +70,8 @@ Once that tree exists, the four of them work in **disjoint directories** and Pha
 
 ## Phase 1 — skeleton
 
+> **Status: complete — 2026-09-08** ([#23](https://github.com/moneytosms/Pulse/issues/23), merged to `main` at `1121a30`; seed-email fix `2cbe30a`). Gate met: `docker compose up` on a fresh volume brings up six containers, runs migrations `0001..0003` and the first-boot identity seed, and the full register → verify (Mailpit) → login → `GET /api/v1/patients/me` → `/hi` journey passes through Caddy. `demo.patient.hi@example.com` / `Pulse@demo1` logs in. Backend 42 tests green; frontend `tsc` + `eslint` + `next build` green; route-coverage / cross-module / entry-query lints wired into CI.
+
 *Demoable: a user registers, verifies by email in Mailpit, logs in, sees a seeded Patient's profile, switches to Hindi. CI blocks a route that declares no permission.*
 
 **Shivansh** — `User`, `Patient`, `Provider`, `ProviderStaff` models and migrations; users and patients repositories; seed pipeline part one (pinned Synthea invocation, deterministic Indian overlay, dataset committed); the loader that seeds on first `compose up`.
@@ -80,7 +82,9 @@ Once that tree exists, the four of them work in **disjoint directories** and Pha
 
 **Srimoney** — the three enforcement tests, landed now while there are three endpoints and not sixty: route-coverage (default-deny, [ADR-0004](./adr/0004-default-deny-route-authorization.md)), the `select(MedicalEntry)` lint ([ADR-0006](./adr/0006-consent-enforced-by-one-query-builder.md)), and the cross-module import lint. The "authenticate as role X" test fixture. Mailpit wired into the demo. README quickstart. Every PR reviewed.
 
-**Gate to Phase 2:** `git clone && docker compose up` on a machine that has never seen the project produces a working, seeded, logged-in-able system. That is the acceptance test, and it is checked on someone else's laptop, not the author's.
+**Gate to Phase 2:** `git clone && docker compose up` on a machine that has never seen the project produces a working, seeded, logged-in-able system. That is the acceptance test, and it is checked on someone else's laptop, not the author's. — **met 2026-09-08.**
+
+Delivered against the [#23](https://github.com/moneytosms/Pulse/issues/23) spec, not the four-person split above (built solo across one Wave-0 contract commit + four parallel lanes). Known follow-ups carried into Phase 2: `USER_CREDENTIALS_CHANGE` doubles as an "authenticated-only" marker until a dedicated one is needed; `backend/.venv` is copied into the image then rebuilt on boot (add a `.dockerignore`); `next build` runs Turbopack — recheck on every `16.x` bump.
 
 ---
 
