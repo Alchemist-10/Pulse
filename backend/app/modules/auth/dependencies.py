@@ -9,7 +9,7 @@ marker is attached to the dependency callable so the test can introspect
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends, Request, status
+from fastapi import Depends, Request, params, status
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,7 +86,7 @@ async def current_user(
     )
 
 
-def requires(permission: Permission) -> object:
+def requires(permission: Permission) -> params.Depends:
     """Route guard: the actor's Role must hold `permission`, and (for any
     permissioned route) the email must be verified."""
 
@@ -106,10 +106,10 @@ def requires(permission: Permission) -> object:
         return ctx
 
     setattr(guard, PERMISSION_ATTR, permission)
-    return Depends(guard)
+    return params.Depends(guard)
 
 
-def requires_step_up() -> object:
+def requires_step_up() -> params.Depends:
     """Composed alongside `requires(...)` on credential-change routes."""
 
     async def guard(
@@ -124,14 +124,14 @@ def requires_step_up() -> object:
             )
         return ctx
 
-    return Depends(guard)
+    return params.Depends(guard)
 
 
-def public() -> object:
+def public() -> params.Depends:
     """Explicit 'no authorization' marker for unauthenticated routes."""
 
     async def marker() -> None:
         return None
 
     setattr(marker, PUBLIC_ATTR, True)
-    return Depends(marker)
+    return params.Depends(marker)

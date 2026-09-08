@@ -1,8 +1,10 @@
 """Cross-module import lint (backend.md, issue #23 story 60).
 
 A file under `app/modules/<X>/` may not import from `app.modules.<Y>` when
-`Y != X`, except `app.modules.<Y>.service` and `app.modules.<Y>.schemas` —
-modules communicate only through service interfaces and wire schemas.
+`Y != X`, except `app.modules.<Y>.{service,schemas,dependencies}` — modules
+communicate through service interfaces, wire schemas, and the auth module's
+FastAPI DI surface (`requires`/`public`/`current_user`, ADR-0004). What stays
+forbidden is another module's `models` / `repository` — its tables.
 
 Prints `file:line -> import` for each violation. Exit 1 if any, else exit 0
 after an explicit `clean` line. Relative imports are resolved to absolute
@@ -17,7 +19,7 @@ from pathlib import Path
 
 _BACKEND_DIR = Path(__file__).resolve().parents[1]
 _MODULES_DIR = _BACKEND_DIR / "app" / "modules"
-_ALLOWED_SUBMODULES = {"service", "schemas"}
+_ALLOWED_SUBMODULES = {"service", "schemas", "dependencies"}
 
 
 def _own_module(path: Path) -> str:

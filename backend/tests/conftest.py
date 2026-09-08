@@ -28,7 +28,9 @@ from testcontainers.redis import RedisContainer
 LoginFactory = Callable[..., Awaitable[Response]]
 
 _BACKEND_DIR = Path(__file__).resolve().parents[1]
-_APP_TABLES = '"user", provider, patient, provider_staff'
+# Child-first: the app role has DML but not TRUNCATE on these (migration 0002),
+# so teardown is ordered DELETEs, not a single TRUNCATE ... CASCADE.
+_APP_TABLES = ("provider_staff", "patient", '"user"', "provider")
 
 
 @pytest.fixture(scope="session")
@@ -83,7 +85,8 @@ async def db_session(db_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     async with maker() as session:
         yield session
     async with db_engine.begin() as conn:
-        await conn.execute(text(f"TRUNCATE {_APP_TABLES} RESTART IDENTITY CASCADE"))
+        for table in _APP_TABLES:
+            await conn.execute(text(f"DELETE FROM {table}"))
 
 
 # Tests that touch neither the app nor the database — the enforcement lints and

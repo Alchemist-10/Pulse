@@ -6,11 +6,10 @@ Endpoints (Wave 1, Agent A):
 """
 
 from datetime import date
-from typing import Annotated, cast
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response, status
-from fastapi import params as fastapi_params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.authz import Permission
@@ -23,12 +22,6 @@ from app.modules.patients.schemas import PatientProfile
 from app.modules.users import service as users_service
 
 router = APIRouter(prefix="/api/v1/patients", tags=["patients"])
-
-
-def _marker(dep: object) -> fastapi_params.Depends:
-    """Wave 0 types `requires(...)` as `object`; it returns `Depends`."""
-    return cast(fastapi_params.Depends, dep)
-
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[AuthContext, Depends(current_user)]
@@ -49,7 +42,7 @@ _STUB_PROFILE = PatientProfile(
 
 @router.get(
     "/me",
-    dependencies=[_marker(requires(Permission.PATIENT_PROFILE_READ_SELF))],
+    dependencies=[requires(Permission.PATIENT_PROFILE_READ_SELF)],
 )
 async def read_own_profile(ctx: CurrentUser, session: SessionDep) -> PatientProfile:
     profile = await users_service.get_own_patient_profile(session, ctx.actor)
@@ -64,7 +57,7 @@ async def read_own_profile(ctx: CurrentUser, session: SessionDep) -> PatientProf
 
 @router.get(
     "/{patient_id}",
-    dependencies=[_marker(requires(Permission.PATIENT_PROFILE_READ_SELF))],
+    dependencies=[requires(Permission.PATIENT_PROFILE_READ_SELF)],
 )
 @stub(_STUB_PROFILE)
 async def read_profile_by_id(

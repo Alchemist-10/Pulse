@@ -13,10 +13,9 @@ Endpoints (Wave 1, Agent A):
 Every route declares `public()` or `requires(...)` in its `dependencies=`.
 """
 
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response, status
-from fastapi import params as fastapi_params
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,12 +45,6 @@ from app.modules.auth.schemas import (
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
-
-def _marker(dep: object) -> fastapi_params.Depends:
-    """Wave 0 types `requires(...)` / `public()` as `object`; they return `Depends`."""
-    return cast(fastapi_params.Depends, dep)
-
-
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 RedisDep = Annotated[Redis, Depends(get_redis)]
 IdpDep = Annotated[IdentityProvider, Depends(get_identity_provider)]
@@ -73,7 +66,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[_marker(public())],
+    dependencies=[public()],
 )
 async def register(
     body: RegisterRequest, session: SessionDep, idp: IdpDep
@@ -92,7 +85,7 @@ async def register(
 @router.post(
     "/verify/resend",
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[_marker(public())],
+    dependencies=[public()],
 )
 async def resend_verification(
     body: ResendVerificationRequest, session: SessionDep, idp: IdpDep
@@ -103,7 +96,7 @@ async def resend_verification(
     return {}
 
 
-@router.post("/verify", dependencies=[_marker(public())])
+@router.post("/verify", dependencies=[public()])
 async def verify(
     body: VerifyRequest, session: SessionDep, idp: IdpDep
 ) -> dict[str, str]:
@@ -113,7 +106,7 @@ async def verify(
     return {}
 
 
-@router.post("/login", dependencies=[_marker(public())])
+@router.post("/login", dependencies=[public()])
 async def login(
     body: LoginRequest, response: Response, session: SessionDep, redis: RedisDep
 ) -> dict[str, str]:
@@ -127,7 +120,7 @@ async def login(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[_marker(requires(Permission.USER_CREDENTIALS_CHANGE))],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
 )
 async def logout(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
     await service.logout(redis, ctx.session_token)
@@ -137,7 +130,7 @@ async def logout(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
 @router.post(
     "/logout-all",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[_marker(requires(Permission.USER_CREDENTIALS_CHANGE))],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
 )
 async def logout_all(response: Response, ctx: CurrentUser, redis: RedisDep) -> None:
     await service.logout_all(redis, ctx.user_id)
@@ -146,7 +139,7 @@ async def logout_all(response: Response, ctx: CurrentUser, redis: RedisDep) -> N
 
 @router.post(
     "/step-up",
-    dependencies=[_marker(requires(Permission.USER_CREDENTIALS_CHANGE))],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
 )
 async def step_up(
     body: StepUpRequest, ctx: CurrentUser, session: SessionDep, redis: RedisDep
@@ -163,7 +156,7 @@ async def step_up(
 
 @router.get(
     "/me",
-    dependencies=[_marker(requires(Permission.USER_CREDENTIALS_CHANGE))],
+    dependencies=[requires(Permission.USER_CREDENTIALS_CHANGE)],
 )
 async def me(ctx: CurrentUser) -> MeResponse:
     return MeResponse(
