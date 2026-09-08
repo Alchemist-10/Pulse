@@ -73,9 +73,13 @@ export const config = { matcher: '/((?!api|_next|_vercel|.*\\..*).*)' };
 
 Without it every API call gets a locale prefix rewritten onto it, and the symptom looks nothing like the cause.
 
-### Next.js 16.3.2: `next build` crashes on `/_global-error`
+### Next.js 16.3.2: `next build` — earlier `/_global-error` crash no longer reproduces
 
-Confirmed during Phase 0 scaffolding: `next build` fails prerendering `/_global-error` with `TypeError: Cannot read properties of null (reading 'useContext')`, on a stock scaffold with no custom code. Upstream Turbopack static-generation bug — see [vercel/next.js#95741](https://github.com/vercel/next.js/issues/95741) (best-diagnosed), also #86178, #84994, #94667. No fix exists in any published `16.3.x` release; `--webpack`, `experimental.prerenderEarlyExit`, `experimental.cpus`, `output: standalone` all fail to work around it. `next dev` and `next lint`/`tsc --noEmit` are unaffected — CI and the Dockerfile (`npm run dev`) don't hit this. Re-test on every `16.3.x` patch bump; drop this note once fixed upstream.
+Phase 0 (verified 2026-08-22) recorded `next build` failing while prerendering `/_global-error` with `TypeError: Cannot read properties of null (reading 'useContext')` on a bare scaffold — an upstream Turbopack static-generation bug ([vercel/next.js#95741](https://github.com/vercel/next.js/issues/95741), also #86178, #84994, #94667).
+
+Re-verified 2026-09-08 against the Phase 1 tree: **`next build` exits 0** and prerenders every page. The committed `frontend/src/app/global-error.tsx` is a plain custom component (present since Phase 0), which is what sidesteps the crashing stock code path — the original note was written against a barer state and not revisited. `next build` is now part of CI's frontend job. Keep an eye on it across `16.x` bumps; if it regresses, the workaround is still "there isn't one, pin back".
+
+Unrelated: `next build` prints a deprecation warning for the `middleware` file convention (renamed `proxy` in 16.x). Non-blocking; the `next-intl` middleware still works. Migrate with `npx @next/codemod@canary middleware-to-proxy .` when convenient.
 
 ### postgres:18 changed its data volume mount point
 
