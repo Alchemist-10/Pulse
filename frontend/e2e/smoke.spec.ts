@@ -59,6 +59,36 @@ test("EN <-> HI toggle changes the URL locale prefix and a visible string", asyn
   await expect(page.getByRole("heading", { name: "साइन इन करें" })).toBeVisible();
 });
 
+test("locale switcher lists all four locales", async ({ page }) => {
+  await page.goto("/en/login");
+  const group = page.getByRole("group", { name: "Language" });
+  await expect(group.getByRole("button", { name: "English" })).toBeVisible();
+  await expect(group.getByRole("button", { name: "हिन्दी" })).toBeVisible();
+  await expect(group.getByRole("button", { name: "தமிழ்" })).toBeVisible();
+  await expect(group.getByRole("button", { name: "മലയാളം" })).toBeVisible();
+});
+
+// ta/ml catalogs ship with every key present and every value empty (P2.10) —
+// real translations land in Phase 4. next-intl only raises MISSING_MESSAGE for
+// an absent key, so request.ts prunes empty leaves first; the guard then fires
+// in dev and CI. This is the test that keeps an untranslated locale a red build
+// instead of a page of silent blanks.
+test("ta locale throws on an untranslated key in dev", async ({ page }) => {
+  const response = await page.goto("/ta/login");
+  expect(response?.status()).toBe(500);
+});
+
+test("/api/* is not rewritten by the locale middleware", async ({ page }) => {
+  // The matcher (src/middleware.ts) excludes /api so Caddy's FastAPI route is
+  // untouched. Hitting an unmocked /api path directly (no page.route stub for
+  // this specific one) must reach Next's own 404 handler at the literal path —
+  // if the middleware ever rewrote it to /en/api/... it would 404 differently
+  // or redirect, which this assertion would catch.
+  const response = await page.goto("/api/v1/does-not-exist");
+  expect(response?.status()).toBe(404);
+  expect(page.url()).toContain("/api/v1/does-not-exist");
+});
+
 test("login redirects to the profile and renders identity fields", async ({ page }) => {
   await page.goto("/en/login");
   await page.getByLabel("Email address").fill("aarav@example.com");

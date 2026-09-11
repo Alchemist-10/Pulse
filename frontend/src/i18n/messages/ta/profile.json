@@ -1,0 +1,22 @@
+{
+  "title": "",
+  "subtitle": "",
+  "loading": "",
+  "notFound": "",
+  "fields": {
+    "fullName": "",
+    "dateOfBirth": "",
+    "sex": "",
+    "phone": "",
+    "addressLine": "",
+    "city": "",
+    "state": "",
+    "localePreference": ""
+  },
+  "claimed": {
+    "label": "",
+    "true": "",
+    "false": ""
+  },
+  "signOut": ""
+}

@@ -1,0 +1,22 @@
+{
+  "home": {
+    "title": "",
+    "description": "",
+    "registerCta": "",
+    "loginCta": ""
+  },
+  "app": {
+    "name": "",
+    "skipToContent": ""
+  },
+  "locale": {
+    "label": "",
+    "en": "",
+    "hi": ""
+  },
+  "actions": {
+    "submit": "",
+    "retry": "",
+    "loading": ""
+  }
+}

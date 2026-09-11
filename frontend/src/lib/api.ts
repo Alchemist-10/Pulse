@@ -10,11 +10,17 @@
 
 const API_BASE = "/api/v1";
 
+/** One field-level validation failure (docs/api-conventions.md `details`). */
+export interface ApiErrorDetail {
+  field?: string | null;
+  code?: string | null;
+}
+
 /** The coded error envelope every non-2xx response carries. */
 export interface ApiErrorBody {
   code: string;
   message: string;
-  details?: Record<string, unknown>;
+  details?: ApiErrorDetail[];
   requestId?: string;
 }
 
@@ -26,7 +32,7 @@ export interface ApiErrorBody {
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
-  readonly details?: Record<string, unknown>;
+  readonly details?: ApiErrorDetail[];
   readonly requestId?: string;
 
   constructor(status: number, body: ApiErrorBody) {

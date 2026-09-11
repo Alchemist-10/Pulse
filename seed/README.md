@@ -9,17 +9,19 @@ construction.
 
 ## What is committed vs generated
 
-| Path | Committed? | Loaded in Phase 1? |
+| Path | Committed? | Loaded by the first-boot loader? |
 |---|---|---|
-| `data/identity/*.csv` | yes | **yes** — first-boot loader |
-| `data/clinical/*.csv` | yes (~15 MB) | **no** — staged for Phase 2 (no clinical tables yet) |
+| `data/identity/*.csv` | yes | **yes** — Provider, ProviderStaff, User, Patient |
+| `data/clinical/*.csv` | yes (~15 MB) | **yes, from P2.4** — a capped selection per Patient |
 | `data/reference/pincodes.csv` | yes | as address source during regeneration only |
 | `data/MANIFEST.json` | yes | no — provenance + row counts + csv hashes |
 | `raw/` (Synthea output), the ~192 MiB jar | **no** — git-ignored | — |
 
-Phase 1 has no `medical_entry` tables. `seed_loader.py` loads Provider,
-ProviderStaff, User and Patient and nothing else; it never opens
-`data/clinical/`.
+Phase 1 had no `medical_entry` tables, so `seed_loader.py` loaded identity
+only. From Phase 2 (P2.4) it also reads `data/clinical/` and inserts a
+capped, deterministic set of Medical Entries per Patient — real
+SNOMED-CT/LOINC/RxNorm `(code_system, code)` pairs straight from that
+data, no code invented. Both passes share the one `seed_marker` row.
 
 ## Layout
 
@@ -42,7 +44,8 @@ seed/
 
 1. `backend/entrypoint.sh` runs `alembic upgrade head`.
 2. Then `python -m app.db.seed_loader`. It checks the `seed_marker` row
-   (migration `0003`); absent -> load `data/identity/`, then write the
+   (migration `0003`); absent -> load `data/identity/`, then a capped
+   selection of Medical Entries from `data/clinical/`, then write the
    marker. Present -> no-op. So a second `docker compose up` changes
    nothing.
 3. `compose.yaml` bind-mounts `./seed/data` to `/seed/data:ro`; the loader

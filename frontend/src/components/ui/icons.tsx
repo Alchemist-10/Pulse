@@ -57,6 +57,59 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+// One icon per Entry type (entryType discriminator) — the timeline row pairs
+// this with the localized type label, never colour alone, to distinguish the
+// five kinds (.claude/rules/frontend.md, docs/design-direction.md).
+
+export function DiagnosisIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  );
+}
+
+export function PrescriptionIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="11" width="18" height="7" rx="3.5" transform="rotate(-45 12 14.5)" />
+      <line x1="9.17" y1="9.17" x2="14.83" y2="14.83" />
+    </svg>
+  );
+}
+
+export function FlaskIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 2v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-11V2" />
+      <line x1="8" y1="2" x2="16" y2="2" />
+      <line x1="6" y1="15" x2="18" y2="15" />
+    </svg>
+  );
+}
+
+export function ProcedureIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="4" width="16" height="18" rx="2" />
+      <line x1="8" y1="9" x2="16" y2="9" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </svg>
+  );
+}
+
+export function ClinicalNoteIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+    </svg>
+  );
+}
+
 export function SpinnerIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

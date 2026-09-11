@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import { fieldErrorsFrom, useApiErrorMessage } from "@/lib/errors";
+import { useApiErrorMessage, useFieldErrors } from "@/lib/errors";
 
 const ROLES = ["PATIENT", "CLINICIAN", "PROVIDER_STAFF", "ADMINISTRATOR"] as const;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +18,7 @@ const MIN_PASSWORD = 12;
 export default function RegisterPage() {
   const t = useTranslations("auth");
   const errorMessage = useApiErrorMessage();
+  const fieldErrors = useFieldErrors();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -50,8 +51,8 @@ export default function RegisterPage() {
       await api.post("/auth/register", { email, password, role });
       router.push(`/verify-pending?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      const fieldErrors = fieldErrorsFrom(err);
-      if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors);
+      const fields = fieldErrors(err);
+      if (Object.keys(fields).length > 0) setErrors(fields);
       setFormError(errorMessage(err));
     } finally {
       setSubmitting(false);

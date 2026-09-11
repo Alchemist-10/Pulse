@@ -1,0 +1,41 @@
+{
+  "new": {
+    "title": "",
+    "subtitle": "",
+    "submit": "",
+    "submitting": "",
+    "success": {
+      "title": "",
+      "body": "",
+      "viewEntry": ""
+    },
+    "fields": {
+      "patientId": "",
+      "entryType": "",
+      "occurredAt": "",
+      "isCritical": "",
+      "codeSystem": "",
+      "code": "",
+      "displayName": "",
+      "valueNumeric": "",
+      "valueText": "",
+      "unit": "",
+      "referenceLow": "",
+      "referenceHigh": "",
+      "medicationName": "",
+      "dosage": "",
+      "frequency": "",
+      "route": "",
+      "text": "",
+      "file": ""
+    },
+    "fileHint": "",
+    "validation": {
+      "requiredFields": ""
+    },
+    "upload": {
+      "inProgress": "",
+      "failed": ""
+    }
+  }
+}

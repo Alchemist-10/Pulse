@@ -1,0 +1,65 @@
+{
+  "title": "",
+  "subtitle": "",
+  "fileNewEntry": "",
+  "loading": "",
+  "critical": "",
+  "filter": {
+    "label": "",
+    "all": ""
+  },
+  "entryTypes": {
+    "DIAGNOSIS": "",
+    "PRESCRIPTION": "",
+    "LAB_REPORT": "",
+    "PROCEDURE": "",
+    "CLINICAL_NOTE": ""
+  },
+  "loadMore": "",
+  "loadingMore": "",
+  "empty": {
+    "title": "",
+    "body": ""
+  },
+  "emptyFiltered": {
+    "title": "",
+    "body": ""
+  },
+  "error": {
+    "title": "",
+    "retry": ""
+  },
+  "notFound": "",
+  "detail": {
+    "title": "",
+    "back": "",
+    "correctsNotice": "",
+    "viewPrevious": "",
+    "notFound": "",
+    "fields": {
+      "occurredAt": "",
+      "recordedAt": "",
+      "code": "",
+      "value": "",
+      "referenceRange": "",
+      "medication": "",
+      "dosage": "",
+      "frequency": "",
+      "route": "",
+      "note": "",
+      "documents": ""
+    },
+    "abnormal": {
+      "high": "",
+      "low": "",
+      "aboveRange": "",
+      "belowRange": ""
+    },
+    "documentViewer": {
+      "view": "",
+      "loading": "",
+      "unsupported": "",
+      "close": ""
+    }
+  }
+}

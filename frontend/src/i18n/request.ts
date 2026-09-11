@@ -11,19 +11,85 @@ import { routing } from "./routing";
 // every catalog at build time and a missing file is a build error.
 import enCommon from "./messages/en/common.json";
 import enAuth from "./messages/en/auth.json";
+import enEntry from "./messages/en/entry.json";
 import enErrors from "./messages/en/errors.json";
 import enProfile from "./messages/en/profile.json";
+import enTimeline from "./messages/en/timeline.json";
 import hiCommon from "./messages/hi/common.json";
 import hiAuth from "./messages/hi/auth.json";
+import hiEntry from "./messages/hi/entry.json";
 import hiErrors from "./messages/hi/errors.json";
 import hiProfile from "./messages/hi/profile.json";
+import hiTimeline from "./messages/hi/timeline.json";
+import taCommon from "./messages/ta/common.json";
+import taAuth from "./messages/ta/auth.json";
+import taEntry from "./messages/ta/entry.json";
+import taErrors from "./messages/ta/errors.json";
+import taProfile from "./messages/ta/profile.json";
+import taTimeline from "./messages/ta/timeline.json";
+import mlCommon from "./messages/ml/common.json";
+import mlAuth from "./messages/ml/auth.json";
+import mlEntry from "./messages/ml/entry.json";
+import mlErrors from "./messages/ml/errors.json";
+import mlProfile from "./messages/ml/profile.json";
+import mlTimeline from "./messages/ml/timeline.json";
 
 type Catalog = Record<string, unknown>;
 
 const CATALOGS: Record<string, Catalog> = {
-  en: { ...enCommon, auth: enAuth, errors: enErrors, profile: enProfile },
-  hi: { ...hiCommon, auth: hiAuth, errors: hiErrors, profile: hiProfile },
+  en: {
+    ...enCommon,
+    auth: enAuth,
+    entry: enEntry,
+    errors: enErrors,
+    profile: enProfile,
+    timeline: enTimeline,
+  },
+  hi: {
+    ...hiCommon,
+    auth: hiAuth,
+    entry: hiEntry,
+    errors: hiErrors,
+    profile: hiProfile,
+    timeline: hiTimeline,
+  },
+  ta: {
+    ...taCommon,
+    auth: taAuth,
+    entry: taEntry,
+    errors: taErrors,
+    profile: taProfile,
+    timeline: taTimeline,
+  },
+  ml: {
+    ...mlCommon,
+    auth: mlAuth,
+    entry: mlEntry,
+    errors: mlErrors,
+    profile: mlProfile,
+    timeline: mlTimeline,
+  },
 };
+
+// A catalog awaiting translation ships every key with an empty-string value, so
+// translators see the full structure (P2.10). next-intl only raises
+// MISSING_MESSAGE for a key that is entirely absent -- a key present as "" is a
+// successful lookup that renders blank. That would make an untranslated locale
+// invisible in dev and CI, which is the one thing the guard below exists to
+// prevent, so empty leaves are dropped before the catalog is handed over: they
+// then throw in dev/CI and fall back to English in production.
+function pruneEmpty(catalog: Catalog): Catalog {
+  const out: Catalog = {};
+  for (const [key, value] of Object.entries(catalog)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const nested = pruneEmpty(value as Catalog);
+      if (Object.keys(nested).length > 0) out[key] = nested;
+    } else if (value !== "") {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 
 function mergeCatalogs(base: Catalog, override: Catalog): Catalog {
   const out: Catalog = { ...base };
@@ -47,10 +113,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
   // Dev and CI: use only the requested locale, so a missing key throws.
   // Production: layer the requested locale over an English base so a gap
   // degrades to English rather than crashing a live page.
+  const catalog = pruneEmpty(CATALOGS[locale]);
   const messages =
     isProduction && locale !== routing.defaultLocale
-      ? mergeCatalogs(CATALOGS[routing.defaultLocale], CATALOGS[locale])
-      : CATALOGS[locale];
+      ? mergeCatalogs(CATALOGS[routing.defaultLocale], catalog)
+      : catalog;
 
   return {
     locale,

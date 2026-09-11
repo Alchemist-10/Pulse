@@ -11,10 +11,12 @@ import { cn } from "@/lib/cn";
 const AUTONYMS: Record<string, string> = {
   en: "English",
   hi: "हिन्दी",
+  ta: "தமிழ்",
+  ml: "മലയാളം",
 };
 
-// EN <-> HI. Preserves the current path (next-intl navigation strips and
-// re-adds the locale prefix) and the query string.
+// EN / HI / TA / ML. Preserves the current path (next-intl navigation strips
+// and re-adds the locale prefix) and the query string.
 export function LocaleSwitcher() {
   const t = useTranslations("locale");
   const activeLocale = useLocale();

@@ -11,5 +11,25 @@
   "STEP_UP_REQUIRED": "Re-enter your password to continue.",
   "NOT_FOUND": "We could not find that.",
   "FORBIDDEN": "You do not have access to this.",
-  "UNAUTHORIZED": "Sign in to continue."
+  "UNAUTHORIZED": "Sign in to continue.",
+  "CONFLICT": "That could not be completed — it may have just changed. Try again.",
+  "ENTRY_TYPE_MISMATCH": "This entry is missing required fields for its type.",
+  "ENTRY_ALREADY_SUPERSEDED": "This entry has already been corrected.",
+  "UNSUPPORTED_MEDIA_TYPE": "Only PDF, PNG and JPEG documents are accepted.",
+  "PAYLOAD_TOO_LARGE": "This file is too large — compress or split it and try again.",
+  "fieldErrors": {
+    "missing": "This field is required.",
+    "string_type": "Enter a valid value.",
+    "int_parsing": "Enter a whole number.",
+    "float_parsing": "Enter a number.",
+    "enum": "Choose a valid option.",
+    "greater_than": "Enter a larger value.",
+    "greater_than_equal": "Enter a larger value.",
+    "less_than": "Enter a smaller value.",
+    "less_than_equal": "Enter a smaller value.",
+    "datetime_parsing": "Enter a valid date and time.",
+    "datetime_from_date_parsing": "Enter a valid date and time.",
+    "value_error": "Check this value.",
+    "GENERIC": "This field needs attention."
+  }
 }

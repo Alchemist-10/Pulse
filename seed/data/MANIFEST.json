@@ -1,5 +1,5 @@
 {
-  "clinical_rows_committed_not_loaded": {
+  "clinical_rows_committed": {
     "conditions.csv": 3908,
     "encounters.csv": 6290,
     "medications.csv": 5122,
@@ -23,7 +23,7 @@
     "providers.csv": "6c932c2894d8ffce7d958488128d22afd3e0b409050434940bc0be6077ef2949",
     "users.csv": "0ba6c38dac37e10767759de41aa2221cb48fc02eb675ab89b159301b175da187"
   },
-  "note": "Phase 1 loads identity only. clinical/ is committed for Phase 2 and is not read by the first-boot loader.",
+  "note": "Phase 1 loaded identity only. From P2.4 the first-boot loader also reads clinical/ and inserts a capped selection of Medical Entries per Patient.",
   "overlay_seed": 20260901,
   "phone_sentinel_prefix": "+91 90000",
   "synthea_clinician_seed": 20260901,

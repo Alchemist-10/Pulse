@@ -1,0 +1,41 @@
+{
+  "new": {
+    "title": "File a new entry",
+    "subtitle": "Record a Diagnosis, Prescription, Lab Report, Procedure or Clinical Note for a patient.",
+    "submit": "File entry",
+    "submitting": "Filing entry…",
+    "success": {
+      "title": "Entry filed",
+      "body": "The entry was filed successfully.",
+      "viewEntry": "View entry"
+    },
+    "fields": {
+      "patientId": "Patient ID",
+      "entryType": "Entry type",
+      "occurredAt": "Occurred at",
+      "isCritical": "Mark as critical",
+      "codeSystem": "Code system",
+      "code": "Code",
+      "displayName": "Display name",
+      "valueNumeric": "Result (numeric)",
+      "valueText": "Result (text)",
+      "unit": "Unit",
+      "referenceLow": "Reference range — low",
+      "referenceHigh": "Reference range — high",
+      "medicationName": "Medication name",
+      "dosage": "Dosage",
+      "frequency": "Frequency",
+      "route": "Route",
+      "text": "Note text",
+      "file": "Attach a document"
+    },
+    "fileHint": "PDF, PNG or JPEG.",
+    "validation": {
+      "requiredFields": "Fill in the patient, entry type and when it occurred."
+    },
+    "upload": {
+      "inProgress": "Uploading document… {percent}%",
+      "failed": "The entry was filed, but the document could not be uploaded: {reason}"
+    }
+  }
+}

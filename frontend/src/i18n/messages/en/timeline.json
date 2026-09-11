@@ -1,0 +1,65 @@
+{
+  "title": "Your timeline",
+  "subtitle": "Every entry filed to your record, newest first.",
+  "fileNewEntry": "File new entry",
+  "loading": "Loading your timeline…",
+  "critical": "Critical",
+  "filter": {
+    "label": "Filter by type",
+    "all": "All entry types"
+  },
+  "entryTypes": {
+    "DIAGNOSIS": "Diagnosis",
+    "PRESCRIPTION": "Prescription",
+    "LAB_REPORT": "Lab report",
+    "PROCEDURE": "Procedure",
+    "CLINICAL_NOTE": "Clinical note"
+  },
+  "loadMore": "Load more",
+  "loadingMore": "Loading more…",
+  "empty": {
+    "title": "No entries yet",
+    "body": "Nothing has been filed to your timeline yet."
+  },
+  "emptyFiltered": {
+    "title": "No {type} entries",
+    "body": "Nothing has been filed under {type} yet."
+  },
+  "error": {
+    "title": "Could not load your timeline",
+    "retry": "Try again"
+  },
+  "notFound": "We could not find a patient profile linked to your account.",
+  "detail": {
+    "title": "Entry",
+    "back": "Back to timeline",
+    "correctsNotice": "This entry corrects an earlier one.",
+    "viewPrevious": "View previous version",
+    "notFound": "We could not find that entry.",
+    "fields": {
+      "occurredAt": "Occurred",
+      "recordedAt": "Recorded",
+      "code": "Code",
+      "value": "Result",
+      "referenceRange": "Reference range",
+      "medication": "Medication",
+      "dosage": "Dosage",
+      "frequency": "Frequency",
+      "route": "Route",
+      "note": "Note",
+      "documents": "Documents"
+    },
+    "abnormal": {
+      "high": "H",
+      "low": "L",
+      "aboveRange": "above range",
+      "belowRange": "below range"
+    },
+    "documentViewer": {
+      "view": "View",
+      "loading": "Loading document…",
+      "unsupported": "Preview is not available for this file type.",
+      "close": "Close preview"
+    }
+  }
+}
