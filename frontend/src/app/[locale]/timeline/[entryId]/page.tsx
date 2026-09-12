@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { BreakGlassBanner } from "@/components/BreakGlassBanner";
 import { Callout } from "@/components/ui/Callout";
 import { ClinicalText } from "@/components/ClinicalText";
 import { DocumentViewer } from "@/components/DocumentViewer";
@@ -120,7 +121,12 @@ export default function EntryDetailPage({
         </Callout>
       )}
 
-      {state.status === "ready" && <EntryDetailView entry={state.entry} />}
+      {state.status === "ready" && (
+        <>
+          <BreakGlassBanner patientId={state.entry.patientId} />
+          <EntryDetailView entry={state.entry} />
+        </>
+      )}
     </section>
   );
 }

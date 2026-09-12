@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
+import { BreakGlassBanner } from "@/components/BreakGlassBanner";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { Label } from "@/components/ui/Label";
@@ -180,6 +181,8 @@ export default function TimelinePage() {
 
   return (
     <section className="space-y-6">
+      {patientId && <BreakGlassBanner patientId={patientId} />}
+
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
