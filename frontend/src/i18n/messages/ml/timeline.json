@@ -1,65 +1,65 @@
 {
-  "title": "",
-  "subtitle": "",
-  "fileNewEntry": "",
-  "loading": "",
-  "critical": "",
+  "title": "നിങ്ങളുടെ ടൈംലൈൻ",
+  "subtitle": "നിങ്ങളുടെ രേഖയിൽ ഫയൽ ചെയ്ത ഓരോ എൻട്രിയും, ഏറ്റവും പുതിയത് ആദ്യം.",
+  "fileNewEntry": "പുതിയ എൻട്രി ഫയൽ ചെയ്യുക",
+  "loading": "നിങ്ങളുടെ ടൈംലൈൻ ലോഡ് ചെയ്യുന്നു…",
+  "critical": "ഗുരുതരം",
   "filter": {
-    "label": "",
-    "all": ""
+    "label": "തരം അനുസരിച്ച് ഫിൽട്ടർ ചെയ്യുക",
+    "all": "എല്ലാ എൻട്രി തരങ്ങളും"
   },
   "entryTypes": {
-    "DIAGNOSIS": "",
-    "PRESCRIPTION": "",
-    "LAB_REPORT": "",
-    "PROCEDURE": "",
-    "CLINICAL_NOTE": ""
+    "DIAGNOSIS": "ഡയഗ്നോസിസ്",
+    "PRESCRIPTION": "പ്രിസ്ക്രിപ്ഷൻ",
+    "LAB_REPORT": "ലാബ് റിപ്പോർട്ട്",
+    "PROCEDURE": "പ്രൊസീജ്യർ",
+    "CLINICAL_NOTE": "ക്ലിനിക്കൽ നോട്ട്"
   },
-  "loadMore": "",
-  "loadingMore": "",
+  "loadMore": "കൂടുതൽ ലോഡ് ചെയ്യുക",
+  "loadingMore": "കൂടുതൽ ലോഡ് ചെയ്യുന്നു…",
   "empty": {
-    "title": "",
-    "body": ""
+    "title": "ഇതുവരെ എൻട്രികൾ ഇല്ല",
+    "body": "നിങ്ങളുടെ ടൈംലൈനിൽ ഇതുവരെ ഒന്നും ഫയൽ ചെയ്തിട്ടില്ല."
   },
   "emptyFiltered": {
-    "title": "",
-    "body": ""
+    "title": "{type} എൻട്രികൾ ഇല്ല",
+    "body": "{type} എന്നതിന് കീഴിൽ ഇതുവരെ ഒന്നും ഫയൽ ചെയ്തിട്ടില്ല."
   },
   "error": {
-    "title": "",
-    "retry": ""
+    "title": "നിങ്ങളുടെ ടൈംലൈൻ ലോഡ് ചെയ്യാനായില്ല",
+    "retry": "വീണ്ടും ശ്രമിക്കുക"
   },
-  "notFound": "",
+  "notFound": "നിങ്ങളുടെ അക്കൗണ്ടുമായി ബന്ധിപ്പിച്ച ഒരു രോഗി പ്രൊഫൈൽ ഞങ്ങൾക്ക് കണ്ടെത്താനായില്ല.",
   "detail": {
-    "title": "",
-    "back": "",
-    "correctsNotice": "",
-    "viewPrevious": "",
-    "notFound": "",
+    "title": "എൻട്രി",
+    "back": "ടൈംലൈനിലേക്ക് മടങ്ങുക",
+    "correctsNotice": "ഈ എൻട്രി മുൻപത്തെ ഒന്നിനെ തിരുത്തുന്നു.",
+    "viewPrevious": "മുൻ പതിപ്പ് കാണുക",
+    "notFound": "ആ എൻട്രി ഞങ്ങൾക്ക് കണ്ടെത്താനായില്ല.",
     "fields": {
-      "occurredAt": "",
-      "recordedAt": "",
-      "code": "",
-      "value": "",
-      "referenceRange": "",
-      "medication": "",
-      "dosage": "",
-      "frequency": "",
-      "route": "",
-      "note": "",
-      "documents": ""
+      "occurredAt": "സംഭവിച്ചത്",
+      "recordedAt": "രേഖപ്പെടുത്തിയത്",
+      "code": "കോഡ്",
+      "value": "ഫലം",
+      "referenceRange": "റഫറൻസ് പരിധി",
+      "medication": "മരുന്ന്",
+      "dosage": "ഡോസേജ്",
+      "frequency": "ആവൃത്തി",
+      "route": "റൂട്ട്",
+      "note": "കുറിപ്പ്",
+      "documents": "രേഖകൾ"
     },
     "abnormal": {
-      "high": "",
-      "low": "",
-      "aboveRange": "",
-      "belowRange": ""
+      "high": "ഉ",
+      "low": "താ",
+      "aboveRange": "പരിധിക്ക് മുകളിൽ",
+      "belowRange": "പരിധിക്ക് താഴെ"
     },
     "documentViewer": {
-      "view": "",
-      "loading": "",
-      "unsupported": "",
-      "close": ""
+      "view": "കാണുക",
+      "loading": "രേഖ ലോഡ് ചെയ്യുന്നു…",
+      "unsupported": "ഈ ഫയൽ തരത്തിന് പ്രിവ്യൂ ലഭ്യമല്ല.",
+      "close": "പ്രിവ്യൂ അടയ്ക്കുക"
     }
   }
 }

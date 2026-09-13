@@ -1,41 +1,41 @@
 {
   "new": {
-    "title": "",
-    "subtitle": "",
-    "submit": "",
-    "submitting": "",
+    "title": "പുതിയ എൻട്രി ഫയൽ ചെയ്യുക",
+    "subtitle": "ഒരു രോഗിക്കായി ഒരു ഡയഗ്നോസിസ്, പ്രിസ്ക്രിപ്ഷൻ, ലാബ് റിപ്പോർട്ട്, പ്രൊസീജ്യർ അല്ലെങ്കിൽ ക്ലിനിക്കൽ നോട്ട് രേഖപ്പെടുത്തുക.",
+    "submit": "എൻട്രി ഫയൽ ചെയ്യുക",
+    "submitting": "എൻട്രി ഫയൽ ചെയ്യുന്നു…",
     "success": {
-      "title": "",
-      "body": "",
-      "viewEntry": ""
+      "title": "എൻട്രി ഫയൽ ചെയ്തു",
+      "body": "എൻട്രി വിജയകരമായി ഫയൽ ചെയ്തു.",
+      "viewEntry": "എൻട്രി കാണുക"
     },
     "fields": {
-      "patientId": "",
-      "entryType": "",
-      "occurredAt": "",
-      "isCritical": "",
-      "codeSystem": "",
-      "code": "",
-      "displayName": "",
-      "valueNumeric": "",
-      "valueText": "",
-      "unit": "",
-      "referenceLow": "",
-      "referenceHigh": "",
-      "medicationName": "",
-      "dosage": "",
-      "frequency": "",
-      "route": "",
-      "text": "",
-      "file": ""
+      "patientId": "രോഗി ഐഡി",
+      "entryType": "എൻട്രി തരം",
+      "occurredAt": "സംഭവിച്ച സമയം",
+      "isCritical": "ഗുരുതരമായി അടയാളപ്പെടുത്തുക",
+      "codeSystem": "കോഡ് സിസ്റ്റം",
+      "code": "കോഡ്",
+      "displayName": "പ്രദർശന നാമം",
+      "valueNumeric": "ഫലം (സംഖ്യ)",
+      "valueText": "ഫലം (ടെക്സ്റ്റ്)",
+      "unit": "യൂണിറ്റ്",
+      "referenceLow": "റഫറൻസ് പരിധി — താഴ്ന്നത്",
+      "referenceHigh": "റഫറൻസ് പരിധി — ഉയർന്നത്",
+      "medicationName": "മരുന്നിന്റെ പേര്",
+      "dosage": "ഡോസേജ്",
+      "frequency": "ആവൃത്തി",
+      "route": "റൂട്ട്",
+      "text": "കുറിപ്പ് വാചകം",
+      "file": "ഒരു രേഖ അറ്റാച്ച് ചെയ്യുക"
     },
-    "fileHint": "",
+    "fileHint": "PDF, PNG അല്ലെങ്കിൽ JPEG.",
     "validation": {
-      "requiredFields": ""
+      "requiredFields": "രോഗി, എൻട്രി തരം, അത് സംഭവിച്ച സമയം എന്നിവ പൂരിപ്പിക്കുക."
     },
     "upload": {
-      "inProgress": "",
-      "failed": ""
+      "inProgress": "രേഖ അപ്‌ലോഡ് ചെയ്യുന്നു… {percent}%",
+      "failed": "എൻട്രി ഫയൽ ചെയ്തു, പക്ഷേ രേഖ അപ്‌ലോഡ് ചെയ്യാനായില്ല: {reason}"
     }
   }
 }

@@ -1,22 +1,22 @@
 {
   "home": {
-    "title": "",
-    "description": "",
-    "registerCta": "",
-    "loginCta": ""
+    "title": "പൾസ്",
+    "description": "ആജീവനാന്ത ഇലക്ട്രോണിക് ആരോഗ്യ രേഖ.",
+    "registerCta": "അക്കൗണ്ട് സൃഷ്ടിക്കുക",
+    "loginCta": "സൈൻ ഇൻ ചെയ്യുക"
   },
   "app": {
-    "name": "",
-    "skipToContent": ""
+    "name": "പൾസ്",
+    "skipToContent": "ഉള്ളടക്കത്തിലേക്ക് പോകുക"
   },
   "locale": {
-    "label": "",
-    "en": "",
-    "hi": ""
+    "label": "ഭാഷ",
+    "en": "ഇംഗ്ലീഷ്",
+    "hi": "ഹിന്ദി"
   },
   "actions": {
-    "submit": "",
-    "retry": "",
-    "loading": ""
+    "submit": "സമർപ്പിക്കുക",
+    "retry": "വീണ്ടും ശ്രമിക്കുക",
+    "loading": "ലോഡ് ചെയ്യുന്നു…"
   }
 }

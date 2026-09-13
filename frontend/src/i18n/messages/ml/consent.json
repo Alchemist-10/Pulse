@@ -1,79 +1,79 @@
 {
   "list": {
-    "title": "",
-    "subtitle": "",
-    "loading": "",
-    "loadMore": "",
-    "loadingMore": "",
-    "grantCta": "",
-    "notFound": "",
+    "title": "ആർക്കൊക്കെ ആക്സസ് ഉണ്ട്",
+    "subtitle": "നിങ്ങളുടെ രേഖയിലേക്ക് നിങ്ങൾ ആക്സസ് നൽകിയ എല്ലാവരും, എത്ര കാലത്തേക്ക് എന്നതും.",
+    "loading": "നിങ്ങളുടെ സമ്മതങ്ങൾ ലോഡ് ചെയ്യുന്നു…",
+    "loadMore": "കൂടുതൽ ലോഡ് ചെയ്യുക",
+    "loadingMore": "കൂടുതൽ ലോഡ് ചെയ്യുന്നു…",
+    "grantCta": "ആക്സസ് നൽകുക",
+    "notFound": "നിങ്ങളുടെ അക്കൗണ്ടുമായി ബന്ധിപ്പിച്ച ഒരു രോഗി പ്രൊഫൈൽ ഞങ്ങൾക്ക് കണ്ടെത്താനായില്ല.",
     "error": {
-      "title": "",
-      "retry": ""
+      "title": "നിങ്ങളുടെ സമ്മതങ്ങൾ ലോഡ് ചെയ്യാനായില്ല",
+      "retry": "വീണ്ടും ശ്രമിക്കുക"
     },
     "empty": {
-      "title": "",
-      "body": ""
+      "title": "ഇതുവരെ സമ്മതങ്ങൾ ഇല്ല",
+      "body": "നിങ്ങൾ ഇതുവരെ ആർക്കും നിങ്ങളുടെ രേഖയിലേക്ക് ആക്സസ് നൽകിയിട്ടില്ല."
     },
     "status": {
-      "ACTIVE": "",
-      "REVOKED": "",
-      "EXPIRED": ""
+      "ACTIVE": "സജീവം",
+      "REVOKED": "റദ്ദാക്കി",
+      "EXPIRED": "കാലഹരണപ്പെട്ടു"
     },
     "purpose": {
-      "TREATMENT": "",
-      "SECOND_OPINION": "",
-      "OTHER": ""
+      "TREATMENT": "ചികിത്സ",
+      "SECOND_OPINION": "രണ്ടാമത്തെ അഭിപ്രായം",
+      "OTHER": "മറ്റുള്ളവ"
     },
     "fields": {
-      "grantee": "",
-      "purpose": "",
-      "scope": "",
-      "expires": "",
-      "granted": "",
-      "revokedAt": ""
+      "grantee": "സ്വീകർത്താവ്",
+      "purpose": "ഉദ്ദേശ്യം",
+      "scope": "പരിധി",
+      "expires": "കാലഹരണപ്പെടുന്നത്",
+      "granted": "നൽകിയത്",
+      "revokedAt": "റദ്ദാക്കിയത്"
     },
     "scope": {
-      "allTypes": "",
-      "dateWindow": "",
-      "fromOnly": "",
-      "toOnly": "",
-      "noWindow": ""
+      "allTypes": "എല്ലാ എൻട്രി തരങ്ങളും",
+      "dateWindow": "{from} – {to}",
+      "fromOnly": "{from} മുതൽ",
+      "toOnly": "{to} വരെ",
+      "noWindow": "തീയതി പരിധിയില്ല"
     },
     "revoke": {
-      "action": "",
-      "confirmTitle": "",
-      "confirmBody": "",
-      "reasonLabel": "",
-      "confirm": "",
-      "cancel": "",
-      "revoking": "",
-      "success": ""
+      "action": "റദ്ദാക്കുക",
+      "confirmTitle": "ഈ സമ്മതം റദ്ദാക്കണോ?",
+      "confirmBody": "അവർക്ക് നിങ്ങളുടെ രേഖയിലേക്കുള്ള ആക്സസ് ഉടനടി നഷ്ടപ്പെടും.",
+      "reasonLabel": "കാരണം (ഐച്ഛികം)",
+      "confirm": "റദ്ദാക്കൽ സ്ഥിരീകരിക്കുക",
+      "cancel": "മടങ്ങുക",
+      "revoking": "റദ്ദാക്കുന്നു…",
+      "success": "ആക്സസ് റദ്ദാക്കി."
     }
   },
   "new": {
-    "title": "",
-    "subtitle": "",
-    "back": "",
+    "title": "ആക്സസ് നൽകുക",
+    "subtitle": "ഒരു ക്ലിനിഷ്യന് നിങ്ങളുടെ രേഖയുടെ ഒരു ഭാഗത്തേക്ക് പരിമിതമായ സമയത്തേക്ക് ആക്സസ് നൽകുക.",
+    "back": "ആർക്കൊക്കെ ആക്സസ് ഉണ്ട് എന്നതിലേക്ക് മടങ്ങുക",
     "fields": {
-      "granteeUserId": "",
-      "entryTypes": "",
-      "entryTypesHint": "",
-      "fromDate": "",
-      "toDate": "",
-      "purpose": "",
-      "purposeText": "",
-      "expiresAt": ""
+      "granteeUserId": "ക്ലിനിഷ്യൻ ഉപയോക്തൃ ഐഡി",
+      "entryTypes": "എൻട്രി തരങ്ങൾ",
+      "entryTypesHint": "എല്ലാ എൻട്രി തരങ്ങൾക്കും ആക്സസ് നൽകാൻ എല്ലാം അൺചെക്ക് ചെയ്ത നിലയിൽ വിടുക.",
+      "fromDate": "ആരംഭ തീയതി (ഐച്ഛികം)",
+      "toDate": "അവസാന തീയതി (ഐച്ഛികം)",
+      "purpose": "ഉദ്ദേശ്യം",
+      "purposeText": "ഉദ്ദേശ്യം വിവരിക്കുക",
+      "expiresAt": "ആക്സസ് കാലഹരണപ്പെടുന്നത്"
     },
     "validation": {
-      "requiredFields": ""
+      "requiredFields": "സ്വീകർത്താവ്, ഉദ്ദേശ്യം, കാലഹരണ തീയതി എന്നിവ നൽകുക."
     },
-    "submit": "",
-    "submitting": "",
+    "submit": "ആക്സസ് നൽകുക",
+    "submitting": "ആക്സസ് നൽകുന്നു…",
     "success": {
-      "title": "",
-      "body": "",
-      "viewConsents": ""
+      "title": "ആക്സസ് നൽകി",
+      "body": "നിങ്ങൾ തിരഞ്ഞെടുത്ത എൻട്രി തരങ്ങളും തീയതി പരിധിയും സ്വീകർത്താവിന് ഇനി വായിക്കാം, അത് കാലഹരണപ്പെടുന്നത് വരെ അല്ലെങ്കിൽ നിങ്ങൾ അത് റദ്ദാക്കുന്നത് വരെ.",
+      "viewConsents": "ആർക്കൊക്കെ ആക്സസ് ഉണ്ട് എന്നതിലേക്ക് മടങ്ങുക"
     }
   }
 }

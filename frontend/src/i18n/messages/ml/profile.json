@@ -1,26 +1,26 @@
 {
-  "title": "",
-  "subtitle": "",
-  "loading": "",
-  "notFound": "",
+  "title": "നിങ്ങളുടെ പ്രൊഫൈൽ",
+  "subtitle": "പൾസ് നിങ്ങൾക്കായി സൂക്ഷിക്കുന്ന തിരിച്ചറിയൽ വിവരങ്ങൾ.",
+  "loading": "നിങ്ങളുടെ പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു…",
+  "notFound": "നിങ്ങളുടെ അക്കൗണ്ടുമായി ബന്ധിപ്പിച്ച ഒരു രോഗി പ്രൊഫൈൽ ഞങ്ങൾക്ക് കണ്ടെത്താനായില്ല.",
   "fields": {
-    "fullName": "",
-    "dateOfBirth": "",
-    "sex": "",
-    "phone": "",
-    "addressLine": "",
-    "city": "",
-    "state": "",
-    "localePreference": ""
+    "fullName": "മുഴുവൻ പേര്",
+    "dateOfBirth": "ജനനത്തീയതി",
+    "sex": "ലിംഗം",
+    "phone": "ഫോൺ",
+    "addressLine": "വിലാസം",
+    "city": "നഗരം",
+    "state": "സംസ്ഥാനം",
+    "localePreference": "ഇഷ്ട ഭാഷ"
   },
   "claimed": {
-    "label": "",
-    "true": "",
-    "false": ""
+    "label": "അക്കൗണ്ട് നില",
+    "true": "അവകാശപ്പെട്ടത്",
+    "false": "അവകാശപ്പെടാത്തത്"
   },
-  "signOut": "",
+  "signOut": "സൈൻ ഔട്ട് ചെയ്യുക",
   "links": {
-    "consent": "",
-    "audit": ""
+    "consent": "എന്റെ രേഖകളിലേക്ക് ആർക്കൊക്കെ ആക്സസ് ഉണ്ട്",
+    "audit": "എന്റെ രേഖകൾ ആരൊക്കെ കണ്ടു"
   }
 }
