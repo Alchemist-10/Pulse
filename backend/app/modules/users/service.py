@@ -33,6 +33,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.actor import Actor
 from app.core.authz import Role
+from app.core.errors import ErrorCode
+from app.core.exceptions import PulseError
 from app.modules.patients.schemas import PatientProfile
 from app.modules.users import repository
 from app.modules.users.models import (
@@ -148,6 +150,21 @@ DUPLICATE_THRESHOLD = 0.5
 _TOKEN_SPLIT = re.compile(r"[^\w]+", re.UNICODE)
 
 
+def _require_administrator(actor: Actor) -> None:
+    """Merge/reversal and review decisions are human-admin-only, never a
+    background job (ADR-0011, #54). An `Actor` only ever exists after
+    authentication (`AuthContext.actor`) — nothing in this codebase
+    constructs one for a scheduled task — so gating on the role is
+    sufficient to keep this off the detection pipeline's path, which
+    calls `record_duplicate_candidates` with no actor at all."""
+    if actor.role is not Role.ADMINISTRATOR:
+        raise PulseError(
+            ErrorCode.FORBIDDEN,
+            "Only an Administrator may decide duplicate review items.",
+            http_status=403,
+        )
+
+
 @dataclass(frozen=True)
 class PatientIdentity:
     full_name: str
@@ -254,9 +271,19 @@ async def record_duplicate_candidates(
     return items
 
 
+async def list_duplicate_review_queue(
+    session: AsyncSession, actor: Actor
+) -> list[DuplicateReviewItem]:
+    """`PENDING` review items only — decided pairs are never re-flagged
+    (ADR-0011). Human-admin-only, same gate as merge/reversal."""
+    _require_administrator(actor)
+    return await repository.list_pending_review_items(session)
+
+
 async def mark_not_duplicate(
     session: AsyncSession, actor: Actor, patient_id_a: UUID, patient_id_b: UUID
 ) -> DuplicateReviewItem:
+    _require_administrator(actor)
     item = await repository.set_review_status(
         session,
         patient_id_a=patient_id_a,
@@ -278,6 +305,7 @@ async def merge_patients(
     """
     from app.modules.records import service as records_service
 
+    _require_administrator(actor)
     if winner_id == loser_id:
         raise ValueError("cannot merge a patient into itself")
 
@@ -319,6 +347,7 @@ async def reverse_merge(session: AsyncSession, actor: Actor, merge_id: UUID) -> 
     """
     from app.modules.records import service as records_service
 
+    _require_administrator(actor)
     merge = await session.get(PatientMerge, merge_id)
     if merge is None:
         raise ValueError("merge not found")

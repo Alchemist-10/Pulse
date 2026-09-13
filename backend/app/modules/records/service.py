@@ -33,6 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.storage import StorageProvider
 from app.core.actor import Actor
+from app.core.authz import Role
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
 from app.core.pagination import Page
@@ -378,3 +379,16 @@ async def provider_entry_counts(
 
 async def future_dated_entry_count(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
     return await repository.future_dated_entry_count(session, actor, patient_id)
+
+
+async def entry_count_for_patient(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
+    """Administrator-only entry count, content never read (ADR-0007,
+    #54's duplicate-review queue). Every other actor gets FORBIDDEN — this
+    is not a general-purpose count and must not be reused as one."""
+    if actor.role is not Role.ADMINISTRATOR:
+        raise PulseError(
+            ErrorCode.FORBIDDEN,
+            "Only an Administrator may read an entry count without reading entries.",
+            http_status=403,
+        )
+    return await repository.count_entries_for_patient(session, actor, patient_id)

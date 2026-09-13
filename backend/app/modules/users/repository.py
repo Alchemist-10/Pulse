@@ -151,6 +151,17 @@ async def upsert_review_item(
     return item
 
 
+async def list_pending_review_items(session: AsyncSession) -> list[DuplicateReviewItem]:
+    """Every `PENDING` review item — the admin duplicate-review queue
+    (#54). Decided pairs (`MERGED` / `NOT_DUPLICATE`) never resurface here."""
+    result = await session.execute(
+        select(DuplicateReviewItem)
+        .where(DuplicateReviewItem.status == ReviewStatus.PENDING)
+        .order_by(DuplicateReviewItem.score.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def set_review_status(
     session: AsyncSession,
     *,

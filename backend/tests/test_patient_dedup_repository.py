@@ -153,6 +153,56 @@ async def test_marked_not_duplicate_is_never_re_flagged(db_session: AsyncSession
 
 
 @pytest.mark.asyncio
+async def test_merge_rejects_non_administrator_actor(db_session: AsyncSession) -> None:
+    """ADR-0011 + #54: merge/reversal is human-admin-only, never a
+    background job or any other role. Written first, before the gate
+    exists in `service.merge_patients` — must fail red."""
+    from app.core.errors import ErrorCode
+    from app.core.exceptions import PulseError
+
+    winner = Patient(full_name="Winner Patient", date_of_birth=date(1980, 1, 1))
+    loser = Patient(full_name="Loser Patient", date_of_birth=date(1980, 1, 1))
+    db_session.add_all([winner, loser])
+    await db_session.flush()
+
+    staff_user = User(
+        email=f"{uuid.uuid4()}@example.com", password_hash=_PW_HASH, role=Role.PROVIDER_STAFF
+    )
+    db_session.add(staff_user)
+    await db_session.flush()
+    non_admin_actor = Actor(user_id=staff_user.id, role=Role.PROVIDER_STAFF)
+
+    with pytest.raises(PulseError) as exc:
+        await service.merge_patients(db_session, non_admin_actor, winner.id, loser.id)
+    assert exc.value.code is ErrorCode.FORBIDDEN
+
+
+@pytest.mark.asyncio
+async def test_reverse_merge_rejects_non_administrator_actor(db_session: AsyncSession) -> None:
+    from app.core.errors import ErrorCode
+    from app.core.exceptions import PulseError
+
+    winner = Patient(full_name="Winner Patient", date_of_birth=date(1980, 1, 1))
+    loser = Patient(full_name="Loser Patient", date_of_birth=date(1980, 1, 1))
+    db_session.add_all([winner, loser])
+    await db_session.flush()
+    admin = await _user(db_session)
+    admin_actor = Actor(user_id=admin.id, role=Role.ADMINISTRATOR)
+    merge = await service.merge_patients(db_session, admin_actor, winner.id, loser.id)
+
+    staff_user = User(
+        email=f"{uuid.uuid4()}@example.com", password_hash=_PW_HASH, role=Role.PROVIDER_STAFF
+    )
+    db_session.add(staff_user)
+    await db_session.flush()
+    non_admin_actor = Actor(user_id=staff_user.id, role=Role.PROVIDER_STAFF)
+
+    with pytest.raises(PulseError) as exc:
+        await service.reverse_merge(db_session, non_admin_actor, merge.id)
+    assert exc.value.code is ErrorCode.FORBIDDEN
+
+
+@pytest.mark.asyncio
 async def test_merge_moves_entries_and_reversal_moves_them_back(db_session: AsyncSession) -> None:
     winner = Patient(full_name="Winner Patient", date_of_birth=date(1980, 1, 1))
     loser = Patient(full_name="Loser Patient", date_of_birth=date(1980, 1, 1))

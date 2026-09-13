@@ -612,3 +612,21 @@ async def future_dated_entry_count(session: AsyncSession, actor: Actor, patient_
     )
     result = await session.execute(select(func.count()).select_from(base.subquery()))
     return result.scalar_one()
+
+
+async def count_entries_for_patient(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
+    """Total Medical Entry row count for one Patient, **content never
+    read**. Deliberately bypasses `accessible_entries`: ADR-0007 names
+    entry counts (not entries) as exactly what the admin duplicate-review
+    queue is allowed to see, and `accessible_entries` returns nothing at
+    all for an Administrator actor by design, which would make every
+    count zero. `actor` is accepted (and required by the actor-first lint,
+    clinical-safety.md) even though it does not filter this query — the
+    caller (`records.service.entry_count_for_patient`) is what enforces
+    Administrator-only before this ever runs; this is not a
+    general-purpose count and must never be reused with a broader actor."""
+    stmt = select(func.count()).select_from(MedicalEntry).where(
+        MedicalEntry.patient_id == patient_id
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one()
