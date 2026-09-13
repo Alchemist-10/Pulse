@@ -132,6 +132,9 @@ export default function ProfilePage() {
         <Link href="/audit" className="text-sm font-medium text-accent-text underline">
           {t("links.audit")}
         </Link>
+        <Link href="/analytics" className="text-sm font-medium text-accent-text underline">
+          {t("links.analytics")}
+        </Link>
       </div>
     </section>
   );

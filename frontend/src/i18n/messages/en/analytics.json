@@ -1,0 +1,37 @@
+{
+  "title": "Your health analytics",
+  "subtitle": "Trends and summaries computed from your own records.",
+  "loading": "Loading your analytics…",
+  "notFound": "We could not find a patient profile linked to your account.",
+  "empty": "No data yet.",
+  "error": {
+    "title": "Could not load analytics"
+  },
+  "dataQuality": {
+    "title": "Data quality notes",
+    "hint": "Informational only — nothing here blocks access to your records.",
+    "flags": {
+      "MISSING_DOB": "Your date of birth is missing from your profile.",
+      "MISSING_CONTACT": "No contact phone number is on file for you.",
+      "FUTURE_DATED_ENTRY": "One of your records is dated in the future.",
+      "IMPLAUSIBLE_DOB": "Your date of birth looks implausible and may need review.",
+      "UNCLAIMED_LONG_LIVED": "This profile has been unclaimed for a long time."
+    }
+  },
+  "visitFrequency": {
+    "title": "Visits per month"
+  },
+  "providerEntryCounts": {
+    "title": "Records by provider",
+    "providerLabel": "Provider {n}",
+    "unknown": "Unknown provider"
+  },
+  "activeMedications": {
+    "title": "Active medications"
+  },
+  "labTrend": {
+    "title": "Recent lab trend",
+    "aboveRange": "above reference range",
+    "belowRange": "below reference range"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "title": "Admin dashboard",
+  "subtitle": "Administrators read no clinical data on any screen — identity and counts only.",
+  "loading": "Loading…",
+  "gate": {
+    "title": "Administrator access required",
+    "denied": "This screen is for Administrators only.",
+    "error": "Could not verify your access."
+  },
+  "duplicateReview": {
+    "title": "Duplicate review",
+    "description": "Review candidate duplicate patients. Only identity fields and a record count are shown — never any record's contents.",
+    "cta": "Open duplicate review",
+    "candidateTitle": "Possible duplicate",
+    "candidateLabel": "Patient {n}",
+    "score": "Match score {score}",
+    "fields": {
+      "dateOfBirth": "Date of birth",
+      "phone": "Phone",
+      "claimed": "Account status",
+      "entryCount": "Records on file"
+    },
+    "claimedTrue": "Claimed",
+    "claimedFalse": "Unclaimed",
+    "mergeCta": "Merge",
+    "notDuplicateCta": "Not a duplicate",
+    "emptyTitle": "Nothing to review",
+    "empty": "No duplicate candidates are waiting for review.",
+    "actionErrorTitle": "Action failed",
+    "recentMerges": {
+      "title": "Merges this session",
+      "hint": "Only merges you performed in this browser session can be reversed here.",
+      "reversed": "Reversed",
+      "reverseCta": "Reverse merge"
+    }
+  }
+}

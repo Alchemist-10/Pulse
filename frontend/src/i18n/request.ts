@@ -10,6 +10,8 @@ import { routing } from "./routing";
 // Static imports (not a dynamic `import(\`...${ns}\`)`) so the bundler resolves
 // every catalog at build time and a missing file is a build error.
 import enCommon from "./messages/en/common.json";
+import enAdmin from "./messages/en/admin.json";
+import enAnalytics from "./messages/en/analytics.json";
 import enAuth from "./messages/en/auth.json";
 import enAudit from "./messages/en/audit.json";
 import enBreakGlass from "./messages/en/breakGlass.json";
@@ -21,6 +23,8 @@ import enNotifications from "./messages/en/notifications.json";
 import enProfile from "./messages/en/profile.json";
 import enTimeline from "./messages/en/timeline.json";
 import hiCommon from "./messages/hi/common.json";
+import hiAdmin from "./messages/hi/admin.json";
+import hiAnalytics from "./messages/hi/analytics.json";
 import hiAuth from "./messages/hi/auth.json";
 import hiAudit from "./messages/hi/audit.json";
 import hiBreakGlass from "./messages/hi/breakGlass.json";
@@ -32,6 +36,8 @@ import hiNotifications from "./messages/hi/notifications.json";
 import hiProfile from "./messages/hi/profile.json";
 import hiTimeline from "./messages/hi/timeline.json";
 import taCommon from "./messages/ta/common.json";
+import taAdmin from "./messages/ta/admin.json";
+import taAnalytics from "./messages/ta/analytics.json";
 import taAuth from "./messages/ta/auth.json";
 import taAudit from "./messages/ta/audit.json";
 import taBreakGlass from "./messages/ta/breakGlass.json";
@@ -43,6 +49,8 @@ import taNotifications from "./messages/ta/notifications.json";
 import taProfile from "./messages/ta/profile.json";
 import taTimeline from "./messages/ta/timeline.json";
 import mlCommon from "./messages/ml/common.json";
+import mlAdmin from "./messages/ml/admin.json";
+import mlAnalytics from "./messages/ml/analytics.json";
 import mlAuth from "./messages/ml/auth.json";
 import mlAudit from "./messages/ml/audit.json";
 import mlBreakGlass from "./messages/ml/breakGlass.json";
@@ -59,6 +67,8 @@ type Catalog = Record<string, unknown>;
 const CATALOGS: Record<string, Catalog> = {
   en: {
     ...enCommon,
+    admin: enAdmin,
+    analytics: enAnalytics,
     auth: enAuth,
     audit: enAudit,
     breakGlass: enBreakGlass,
@@ -72,6 +82,8 @@ const CATALOGS: Record<string, Catalog> = {
   },
   hi: {
     ...hiCommon,
+    admin: hiAdmin,
+    analytics: hiAnalytics,
     auth: hiAuth,
     audit: hiAudit,
     breakGlass: hiBreakGlass,
@@ -85,6 +97,8 @@ const CATALOGS: Record<string, Catalog> = {
   },
   ta: {
     ...taCommon,
+    admin: taAdmin,
+    analytics: taAnalytics,
     auth: taAuth,
     audit: taAudit,
     breakGlass: taBreakGlass,
@@ -98,6 +112,8 @@ const CATALOGS: Record<string, Catalog> = {
   },
   ml: {
     ...mlCommon,
+    admin: mlAdmin,
+    analytics: mlAnalytics,
     auth: mlAuth,
     audit: mlAudit,
     breakGlass: mlBreakGlass,

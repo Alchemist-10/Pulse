@@ -21,6 +21,7 @@
   "signOut": "Sign out",
   "links": {
     "consent": "Who has access to my records",
-    "audit": "Who accessed my records"
+    "audit": "Who accessed my records",
+    "analytics": "My health analytics"
   }
 }
