@@ -120,7 +120,7 @@ function RevokeControl({
   }
 
   return (
-    <div className="w-full space-y-2 rounded-md border border-border-strong bg-surface-raised p-3 sm:w-72">
+    <div className="w-full space-y-2 rounded-xl border border-border-strong bg-surface-raised p-4 shadow-sm sm:w-72">
       <p className="text-sm font-medium text-foreground">{t("list.revoke.confirmTitle")}</p>
       <p className="text-xs text-muted">{t("list.revoke.confirmBody")}</p>
       <label className="block space-y-1 text-xs text-muted">
@@ -165,7 +165,7 @@ function ConsentRow({
   const { types, window } = scopeSummary(consent, t, tTimeline);
 
   return (
-    <li className="space-y-3 rounded-md border border-border bg-surface px-4 py-3">
+    <li className="space-y-3 rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-medium text-foreground">
           {consent.granteeName ?? consent.granteeUserId}

@@ -174,7 +174,7 @@ export default function AuditEventsPage() {
 
       {state.status === "ready" && state.items.length > 0 && (
         <div className="space-y-4">
-          <div className="overflow-x-auto rounded-md border border-border">
+          <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-surface-raised text-xs text-muted">
                 <tr>

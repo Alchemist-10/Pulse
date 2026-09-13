@@ -241,7 +241,7 @@ function EntryRow({ entry, patientId }: { entry: EntrySummary; patientId: string
     <li>
       <Link
         href={`/patients/${patientId}/records/${entry.id}`}
-        className="flex items-start gap-3 rounded-md border border-border bg-surface px-4 py-3 outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        className="flex items-start gap-3 rounded-xl border border-border bg-surface shadow-sm px-4 py-3 outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
       >
         <Icon className="mt-0.5 size-5 shrink-0 text-muted" />
         <div className="min-w-0 flex-1 space-y-0.5">

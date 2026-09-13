@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
+import { Card, CardContent } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -72,58 +73,62 @@ export default function RegisterPage() {
         </Callout>
       )}
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
-        <FormField label={t("fields.email")} error={errors.email}>
-          {(props) => (
-            <Input
-              {...props}
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          )}
-        </FormField>
+      <Card>
+        <CardContent className="space-y-4 pt-5">
+          <form onSubmit={onSubmit} noValidate className="space-y-4">
+            <FormField label={t("fields.email")} error={errors.email}>
+              {(props) => (
+                <Input
+                  {...props}
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              )}
+            </FormField>
 
-        <FormField label={t("fields.password")} error={errors.password}>
-          {(props) => (
-            <Input
-              {...props}
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          )}
-        </FormField>
+            <FormField label={t("fields.password")} error={errors.password}>
+              {(props) => (
+                <Input
+                  {...props}
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
+            </FormField>
 
-        <FormField label={t("fields.role")} error={errors.role}>
-          {(props) => (
-            <Select
-              {...props}
-              value={role || undefined}
-              onValueChange={setRole}
-              placeholder={t("fields.role")}
-              options={ROLES.map((value) => ({
-                value,
-                label: t(`roles.${value}`),
-              }))}
-            />
-          )}
-        </FormField>
+            <FormField label={t("fields.role")} error={errors.role}>
+              {(props) => (
+                <Select
+                  {...props}
+                  value={role || undefined}
+                  onValueChange={setRole}
+                  placeholder={t("fields.role")}
+                  options={ROLES.map((value) => ({
+                    value,
+                    label: t(`roles.${value}`),
+                  }))}
+                />
+              )}
+            </FormField>
 
-        <Button type="submit" loading={submitting} className="w-full">
-          {t("register.submit")}
-        </Button>
-      </form>
+            <Button type="submit" loading={submitting} className="w-full">
+              {t("register.submit")}
+            </Button>
+          </form>
 
-      <p className="text-sm text-muted">
-        {t("register.haveAccount")}{" "}
-        <Link href="/login" className="font-medium text-accent-text underline">
-          {t("register.signInLink")}
-        </Link>
-      </p>
+          <p className="text-sm text-muted">
+            {t("register.haveAccount")}{" "}
+            <Link href="/login" className="font-medium text-accent-text underline">
+              {t("register.signInLink")}
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </section>
   );
 }

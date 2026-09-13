@@ -75,7 +75,7 @@ function NotificationRow({
   }
 
   return (
-    <li className="space-y-1 rounded-md border border-border bg-surface px-4 py-3">
+    <li className="space-y-1 rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium text-muted">
           {typeLabel(notification.type, t)}

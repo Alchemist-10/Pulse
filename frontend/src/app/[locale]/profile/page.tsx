@@ -111,7 +111,7 @@ export default function ProfilePage() {
         <p className="text-sm text-muted">{t("subtitle")}</p>
       </div>
 
-      <dl className="divide-y divide-border rounded-md border border-border bg-surface">
+      <dl className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">
         {rows.map(([label, value]) => (
           <div
             key={label}

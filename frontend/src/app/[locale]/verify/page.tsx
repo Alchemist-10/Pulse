@@ -53,7 +53,7 @@ function Verify() {
       {state === "success" && (
         <Link
           href="/login"
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast shadow-sm transition-colors hover:bg-accent-hover"
         >
           {t("verify.continue")}
         </Link>
@@ -61,7 +61,7 @@ function Verify() {
       {(state === "expired" || state === "missing") && (
         <Link
           href="/verify-pending"
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-raised"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-surface-raised"
         >
           {t("verifyPending.resend")}
         </Link>

@@ -33,15 +33,15 @@ function Shell({ children }: { children: ReactNode }) {
       >
         {t("skipToContent")}
       </a>
-      <header className="border-b border-border bg-surface">
+      <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="text-base font-bold text-foreground">
+          <Link href="/" className="text-base font-bold tracking-tight text-foreground">
             {t("name")}
           </Link>
           <LocaleSwitcher />
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-3xl px-4 py-8">
+      <main id="main" className="mx-auto max-w-3xl px-4 py-8 sm:py-10">
         {children}
       </main>
     </>

@@ -60,7 +60,7 @@ function PreferenceRow({
   }
 
   return (
-    <li className="space-y-2 rounded-md border border-border bg-surface px-4 py-3">
+    <li className="space-y-2 rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">{typeLabel(pref.notificationType, t)}</p>

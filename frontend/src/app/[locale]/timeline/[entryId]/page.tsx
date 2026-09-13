@@ -212,7 +212,7 @@ function EntryDetailView({ entry }: { entry: EntryDetail }) {
         </Callout>
       )}
 
-      <dl className="divide-y divide-border rounded-md border border-border bg-surface">
+      <dl className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">
         {rows.map(([label, value]) => (
           <Field key={label} label={label}>
             {value}

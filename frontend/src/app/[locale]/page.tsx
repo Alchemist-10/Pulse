@@ -13,13 +13,13 @@ export default function HomePage() {
       <div className="flex flex-wrap gap-3">
         <Link
           href="/register"
-          className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
+          className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast shadow-sm transition-colors hover:bg-accent-hover"
         >
           {t("registerCta")}
         </Link>
         <Link
           href="/login"
-          className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-raised"
+          className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-surface-raised"
         >
           {t("loginCta")}
         </Link>
