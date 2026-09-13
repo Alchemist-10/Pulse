@@ -341,6 +341,60 @@ async def test_data_quality_flags_unclaimed_long_lived(db_session: AsyncSession)
     assert DataQualityFlag.UNCLAIMED_LONG_LIVED in flags
 
 
+async def test_is_abnormal_compares_against_own_row_bounds() -> None:
+    """P4.3 (#54): abnormality is a pure per-row comparison — no global
+    reference range. Same raw value, different bounds, different verdict."""
+    from app.modules.analytics.service import _is_abnormal
+
+    assert _is_abnormal(50, reference_low=40, reference_high=60) is False
+    assert _is_abnormal(50, reference_low=60, reference_high=80) is True
+    assert _is_abnormal(90, reference_low=40, reference_high=60) is True
+    assert _is_abnormal(None, reference_low=40, reference_high=60) is None
+    assert _is_abnormal(50, reference_low=None, reference_high=None) is None
+
+
+async def test_lab_trend_flags_abnormality_per_row_not_globally(
+    db_session: AsyncSession,
+) -> None:
+    """Two rows share the same value but different reference bounds (as if
+    two different labs used different ranges) — the flag must follow each
+    row's own bounds, never a hardcoded/global range."""
+    owner = await _user(db_session)
+    patient = await _patient(db_session, owner)
+    db_session.add_all(
+        [
+            LabReport(
+                patient_id=patient.id,
+                occurred_at=datetime(2025, 1, 1, tzinfo=UTC),
+                code_system="LOINC",
+                code="2345-7",
+                display_name="Glucose",
+                value_numeric=50,
+                reference_low=40,
+                reference_high=60,
+            ),
+            LabReport(
+                patient_id=patient.id,
+                occurred_at=datetime(2025, 2, 1, tzinfo=UTC),
+                code_system="LOINC",
+                code="2345-7",
+                display_name="Glucose",
+                value_numeric=50,
+                reference_low=60,
+                reference_high=80,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    actor = Actor(user_id=owner.id, role=Role.PATIENT)
+    points = await analytics_service.lab_trend(
+        db_session, actor, patient.id, code_system="LOINC", code="2345-7"
+    )
+
+    assert [p.is_abnormal for p in points] == [False, True]
+
+
 async def test_data_quality_flags_future_dated_entry(db_session: AsyncSession) -> None:
     owner = await _user(db_session)
     patient = await _patient(

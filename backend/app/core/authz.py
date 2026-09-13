@@ -46,6 +46,16 @@ class Permission(StrEnum):
     # only (#44) — a Provider Staff member already has Provider-scoped
     # access, and no other role may bypass Consent this way.
     BREAK_GLASS_REQUEST = "BREAK_GLASS_REQUEST"
+    # A Patient's own five data-quality flags, or an Administrator sweeping
+    # the queue (P4.3, #54). Identity-derived, informational only — never a
+    # clinical read, so this is the one analytics permission ADMINISTRATOR
+    # may hold. The service layer narrows further: a Patient may only ever
+    # read their own (`analytics.service._may_read_identity`).
+    ANALYTICS_DATA_QUALITY_READ = "ANALYTICS_DATA_QUALITY_READ"
+    # The duplicate-review queue and merge/reversal (P4.1/#52, P4.3/#54).
+    # Administrator only (ADR-0007, ADR-0011) — identity fields and entry
+    # counts, never clinical content.
+    ADMIN_DUPLICATE_REVIEW = "ADMIN_DUPLICATE_REVIEW"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
@@ -61,6 +71,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.NOTIFICATION_PREFERENCES_READ_SELF,
             Permission.NOTIFICATION_MANAGE_SELF,
             Permission.PROVIDER_READ,
+            Permission.ANALYTICS_DATA_QUALITY_READ,
         }
     ),
     Role.CLINICIAN: frozenset(
@@ -80,7 +91,12 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         }
     ),
     Role.ADMINISTRATOR: frozenset(
-        {Permission.USER_CREDENTIALS_CHANGE, Permission.PROVIDER_READ}
+        {
+            Permission.USER_CREDENTIALS_CHANGE,
+            Permission.PROVIDER_READ,
+            Permission.ANALYTICS_DATA_QUALITY_READ,
+            Permission.ADMIN_DUPLICATE_REVIEW,
+        }
     ),
 }
 

@@ -117,6 +117,9 @@ class LabTrendPoint(PulseSchema):
     unit: str | None = None
     reference_low: float | None = None
     reference_high: float | None = None
+    # Set by `analytics.service` (P4.3, #54) — never here: abnormality is a
+    # business rule computed against this row's own bounds, not SQL.
+    is_abnormal: bool | None = None
 
 
 class MonthlyVisitCount(PulseSchema):

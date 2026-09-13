@@ -43,12 +43,40 @@ _IMPLAUSIBLE_DOB_YEARS = 130
 _LONG_LIVED_DAYS = 365
 
 
+def _is_abnormal(
+    value_numeric: float | None, *, reference_low: float | None, reference_high: float | None
+) -> bool | None:
+    """Compares a lab result against **its own row's** reference bounds
+    only — never a hardcoded/global range (#54 acceptance criterion).
+    `None` when there is nothing to compare (no numeric value, or no bounds
+    recorded for this particular row)."""
+    if value_numeric is None or (reference_low is None and reference_high is None):
+        return None
+    if reference_low is not None and value_numeric < reference_low:
+        return True
+    if reference_high is not None and value_numeric > reference_high:
+        return True
+    return False
+
+
 async def lab_trend(
     session: AsyncSession, actor: Actor, patient_id: UUID, *, code_system: str, code: str
 ) -> list[LabTrendPoint]:
-    return await records_service.lab_trend(
+    points = await records_service.lab_trend(
         session, actor, patient_id, code_system=code_system, code=code
     )
+    return [
+        p.model_copy(
+            update={
+                "is_abnormal": _is_abnormal(
+                    p.value_numeric,
+                    reference_low=p.reference_low,
+                    reference_high=p.reference_high,
+                )
+            }
+        )
+        for p in points
+    ]
 
 
 async def visit_frequency_by_month(
