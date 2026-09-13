@@ -1,27 +1,28 @@
 /*
- * Pulse design tokens.
+ * Pulse design tokens — shadcn-style theme.
  *
- * Decision (docs/design-direction.md): Colour Direction (c) — Sand (warm
- * neutral) + Iris (accent), from Radix Colors. Source of the raw values is the
- * `@radix-ui/colors` package (a devDependency); they are transcribed here so
- * the demo has zero runtime CSS imports and works fully offline.
+ * Light-mode-first, calm/trustworthy healthcare palette: a warm neutral
+ * ("Sand") surface scale plus a single teal accent. Built the same way
+ * shadcn/ui themes are: raw scale steps as CSS custom properties, wired into
+ * Tailwind v4's `@theme` as semantic aliases, consumed by components as
+ * `text-foreground`, `bg-accent`, `rounded-lg` — never a hex, never a raw
+ * Tailwind colour name. An ESLint rule bans hex literals under
+ * src/components/.
  *
  * Two layers:
- *   1. PRIMITIVES  — raw Radix scale steps. Referenced by nobody directly.
- *      Defined light on :root, swapped under prefers-color-scheme: dark.
- *   2. SEMANTIC ALIASES — mapped into Tailwind v4 `@theme` so components write
- *      `text-critical`, `bg-surface`, `border-border` — never a hex, never
- *      `red-500`. An ESLint rule bans hex literals under src/components/.
+ *   1. PRIMITIVES — raw scale steps. Referenced by nobody but this file.
+ *   2. SEMANTIC ALIASES — `@theme` tokens components actually use.
  *
- * sRGB hex only; the P3 refinements Radix ships are out of scope for Phase 1.
- * Dark surfaces use Radix dark step 1 (#111110), never #000000 (OLED halation).
+ * sRGB hex only. Dark surfaces use step 1 of the neutral scale (#111110),
+ * never #000000 (OLED halation) — dark mode stays fully supported, light is
+ * simply the polished default.
  */
 
 /* ---------------------------------------------------------------------------
  * 1. PRIMITIVES — light
  * ------------------------------------------------------------------------- */
 :root {
-  /* Sand — neutral */
+  /* Sand — neutral surface/text scale */
   --sand-1: #fdfdfc;
   --sand-2: #f9f9f8;
   --sand-3: #f1f0ef;
@@ -35,17 +36,19 @@
   --sand-11: #63635e;
   --sand-12: #21201c;
 
-  /* Iris — accent */
-  --iris-2: #f8f8ff;
-  --iris-3: #f0f1fe;
-  --iris-4: #e6e7ff;
-  --iris-6: #cbcdff;
-  --iris-7: #b8baf8;
-  --iris-8: #9b9ef0;
-  --iris-9: #5b5bd6;
-  --iris-10: #5151cd;
-  --iris-11: #5753c6;
-  --iris-12: #272962;
+  /* Teal — accent. 600/700 pass AA with white text (>4.5:1). */
+  --teal-1: #f8fdfc;
+  --teal-2: #f0fdfa;
+  --teal-3: #ccfbf1;
+  --teal-4: #99f6e4;
+  --teal-5: #5eead4;
+  --teal-6: #2dd4bf;
+  --teal-7: #14b8a6;
+  --teal-8: #0d9488;
+  --teal-9: #0f766e;
+  --teal-10: #115e59;
+  --teal-11: #134e4a;
+  --teal-12: #042f2e;
 
   /* Semantic hues — only the steps the design table calls for */
   --red-3: #feebec;
@@ -69,6 +72,10 @@
   --crimson-11: #cb1d63;
 
   --white: #ffffff;
+
+  /* shadcn-style radius scale. One dial — bump this, everything rounds
+     together (Button, Input, Card, Select popover, badges). */
+  --radius: 0.65rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -89,16 +96,15 @@
     --sand-11: #b5b3ad;
     --sand-12: #eeeeec;
 
-    --iris-2: #171625;
-    --iris-3: #202248;
-    --iris-4: #262a65;
-    --iris-6: #3d3e82;
-    --iris-7: #4a4a95;
-    --iris-8: #5958b1;
-    --iris-9: #5b5bd6;
-    --iris-10: #6e6ade;
-    --iris-11: #b1a9ff;
-    --iris-12: #e0dffe;
+    /* Teal-9 (the solid accent, e.g. button fill) is intentionally NOT
+       redefined here — same value in both themes, so accent-contrast (white
+       text on it) keeps its AA ratio everywhere. The steps used for text and
+       tinted backgrounds *do* swap, same as the Sand scale above. */
+    --teal-1: #0d1514;
+    --teal-2: #111c1b;
+    --teal-7: #26887d;
+    --teal-10: #14b8a6;
+    --teal-11: #5eead4;
 
     --red-3: #3b1219;
     --red-7: #8c333a;
@@ -125,14 +131,21 @@
 /* ---------------------------------------------------------------------------
  * 2. SEMANTIC ALIASES → Tailwind v4 theme namespace
  *
- * Non-inline `@theme`, so every `--color-*` / `--font-sans` is also emitted as a
- * real custom property (globals.css and component CSS read them directly). The
- * values point at primitives, which swap under prefers-color-scheme above.
+ * Non-inline `@theme`, so every `--color-*` / `--radius-*` / `--font-sans` is
+ * also emitted as a real custom property (globals.css and component CSS read
+ * them directly). Values point at primitives, which swap under
+ * prefers-color-scheme above — components never reference a primitive.
  * ------------------------------------------------------------------------- */
 @theme {
   --font-sans:
     "Noto Sans", "Noto Sans Devanagari", "Noto Sans Tamil",
     "Noto Sans Malayalam", ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius scale — shadcn convention, one base dial above. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   /* Surfaces & text (Sand) */
   --color-background: var(--sand-1);
@@ -143,13 +156,13 @@
   --color-foreground: var(--sand-12);
   --color-muted: var(--sand-11);
 
-  /* Accent (Iris) — step 9 solid passes AA with white text (5.37:1) */
-  --color-accent: var(--iris-9);
-  --color-accent-hover: var(--iris-10);
+  /* Accent (Teal) — step 9 solid passes AA with white text. */
+  --color-accent: var(--teal-9);
+  --color-accent-hover: var(--teal-10);
   --color-accent-contrast: var(--white);
-  --color-accent-text: var(--iris-11);
-  --color-accent-subtle: var(--iris-3);
-  --color-focus-ring: var(--iris-8);
+  --color-accent-text: var(--teal-11);
+  --color-accent-subtle: var(--teal-2);
+  --color-focus-ring: var(--teal-7);
 
   /* Semantic states — each also carries an icon or label in the component */
   --color-critical: var(--red-11);
