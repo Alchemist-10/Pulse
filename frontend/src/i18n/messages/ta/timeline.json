@@ -1,65 +1,65 @@
 {
-  "title": "",
-  "subtitle": "",
-  "fileNewEntry": "",
-  "loading": "",
-  "critical": "",
+  "title": "உங்கள் காலவரிசை",
+  "subtitle": "உங்கள் பதிவில் சமர்ப்பிக்கப்பட்ட ஒவ்வொரு பதிவும், புதியது முதலில்.",
+  "fileNewEntry": "புதிய பதிவைச் சமர்ப்பிக்கவும்",
+  "loading": "உங்கள் காலவரிசை ஏற்றப்படுகிறது…",
+  "critical": "முக்கியமானது",
   "filter": {
-    "label": "",
-    "all": ""
+    "label": "வகை மூலம் வடிகட்டவும்",
+    "all": "அனைத்து பதிவு வகைகளும்"
   },
   "entryTypes": {
-    "DIAGNOSIS": "",
-    "PRESCRIPTION": "",
-    "LAB_REPORT": "",
-    "PROCEDURE": "",
-    "CLINICAL_NOTE": ""
+    "DIAGNOSIS": "நோயறிதல்",
+    "PRESCRIPTION": "மருந்துச் சீட்டு",
+    "LAB_REPORT": "ஆய்வக அறிக்கை",
+    "PROCEDURE": "செயல்முறை",
+    "CLINICAL_NOTE": "மருத்துவக் குறிப்பு"
   },
-  "loadMore": "",
-  "loadingMore": "",
+  "loadMore": "மேலும் ஏற்றவும்",
+  "loadingMore": "மேலும் ஏற்றுகிறது…",
   "empty": {
-    "title": "",
-    "body": ""
+    "title": "இதுவரை பதிவுகள் இல்லை",
+    "body": "உங்கள் காலவரிசையில் இதுவரை எதுவும் பதிவு செய்யப்படவில்லை."
   },
   "emptyFiltered": {
-    "title": "",
-    "body": ""
+    "title": "{type} பதிவுகள் இல்லை",
+    "body": "{type} இன் கீழ் இதுவரை எதுவும் பதிவு செய்யப்படவில்லை."
   },
   "error": {
-    "title": "",
-    "retry": ""
+    "title": "உங்கள் காலவரிசையை ஏற்ற முடியவில்லை",
+    "retry": "மீண்டும் முயலவும்"
   },
-  "notFound": "",
+  "notFound": "உங்கள் கணக்குடன் இணைக்கப்பட்ட நோயாளர் சுயவிவரத்தை எங்களால் கண்டறிய முடியவில்லை.",
   "detail": {
-    "title": "",
-    "back": "",
-    "correctsNotice": "",
-    "viewPrevious": "",
-    "notFound": "",
+    "title": "பதிவு",
+    "back": "காலவரிசைக்குத் திரும்பு",
+    "correctsNotice": "இந்தப் பதிவு முந்தைய ஒன்றைத் திருத்துகிறது.",
+    "viewPrevious": "முந்தைய பதிப்பைக் காண்க",
+    "notFound": "அந்தப் பதிவை எங்களால் கண்டறிய முடியவில்லை.",
     "fields": {
-      "occurredAt": "",
-      "recordedAt": "",
-      "code": "",
-      "value": "",
-      "referenceRange": "",
-      "medication": "",
-      "dosage": "",
-      "frequency": "",
-      "route": "",
-      "note": "",
-      "documents": ""
+      "occurredAt": "நிகழ்ந்தது",
+      "recordedAt": "பதிவு செய்யப்பட்டது",
+      "code": "குறியீடு",
+      "value": "முடிவு",
+      "referenceRange": "குறிப்பு வரம்பு",
+      "medication": "மருந்து",
+      "dosage": "அளவு",
+      "frequency": "அதிர்வெண்",
+      "route": "வழி",
+      "note": "குறிப்பு",
+      "documents": "ஆவணங்கள்"
     },
     "abnormal": {
-      "high": "",
-      "low": "",
-      "aboveRange": "",
-      "belowRange": ""
+      "high": "உ",
+      "low": "தா",
+      "aboveRange": "வரம்புக்கு மேல்",
+      "belowRange": "வரம்புக்குக் கீழ்"
     },
     "documentViewer": {
-      "view": "",
-      "loading": "",
-      "unsupported": "",
-      "close": ""
+      "view": "காண்க",
+      "loading": "ஆவணம் ஏற்றப்படுகிறது…",
+      "unsupported": "இந்தக் கோப்பு வகைக்கு முன்னோட்டம் கிடைக்கவில்லை.",
+      "close": "முன்னோட்டத்தை மூடு"
     }
   }
 }

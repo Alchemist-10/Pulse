@@ -1,22 +1,22 @@
 {
   "home": {
-    "title": "",
-    "description": "",
-    "registerCta": "",
-    "loginCta": ""
+    "title": "பல்ஸ்",
+    "description": "வாழ்நாள் முழுவதற்குமான மின்னணு சுகாதாரப் பதிவு.",
+    "registerCta": "கணக்கை உருவாக்கவும்",
+    "loginCta": "உள்நுழையவும்"
   },
   "app": {
-    "name": "",
-    "skipToContent": ""
+    "name": "பல்ஸ்",
+    "skipToContent": "உள்ளடக்கத்திற்குச் செல்க"
   },
   "locale": {
-    "label": "",
-    "en": "",
-    "hi": ""
+    "label": "மொழி",
+    "en": "ஆங்கிலம்",
+    "hi": "இந்தி"
   },
   "actions": {
-    "submit": "",
-    "retry": "",
-    "loading": ""
+    "submit": "சமர்ப்பிக்கவும்",
+    "retry": "மீண்டும் முயலவும்",
+    "loading": "ஏற்றுகிறது…"
   }
 }

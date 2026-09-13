@@ -1,41 +1,41 @@
 {
   "new": {
-    "title": "",
-    "subtitle": "",
-    "submit": "",
-    "submitting": "",
+    "title": "புதிய பதிவைச் சமர்ப்பிக்கவும்",
+    "subtitle": "ஒரு நோயாளிக்கான நோயறிதல், மருந்துச் சீட்டு, ஆய்வக அறிக்கை, செயல்முறை அல்லது மருத்துவக் குறிப்பைப் பதிவு செய்யவும்.",
+    "submit": "பதிவைச் சமர்ப்பிக்கவும்",
+    "submitting": "பதிவு சமர்ப்பிக்கப்படுகிறது…",
     "success": {
-      "title": "",
-      "body": "",
-      "viewEntry": ""
+      "title": "பதிவு சமர்ப்பிக்கப்பட்டது",
+      "body": "பதிவு வெற்றிகரமாகச் சமர்ப்பிக்கப்பட்டது.",
+      "viewEntry": "பதிவைக் காண்க"
     },
     "fields": {
-      "patientId": "",
-      "entryType": "",
-      "occurredAt": "",
-      "isCritical": "",
-      "codeSystem": "",
-      "code": "",
-      "displayName": "",
-      "valueNumeric": "",
-      "valueText": "",
-      "unit": "",
-      "referenceLow": "",
-      "referenceHigh": "",
-      "medicationName": "",
-      "dosage": "",
-      "frequency": "",
-      "route": "",
-      "text": "",
-      "file": ""
+      "patientId": "நோயாளர் ஐடி",
+      "entryType": "பதிவு வகை",
+      "occurredAt": "நிகழ்ந்த நேரம்",
+      "isCritical": "முக்கியமானதாகக் குறிக்கவும்",
+      "codeSystem": "குறியீட்டு அமைப்பு",
+      "code": "குறியீடு",
+      "displayName": "காட்சிப் பெயர்",
+      "valueNumeric": "முடிவு (எண்)",
+      "valueText": "முடிவு (உரை)",
+      "unit": "அலகு",
+      "referenceLow": "குறிப்பு வரம்பு — குறைந்தது",
+      "referenceHigh": "குறிப்பு வரம்பு — அதிகபட்சம்",
+      "medicationName": "மருந்தின் பெயர்",
+      "dosage": "அளவு",
+      "frequency": "அதிர்வெண்",
+      "route": "வழி",
+      "text": "குறிப்பு உரை",
+      "file": "ஆவணத்தை இணைக்கவும்"
     },
-    "fileHint": "",
+    "fileHint": "PDF, PNG அல்லது JPEG.",
     "validation": {
-      "requiredFields": ""
+      "requiredFields": "நோயாளர், பதிவு வகை மற்றும் அது நிகழ்ந்த நேரத்தை நிரப்பவும்."
     },
     "upload": {
-      "inProgress": "",
-      "failed": ""
+      "inProgress": "ஆவணம் பதிவேற்றப்படுகிறது… {percent}%",
+      "failed": "பதிவு சமர்ப்பிக்கப்பட்டது, ஆனால் ஆவணத்தைப் பதிவேற்ற முடியவில்லை: {reason}"
     }
   }
 }
