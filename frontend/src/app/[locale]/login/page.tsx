@@ -9,6 +9,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import type { Me } from "@/lib/auth";
 import { useApiErrorMessage } from "@/lib/errors";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,7 +53,11 @@ export default function LoginPage() {
     try {
       // Session cookie is set by the response; nothing to read from the body.
       await api.post("/auth/login", { email, password });
-      router.push("/profile");
+      // Administrators have no Patient profile to land on (ADR-0007) — send
+      // them to the admin dashboard instead. Every other role keeps landing
+      // on /profile, unchanged.
+      const me = await api.get<Me>("/auth/me");
+      router.push(me.role === "ADMINISTRATOR" ? "/admin" : "/profile");
     } catch (err) {
       setFormError(errorMessage(err));
     } finally {
