@@ -1,0 +1,309 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { BarChart } from "@/components/charts/BarChart";
+import { LineChart } from "@/components/charts/LineChart";
+import { ClinicalText } from "@/components/ClinicalText";
+import { Callout } from "@/components/ui/Callout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { AlertTriangleIcon, InfoIcon } from "@/components/ui/icons";
+import { useRouter } from "@/i18n/navigation";
+import type {
+  DataQualityFlag,
+  LabTrendPoint,
+  MedicationSummary,
+  MonthlyVisitCount,
+  ProviderEntryCount,
+} from "@/lib/analytics";
+import { api, ApiError } from "@/lib/api";
+import { useApiErrorMessage } from "@/lib/errors";
+import { formatDate, formatNumber } from "@/lib/format";
+import type { EntryDetail, EntrySummary, Page as EntryPage } from "@/lib/records";
+
+// Patient-facing analytics screen (issue #55). Every series here reads
+// clinical data (`RECORDS_READ`) except data-quality flags
+// (`ANALYTICS_DATA_QUALITY_READ`) — both permissions are the Patient's own,
+// so this page only ever renders the signed-in patient's own analytics
+// (`/patients/{id}/analytics/...`), the same `patient_id` `lib/records.ts`
+// screens already resolve via `/patients/me`.
+//
+// Data-quality flags are informational only, never blocking
+// (`backend/app/modules/analytics/schemas.py` docstring) — rendered as a
+// plain list, never gating anything else on this page.
+
+const FLAG_ICON: Record<DataQualityFlag, typeof InfoIcon> = {
+  MISSING_DOB: InfoIcon,
+  MISSING_CONTACT: InfoIcon,
+  FUTURE_DATED_ENTRY: AlertTriangleIcon,
+  IMPLAUSIBLE_DOB: AlertTriangleIcon,
+  UNCLAIMED_LONG_LIVED: InfoIcon,
+};
+
+// The lab-trend endpoint needs a (codeSystem, code) pair — there is no "pick
+// a test" picker in this pass, so the most recent LAB_REPORT entry's own
+// code is used as a reasonable default trend to show. A patient with no lab
+// reports, or whose most recent one lacks a code, simply gets no trend
+// section: this never fails the rest of the page.
+async function discoverLabTrend(patientId: string): Promise<LabTrendPoint[] | null> {
+  const page = await api.get<EntryPage<EntrySummary>>(
+    `/patients/${patientId}/entries?entryType=LAB_REPORT&limit=1`,
+  );
+  const first = page.items[0];
+  if (!first) return null;
+  const detail = await api.get<EntryDetail>(`/entries/${first.id}`);
+  if (!detail.codeSystem || !detail.code) return null;
+  const params = new URLSearchParams({ codeSystem: detail.codeSystem, code: detail.code });
+  return api.get<LabTrendPoint[]>(
+    `/patients/${patientId}/analytics/lab-trend?${params.toString()}`,
+  );
+}
+
+interface Loaded {
+  visitFrequency: MonthlyVisitCount[];
+  activeMedications: MedicationSummary[];
+  providerEntryCounts: ProviderEntryCount[];
+  dataQualityFlags: DataQualityFlag[];
+  labTrend: LabTrendPoint[] | null;
+}
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "notFound" }
+  | { status: "error"; message: string }
+  | { status: "ready"; data: Loaded };
+
+export default function AnalyticsPage() {
+  const t = useTranslations("analytics");
+  const errorMessage = useApiErrorMessage();
+  const router = useRouter();
+
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get<{ id: string }>("/patients/me")
+      .then((profile) => {
+        if (active) setPatientId(profile.id);
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err instanceof ApiError && (err.status === 401 || err.code === "SESSION_EXPIRED")) {
+          router.replace("/login");
+          return;
+        }
+        if (err instanceof ApiError && err.status === 404) {
+          setState({ status: "notFound" });
+          return;
+        }
+        setState({ status: "error", message: errorMessage(err) });
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!patientId) return;
+    let active = true;
+    const base = `/patients/${patientId}/analytics`;
+
+    Promise.all([
+      api.get<MonthlyVisitCount[]>(`${base}/visit-frequency`),
+      api.get<MedicationSummary[]>(`${base}/active-medications`),
+      api.get<ProviderEntryCount[]>(`${base}/provider-entry-counts`),
+      api.get<DataQualityFlag[]>(`${base}/data-quality-flags`),
+      discoverLabTrend(patientId).catch(() => null),
+    ])
+      .then(([visitFrequency, activeMedications, providerEntryCounts, dataQualityFlags, labTrend]) => {
+        if (!active) return;
+        setState({
+          status: "ready",
+          data: {
+            visitFrequency,
+            activeMedications,
+            providerEntryCounts,
+            dataQualityFlags,
+            labTrend,
+          },
+        });
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err instanceof ApiError && (err.status === 401 || err.code === "SESSION_EXPIRED")) {
+          router.replace("/login");
+          return;
+        }
+        setState({ status: "error", message: errorMessage(err) });
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-muted">{t("subtitle")}</p>
+      </div>
+
+      {state.status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
+
+      {state.status === "notFound" && (
+        <Callout tone="info" iconLabel={t("title")}>
+          {t("notFound")}
+        </Callout>
+      )}
+
+      {state.status === "error" && (
+        <Callout tone="error" iconLabel={t("error.title")}>
+          {state.message}
+        </Callout>
+      )}
+
+      {state.status === "ready" && (
+        <div className="space-y-6">
+          {state.data.dataQualityFlags.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("dataQuality.title")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-xs text-muted">{t("dataQuality.hint")}</p>
+                <ul className="space-y-2">
+                  {state.data.dataQualityFlags.map((flag) => {
+                    const Icon = FLAG_ICON[flag];
+                    return (
+                      <li
+                        key={flag}
+                        className="flex items-start gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground"
+                      >
+                        <Icon className="mt-0.5 shrink-0 text-muted" />
+                        <span>{t(`dataQuality.flags.${flag}`)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("visitFrequency.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {state.data.visitFrequency.length === 0 ? (
+                <p className="text-sm text-muted">{t("empty")}</p>
+              ) : (
+                <BarChart
+                  ariaLabel={t("visitFrequency.title")}
+                  formatValue={formatNumber}
+                  data={state.data.visitFrequency.map((row) => ({
+                    label: formatDate(row.month),
+                    value: row.count,
+                  }))}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("providerEntryCounts.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {state.data.providerEntryCounts.length === 0 ? (
+                <p className="text-sm text-muted">{t("empty")}</p>
+              ) : (
+                <BarChart
+                  ariaLabel={t("providerEntryCounts.title")}
+                  formatValue={formatNumber}
+                  data={state.data.providerEntryCounts.map((row, i) => ({
+                    label: row.providerId
+                      ? t("providerEntryCounts.providerLabel", { n: i + 1 })
+                      : t("providerEntryCounts.unknown"),
+                    value: row.count,
+                  }))}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("activeMedications.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {state.data.activeMedications.length === 0 ? (
+                <p className="text-sm text-muted">{t("empty")}</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {state.data.activeMedications.map((med, i) => (
+                    <li key={i} className="flex flex-col gap-0.5 py-2 text-sm">
+                      <span className="font-medium text-foreground">
+                        <ClinicalText>{med.medicationName}</ClinicalText>
+                      </span>
+                      <span className="text-xs text-muted">
+                        {[med.dosage, med.frequency, med.route]
+                          .filter((v): v is string => Boolean(v))
+                          .map((v, idx, arr) => (
+                            <span key={idx}>
+                              <ClinicalText>{v}</ClinicalText>
+                              {idx < arr.length - 1 ? " · " : ""}
+                            </span>
+                          ))}
+                      </span>
+                      <span className="text-xs text-muted">{formatDate(med.occurredAt)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {state.data.labTrend && state.data.labTrend.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("labTrend.title")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <LineChart
+                  ariaLabel={t("labTrend.title")}
+                  data={state.data.labTrend.map((p) => ({
+                    x: formatDate(p.occurredAt),
+                    value: p.valueNumeric ?? 0,
+                    abnormal: p.isAbnormal ?? false,
+                  }))}
+                />
+                <ul className="space-y-1 text-sm">
+                  {state.data.labTrend
+                    .filter((p) => p.isAbnormal)
+                    .map((p, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center gap-2 rounded-md border border-critical-border bg-critical-surface px-2 py-1 text-critical"
+                      >
+                        <AlertTriangleIcon className="shrink-0" />
+                        <span>
+                          {formatDate(p.occurredAt)} —{" "}
+                          {p.referenceHigh != null && (p.valueNumeric ?? 0) > p.referenceHigh
+                            ? t("labTrend.aboveRange")
+                            : t("labTrend.belowRange")}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
