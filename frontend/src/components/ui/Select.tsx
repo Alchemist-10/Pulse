@@ -38,8 +38,8 @@ export function Select({
         aria-invalid={invalid || undefined}
         {...aria}
         className={cn(
-          "inline-flex w-full items-center justify-between rounded-md border bg-surface",
-          "min-h-11 px-3 py-2 text-sm text-foreground outline-none",
+          "inline-flex w-full items-center justify-between rounded-md border bg-surface shadow-sm",
+          "min-h-11 px-3 py-2 text-sm text-foreground outline-none transition-colors",
           "focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-1",
           "focus-visible:ring-offset-background data-[placeholder]:text-muted",
           invalid ? "border-critical-border" : "border-border-strong",
@@ -56,7 +56,7 @@ export function Select({
           position="popper"
           sideOffset={4}
           className={cn(
-            "z-50 min-w-(--radix-select-trigger-width) overflow-hidden rounded-md",
+            "z-50 min-w-(--radix-select-trigger-width) overflow-hidden rounded-lg",
             "border border-border bg-surface-raised shadow-md",
           )}
         >

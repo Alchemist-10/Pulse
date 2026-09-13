@@ -35,7 +35,7 @@ export function Callout({ tone = "info", iconLabel, children }: CalloutProps) {
     <div
       role="alert"
       className={cn(
-        "flex items-start gap-2 rounded-md border border-l-4 px-3 py-2 text-sm",
+        "flex items-start gap-2.5 rounded-lg border border-l-4 px-4 py-3 text-sm shadow-sm",
         wrap,
       )}
     >

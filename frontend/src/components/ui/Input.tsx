@@ -11,8 +11,8 @@ export function Input({ invalid, className, ...props }: InputProps) {
     <input
       aria-invalid={invalid || undefined}
       className={cn(
-        "block w-full rounded-md border bg-surface px-3 py-2 text-sm text-foreground",
-        "min-h-11 placeholder:text-muted outline-none",
+        "block w-full rounded-md border bg-surface px-3 py-2 text-sm text-foreground shadow-sm",
+        "min-h-11 placeholder:text-muted outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-1",
         "focus-visible:ring-offset-background",
         invalid ? "border-critical-border" : "border-border-strong",
