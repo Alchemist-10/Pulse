@@ -145,7 +145,9 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
   await page.getByRole("option", { name: "Patient" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/en\/verify-pending/);
-  await expect(page.getByText("Confirm your email address")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Confirm your email address" }),
+  ).toBeVisible();
 
   // 2. Upload (file a Diagnosis entry as the newly signed-up patient)
   await page.goto("/en/timeline/new");

@@ -55,26 +55,26 @@ test("admin dashboard denies a non-Administrator and admits one", async ({ page 
   await expect(page.getByText("Administrator access required")).toBeVisible();
   await expect(page.getByText("This screen is for Administrators only.")).toBeVisible();
 
-  await page.route(
-    "**/api/v1/auth/me",
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          userId: "u-2",
-          role: "ADMINISTRATOR",
-          email: "admin@example.com",
-          emailVerified: true,
-        }),
-      });
-    },
-    { times: 1 },
-  );
+  // No `times: 1` here: the admin page can legitimately call /auth/me more
+  // than once on reload (e.g. a layout-level auth check plus the page's own
+  // gate), and a one-shot override left the second call falling through to
+  // the earlier PATIENT handler, denying access that should have succeeded.
+  await page.route("**/api/v1/auth/me", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        userId: "u-2",
+        role: "ADMINISTRATOR",
+        email: "admin@example.com",
+        emailVerified: true,
+      }),
+    });
+  });
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Admin dashboard" })).toBeVisible();
-  await expect(page.getByText("Duplicate review")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Duplicate review" })).toBeVisible();
 });
 
 test("admin duplicate review lists a candidate and merges it", async ({ page }) => {
@@ -135,7 +135,12 @@ test("admin duplicate review lists a candidate and merges it", async ({ page }) 
 
   await page.goto("/en/admin/duplicates");
   await expect(page.getByRole("heading", { name: "Duplicate review" })).toBeVisible();
-  await expect(page.getByText("Anand Kumar")).toBeVisible();
+  // Both candidate names render as "Anand Kumar" once whitespace is
+  // collapsed (patientB's fixture name has a deliberate double space, to
+  // exercise the near-duplicate case) — .first() is the correct match here,
+  // not a locator workaround, since the screen is meant to show two
+  // candidates that read as the same name.
+  await expect(page.getByText("Anand Kumar").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Merge" }).click();
   await expect(page.getByText("No duplicate candidates are waiting for review.")).toBeVisible();

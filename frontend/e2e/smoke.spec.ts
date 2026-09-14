@@ -26,6 +26,12 @@ test.beforeEach(async ({ page }) => {
 
     if (url.includes("/auth/register")) return json(201, { userId: "u1" });
     if (url.includes("/auth/login")) return json(200, { userId: "u1", role: "PATIENT" });
+    // Login now reads role from /auth/me post-login to route Administrators
+    // to /admin instead of /profile (ADR-0007) — every other role keeps
+    // landing on /profile, which is what this fixture always returns.
+    if (url.includes("/auth/me")) {
+      return json(200, { userId: "u1", role: "PATIENT", email: "aarav@example.com", emailVerified: true });
+    }
     if (url.includes("/patients/me")) return json(200, FIXTURE_PROFILE);
     return json(404, { error: { code: "NOT_FOUND", message: "not found" } });
   });
@@ -68,14 +74,19 @@ test("locale switcher lists all four locales", async ({ page }) => {
   await expect(group.getByRole("button", { name: "മലയാളം" })).toBeVisible();
 });
 
-// ta/ml catalogs ship with every key present and every value empty (P2.10) —
-// real translations land in Phase 4. next-intl only raises MISSING_MESSAGE for
-// an absent key, so request.ts prunes empty leaves first; the guard then fires
-// in dev and CI. This is the test that keeps an untranslated locale a red build
-// instead of a page of silent blanks.
-test("ta locale throws on an untranslated key in dev", async ({ page }) => {
+// ta/ml catalogs shipped with every key present and every value empty through
+// P2.10 — real translations landed in Phase 4 (#55). next-intl only raises
+// MISSING_MESSAGE for an absent key, so request.ts prunes empty leaves first;
+// that guard is what used to turn this exact page into a 500 in dev/CI. Now
+// that ta is fully translated, the guard has nothing left to catch here, so
+// this test instead asserts the catalog stayed complete (200, real Tamil
+// text renders) rather than asserting the now-false "still empty" state.
+test("ta locale is fully translated and loads without the missing-key guard firing", async ({
+  page,
+}) => {
   const response = await page.goto("/ta/login");
-  expect(response?.status()).toBe(500);
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "உள்நுழையவும்" })).toBeVisible();
 });
 
 test("/api/* is not rewritten by the locale middleware", async ({ page }) => {
