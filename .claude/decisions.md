@@ -104,3 +104,21 @@ Context: Consent, audit and notifications are the graded half and sit mid-schedu
 Options: run P3 and P4 in parallel to buy slack; hard gate P4 behind P3.
 Chosen: hard gate. Nothing from P4 starts until the full demo spine works and every negative access test is green.
 Rejected: parallel — it converts a schedule risk into a grade risk, in exchange for finishing analytics that nobody is grading.
+
+## [2026-09-13] Duplicate scoring blocks candidates before scoring, and merge/reversal are gated at the service layer
+Context: P4.1 needed duplicate detection that scales past a handful of seeded Patients, and ADR-0011 already committed to human-only reversible merges.
+Options: score every pair (O(n²)); block on birth-year/phone/trigram-hit then score only survivors; gate merge/reversal at the route only vs. also in the service function itself.
+Chosen: block before score (trigram index on `full_name`, token-sorted before comparison — not Soundex/Metaphone, which fail on romanised Indian names), and reject any non-Administrator actor inside `merge_patients`/`reverse_merge`/`mark_not_duplicate` directly, independent of the calling route.
+Rejected: unblocked scoring — degrades with every Patient added. Route-only gating — protects the HTTP surface but not a future same-process caller (a batch job, a script) that invokes the service function directly, which is exactly the auto-merge failure mode ADR-0011 rules out.
+
+## [2026-09-13] Admin duplicate-review entry counts bypass `accessible_entries` on purpose
+Context: ADR-0007 makes `accessible_entries` return nothing for an Administrator actor, by design — but the P4.3 merge-review screen needs a way to tell two candidate Patients apart by history size, and a bare count carries no clinical content.
+Options: thread an Administrator exception into `accessible_entries` itself; give the merge screen no count at all; a separate, narrowly-scoped count query outside `accessible_entries`.
+Chosen: `records.service.entry_count_for_patient` / `repository.count_entries_for_patient` — a single, docstring-flagged, Administrator-only count that never reads entry content and must not be reused as a general-purpose count. Caught first as a near-miss by security review (`.claude/errors.md`, 2026-09-12 entry, on the related identity data-quality-flags gap) before this carve-out was written the right way round: actor required by the actor-first lint, gated by the caller, with its own negative test.
+Rejected: weakening `accessible_entries` for Administrators — it would quietly reopen ADR-0007 for every clinical query that function backs, not just this one screen.
+
+## [2026-09-13] Analytics abnormality flags read each row's own reference range, never a hardcoded one
+Context: P4.3 needed to flag lab results as abnormal, on top of the P4.2 analytics queries already computed on read (ADR-0009).
+Options: a hardcoded per-test-name "normal range" table in application code; per-row `reference_low`/`reference_high` comparison, as `database.md` already required for lab results.
+Chosen: per-row comparison against the columns the record was seeded with.
+Rejected: hardcoded ranges — a second, unauthoritative copy of clinical knowledge in Python that can silently disagree with the source lab's own reference range.

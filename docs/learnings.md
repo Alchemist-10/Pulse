@@ -201,3 +201,53 @@ Appended as patterns land. Not written at the end.
 **Replaces:** The textbook mapping of "authenticated but not permitted → 403", which is right in most systems and wrong in this one.
 
 **Worth knowing:** This has to be consistent everywhere, including on document downloads and analytics endpoints. One endpoint that returns 403 re-opens the channel for every patient in the system.
+
+---
+
+## Duplicate detection: block before you score (P4.1)
+
+**What:** `blocked_candidates` narrows every Patient pair to same-birth-year, same-phone, or a trigram index hit on `full_name` *before* `score_pair` runs. Name similarity itself is a token-sorted trigram Jaccard, not Soundex/Metaphone, and scoring is a weighted blend (name 0.5, DOB 0.3, phone 0.2). See ADR-0011, `.claude/rules/database.md`.
+
+**Why here:** Unblocked pairwise scoring is O(n²) and gets worse with every seeded or real Patient added — it doesn't fail loudly, it just gets slower until someone notices duplicate review is timing out. Token-sorting the name before trigram comparison matters specifically for this demographic: Indian naming order varies by region ("Menon Ramesh" vs "Ramesh Menon"), and Soundex/Metaphone encode English phonetics, so they misscore romanised Indian names both ways — false negatives on real duplicates and false positives on unrelated names that happen to sound alike in English.
+
+**Worth knowing:** Precision/recall is measured, not assumed — the test suite runs scoring against the seed's own planted pairs (`seed/data/identity/planted_pairs.csv`, ADR-0015): 3 planted duplicates flagged, 2 planted near-misses correctly not flagged. A negative test also asserts two genuinely unrelated patients produce zero candidates.
+
+---
+
+## Merge/reversal/review-decisions are gated to a human Administrator at the service layer, not just the UI
+
+**What:** `merge_patients`, `reverse_merge` and `mark_not_duplicate` (`users/service.py`) reject any actor whose role isn't `ADMINISTRATOR`, independent of whatever called them. `lint_actor_first.py` was extended to scan the admin module alongside `records/`.
+
+**Why here:** ADR-0011 says merges are human-initiated; the risk that decision guards against is a future batch job or scheduled task calling the merge function directly, bypassing whatever admin-only route check exists at the HTTP layer. Putting the check in the service function itself means there is no code path — present or future — that can auto-merge two Patients' histories, which is this system's worst possible failure mode.
+
+**Replaces:** Gating only at the route (`requires(Permission.ADMIN_...)`), which protects the HTTP surface but not a same-process caller that skips routing entirely.
+
+---
+
+## Analytics abnormality flags compare against each row's own reference range (P4.3)
+
+**What:** `_is_abnormal` (`analytics/service.py`) flags a lab result against *that row's own* `reference_low`/`reference_high` columns, never a hardcoded clinical range.
+
+**Why here:** ADR-0009 already committed analytics to being computed on read, through `accessible_entries`, with no stored insight table. P4.3 extends that same principle down to the comparison itself: a hardcoded "normal range" is a second, unauthoritative copy of clinical knowledge baked into application code, and it would silently disagree with whatever range the lab that produced the result actually used. Reading the bounds off the row that was seeded means the flag is only ever as wrong as the source data, never wrong because someone typed a textbook range into a Python file.
+
+**Worth knowing:** This is why `database.md` requires `value_numeric`/`value_text` plus two numeric reference-range columns on every lab result — out-of-range flagging has to be a comparison, never a string parse, and it has to be per-row, never per-test-name.
+
+---
+
+## The admin duplicate-review count is a deliberate, narrow bypass of `accessible_entries`
+
+**What:** `records.service.entry_count_for_patient` and `records.repository.count_entries_for_patient` return a row count for the admin duplicate-review queue without going through `accessible_entries` at all. The repository function still takes an `actor` parameter (the actor-first lint requires it), but doesn't filter on it — the caller (`entry_count_for_patient`) is what actually enforces `Role.ADMINISTRATOR`-only before the count ever runs, and the docstring on both functions says explicitly that this must never be reused as a general-purpose count.
+
+**Why here:** `accessible_entries` returns nothing at all for an Administrator actor, by design (ADR-0007: Administrators read no clinical data, ever). But ADR-0011's merge UI needs *some* signal for "which of these two candidate Patients has more history" to suggest a sensible merge winner — and a bare integer count carries no clinical content, which is exactly the line ADR-0007 draws. So this one query had to be exempted from the standard access path on purpose, rather than either (a) quietly threading an Administrator through `accessible_entries` and weakening what that function guarantees everywhere else, or (b) leaving the merge screen with no way to distinguish the two candidates at all.
+
+**Worth knowing:** This is a named, single-purpose exception, not a precedent. See `.claude/errors.md`'s 2026-09-12 entry for the related near-miss on the same feature (identity data-quality flags read Patient fields with no actor gate at all, caught by security review, not by CI) — the fix there was the general rule this carve-out deliberately narrows around: any function reading personal (not just clinical) data takes an actor and gates on it, and the negative case gets a test. `entry_count_for_patient`'s own negative test (non-Administrator gets 403) is that test for this function.
+
+---
+
+## Frontend redesign to a shadcn-style token system (P4.4)
+
+**What:** The frontend's component layer and CSS custom properties were rebuilt around the shadcn convention — a single `--radius` value driving the whole rounded-* scale, an accent color that stays constant across light/dark while its contrast/subtle/focus-ring variants swap per theme, and shared components (`Button`, `Card`, `Badge`, `Callout`) rebuilt once against the new tokens rather than restyled screen-by-screen.
+
+**Why here:** Phase 1-3 screens were built against an earlier Sand/Iris palette before Phase 4 added two data-dense screens (analytics, admin) that needed a denser, more conventional component vocabulary than the original patient-portal-first styling gave them. Rebuilding the shared components once, before the second Phase 4 screen needed them, keeps `frontend.md`'s rule intact: the same button is still built exactly once, even though the visual system underneath it changed.
+
+**Worth knowing:** Dark mode is fully redefined alongside light mode in the same pass, not left to catch up later — `frontend.md`'s theme-token rules (light on bare `:root`, dark redefined under the media query and the explicit `data-theme` selector) apply to this token rebuild the same as they would to any artifact.
