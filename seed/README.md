@@ -63,6 +63,7 @@ switch to Hindi) works against real rows:
 | `demo.patient.hi@example.com` | `Pulse@demo1` | PATIENT | hi |
 | `staff000@example.com` | `Pulse@demo1` | PROVIDER_STAFF | — |
 | `clinician0@example.com` | `Pulse@demo1` | CLINICIAN | — |
+| `admin0@example.com` | `Pulse@demo1` | ADMINISTRATOR | — |
 
 Every other seeded User gets a random unusable hash. The dataset itself
 carries **no** password hashes — argon2 output is non-deterministic and

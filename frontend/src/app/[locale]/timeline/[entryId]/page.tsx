@@ -14,7 +14,9 @@ import {
   PrescriptionIcon,
   ProcedureIcon,
 } from "@/components/ui/icons";
-import { Link, useRouter } from "@/i18n/navigation";
+import { InlineLink } from "@/components/ui/InlineLink";
+import { NavLink } from "@/components/ui/NavLink";
+import { useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -103,9 +105,9 @@ export default function EntryDetailPage({
 
   return (
     <section className="space-y-6">
-      <Link href="/timeline" className="text-sm font-medium text-accent-text underline">
+      <NavLink href="/timeline" icon="back">
         {t("detail.back")}
-      </Link>
+      </NavLink>
 
       {state.status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
 
@@ -203,12 +205,9 @@ function EntryDetailView({ entry }: { entry: EntryDetail }) {
       {entry.supersedesId && (
         <Callout tone="info" iconLabel={t("detail.title")}>
           <span>{t("detail.correctsNotice")}</span>{" "}
-          <Link
-            href={`/timeline/${entry.supersedesId}`}
-            className="font-medium underline"
-          >
+          <InlineLink href={`/timeline/${entry.supersedesId}`}>
             {t("detail.viewPrevious")}
-          </Link>
+          </InlineLink>
         </Callout>
       )}
 

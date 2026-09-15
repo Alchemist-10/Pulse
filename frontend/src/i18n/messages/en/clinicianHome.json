@@ -1,0 +1,21 @@
+{
+  "title": "Clinician access",
+  "subtitle": "Open a patient's record. Access only works where a Consent grant already covers you.",
+  "loading": "Loading…",
+  "gate": {
+    "title": "Clinician or Provider staff access required",
+    "denied": "This screen is for Clinicians and Provider staff only.",
+    "error": "Could not verify your access."
+  },
+  "form": {
+    "title": "Open a patient record",
+    "fields": {
+      "patientId": "Patient ID",
+      "patientIdPlaceholder": "Paste the Patient's ID"
+    },
+    "validation": {
+      "required": "Enter a Patient ID."
+    },
+    "submit": "Open record"
+  }
+}

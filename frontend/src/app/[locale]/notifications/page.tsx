@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { CheckCircleIcon, InfoIcon } from "@/components/ui/icons";
-import { Link, useRouter } from "@/i18n/navigation";
+import { NavLink } from "@/components/ui/NavLink";
+import { useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -184,12 +185,9 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted">{t("subtitle")}</p>
         </div>
-        <Link
-          href="/notifications/preferences"
-          className="shrink-0 text-sm font-medium text-accent-text underline"
-        >
+        <NavLink href="/notifications/preferences" className="shrink-0" icon="forward">
           {t("preferencesCta")}
-        </Link>
+        </NavLink>
       </div>
 
       {state.status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}

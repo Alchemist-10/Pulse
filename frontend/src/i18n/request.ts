@@ -15,6 +15,7 @@ import enAnalytics from "./messages/en/analytics.json";
 import enAuth from "./messages/en/auth.json";
 import enAudit from "./messages/en/audit.json";
 import enBreakGlass from "./messages/en/breakGlass.json";
+import enClinicianHome from "./messages/en/clinicianHome.json";
 import enClinicianRecords from "./messages/en/clinicianRecords.json";
 import enConsent from "./messages/en/consent.json";
 import enEntry from "./messages/en/entry.json";
@@ -28,6 +29,7 @@ import hiAnalytics from "./messages/hi/analytics.json";
 import hiAuth from "./messages/hi/auth.json";
 import hiAudit from "./messages/hi/audit.json";
 import hiBreakGlass from "./messages/hi/breakGlass.json";
+import hiClinicianHome from "./messages/hi/clinicianHome.json";
 import hiClinicianRecords from "./messages/hi/clinicianRecords.json";
 import hiConsent from "./messages/hi/consent.json";
 import hiEntry from "./messages/hi/entry.json";
@@ -41,6 +43,7 @@ import taAnalytics from "./messages/ta/analytics.json";
 import taAuth from "./messages/ta/auth.json";
 import taAudit from "./messages/ta/audit.json";
 import taBreakGlass from "./messages/ta/breakGlass.json";
+import taClinicianHome from "./messages/ta/clinicianHome.json";
 import taClinicianRecords from "./messages/ta/clinicianRecords.json";
 import taConsent from "./messages/ta/consent.json";
 import taEntry from "./messages/ta/entry.json";
@@ -54,6 +57,7 @@ import mlAnalytics from "./messages/ml/analytics.json";
 import mlAuth from "./messages/ml/auth.json";
 import mlAudit from "./messages/ml/audit.json";
 import mlBreakGlass from "./messages/ml/breakGlass.json";
+import mlClinicianHome from "./messages/ml/clinicianHome.json";
 import mlClinicianRecords from "./messages/ml/clinicianRecords.json";
 import mlConsent from "./messages/ml/consent.json";
 import mlEntry from "./messages/ml/entry.json";
@@ -72,6 +76,7 @@ const CATALOGS: Record<string, Catalog> = {
     auth: enAuth,
     audit: enAudit,
     breakGlass: enBreakGlass,
+    clinicianHome: enClinicianHome,
     clinicianRecords: enClinicianRecords,
     consent: enConsent,
     entry: enEntry,
@@ -87,6 +92,7 @@ const CATALOGS: Record<string, Catalog> = {
     auth: hiAuth,
     audit: hiAudit,
     breakGlass: hiBreakGlass,
+    clinicianHome: hiClinicianHome,
     clinicianRecords: hiClinicianRecords,
     consent: hiConsent,
     entry: hiEntry,
@@ -102,6 +108,7 @@ const CATALOGS: Record<string, Catalog> = {
     auth: taAuth,
     audit: taAudit,
     breakGlass: taBreakGlass,
+    clinicianHome: taClinicianHome,
     clinicianRecords: taClinicianRecords,
     consent: taConsent,
     entry: taEntry,
@@ -117,6 +124,7 @@ const CATALOGS: Record<string, Catalog> = {
     auth: mlAuth,
     audit: mlAudit,
     breakGlass: mlBreakGlass,
+    clinicianHome: mlClinicianHome,
     clinicianRecords: mlClinicianRecords,
     consent: mlConsent,
     entry: mlEntry,

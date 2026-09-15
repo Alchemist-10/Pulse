@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Callout } from "@/components/ui/Callout";
-import { Link } from "@/i18n/navigation";
+import { InlineLink } from "@/components/ui/InlineLink";
 import { api } from "@/lib/api";
 import type { AuditEventProjection } from "@/lib/audit";
 import { formatDate } from "@/lib/format";
@@ -56,9 +56,7 @@ export function BreakGlassBanner({ patientId }: { patientId: string }) {
     <Callout tone="error" iconLabel={t("title")}>
       <span className="block font-medium text-foreground">{t("title")}</span>
       <span>{t("body", { date: formatDate(event.occurredAt) })}</span>{" "}
-      <Link href="/audit" className="font-medium underline">
-        {t("viewAudit")}
-      </Link>
+      <InlineLink href="/audit">{t("viewAudit")}</InlineLink>
     </Callout>
   );
 }

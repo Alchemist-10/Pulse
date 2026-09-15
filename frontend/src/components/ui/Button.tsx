@@ -3,9 +3,9 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cn";
 import { SpinnerIcon } from "./icons";
 
-const buttonVariants = cva(
+export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 rounded-md text-sm font-semibold " +
-    "min-h-11 px-4 py-2 transition-all outline-none " +
+    "transition-all outline-none no-underline " +
     "focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 " +
     "focus-visible:ring-offset-background disabled:opacity-60 disabled:pointer-events-none",
   {
@@ -23,9 +23,19 @@ const buttonVariants = cva(
         soft: "bg-accent-soft text-accent-text hover:bg-accent-subtle",
         ghost: "bg-transparent text-accent-text hover:bg-accent-subtle",
       },
+      // Mobile-first: min-h-11 (44px) keeps the tap target usable on a
+      // mid-range Android — the default. "nav" is for inline text-link-style
+      // navigation (back links, cross-links) where a 44px block would look
+      // like chrome, not a sentence; it keeps a 44px *hit area* via negative
+      // margin instead of visible height.
+      size: {
+        default: "min-h-11 px-4 py-2",
+        nav: "-mx-2 -my-2 min-h-9 px-2 py-2 font-medium",
+      },
     },
     defaultVariants: {
       variant: "primary",
+      size: "default",
     },
   },
 );
@@ -37,10 +47,10 @@ interface ButtonProps
   loading?: boolean;
 }
 
-// Mobile-first: min-h-11 (44px) keeps the tap target usable on a mid-range
-// Android. Wrapped once here so the same button is not rebuilt per screen.
+// Wrapped once here so the same button is not rebuilt per screen.
 export function Button({
   variant,
+  size,
   loading = false,
   disabled,
   className,
@@ -53,7 +63,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(buttonVariants({ variant }), className)}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     >
       {loading && <SpinnerIcon className="size-4 animate-spin" />}

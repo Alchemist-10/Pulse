@@ -16,6 +16,7 @@ import {
   PrescriptionIcon,
   ProcedureIcon,
 } from "@/components/ui/icons";
+import { NavLink } from "@/components/ui/NavLink";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -188,12 +189,9 @@ export default function TimelinePage() {
           <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted">{t("subtitle")}</p>
         </div>
-        <Link
-          href="/timeline/new"
-          className="shrink-0 text-sm font-medium text-accent-text underline"
-        >
+        <NavLink href="/timeline/new" className="shrink-0" icon="forward">
           {t("fileNewEntry")}
-        </Link>
+        </NavLink>
       </div>
 
       <div className="max-w-xs space-y-1.5">

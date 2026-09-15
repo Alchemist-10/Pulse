@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
-import { Link } from "@/i18n/navigation";
+import { InlineLink } from "@/components/ui/InlineLink";
 import { api } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 
@@ -65,9 +65,7 @@ function VerifyPending() {
       )}
 
       <p className="text-sm">
-        <Link href="/login" className="font-medium text-accent-text underline">
-          {t("verifyPending.backToLogin")}
-        </Link>
+        <InlineLink href="/login">{t("verifyPending.backToLogin")}</InlineLink>
       </p>
     </section>
   );

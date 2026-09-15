@@ -7,8 +7,9 @@ import { Callout } from "@/components/ui/Callout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import { InlineLink } from "@/components/ui/InlineLink";
 import { Select } from "@/components/ui/Select";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useApiErrorMessage, useFieldErrors } from "@/lib/errors";
 
@@ -123,9 +124,7 @@ export default function RegisterPage() {
 
           <p className="text-sm text-muted">
             {t("register.haveAccount")}{" "}
-            <Link href="/login" className="font-medium text-accent-text underline">
-              {t("register.signInLink")}
-            </Link>
+            <InlineLink href="/login">{t("register.signInLink")}</InlineLink>
           </p>
         </CardContent>
       </Card>

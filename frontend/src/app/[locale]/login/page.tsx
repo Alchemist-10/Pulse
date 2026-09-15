@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
+import { InlineLink } from "@/components/ui/InlineLink";
 import { Input } from "@/components/ui/Input";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { Me } from "@/lib/auth";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -54,11 +55,20 @@ export default function LoginPage() {
     try {
       // Session cookie is set by the response; nothing to read from the body.
       await api.post("/auth/login", { email, password });
-      // Administrators have no Patient profile to land on (ADR-0007) — send
-      // them to the admin dashboard instead. Every other role keeps landing
-      // on /profile, unchanged.
+      // Every non-Patient role has no Patient profile to land on
+      // (/profile calls /patients/me, which only exists for Patients).
+      // Administrators go to the admin dashboard (ADR-0007); Clinicians and
+      // Provider staff go to the patient-lookup screen (docs/demo-script.md
+      // — they navigate to one Consent-scoped Patient at a time). Only
+      // Patient keeps landing on /profile.
       const me = await api.get<Me>("/auth/me");
-      router.push(me.role === "ADMINISTRATOR" ? "/admin" : "/profile");
+      const destination =
+        me.role === "ADMINISTRATOR"
+          ? "/admin"
+          : me.role === "CLINICIAN" || me.role === "PROVIDER_STAFF"
+            ? "/clinician"
+            : "/profile";
+      router.push(destination);
     } catch (err) {
       setFormError(errorMessage(err));
     } finally {
@@ -120,9 +130,7 @@ export default function LoginPage() {
 
           <p className="text-sm text-muted">
             {t("login.noAccount")}{" "}
-            <Link href="/register" className="font-medium text-accent-text underline">
-              {t("login.registerLink")}
-            </Link>
+            <InlineLink href="/register">{t("login.registerLink")}</InlineLink>
           </p>
         </CardContent>
       </Card>

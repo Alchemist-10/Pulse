@@ -13,7 +13,9 @@ import {
   PrescriptionIcon,
   ProcedureIcon,
 } from "@/components/ui/icons";
-import { Link, useRouter } from "@/i18n/navigation";
+import { InlineLink } from "@/components/ui/InlineLink";
+import { NavLink } from "@/components/ui/NavLink";
+import { useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -100,12 +102,9 @@ export default function ClinicianEntryDetailPage({
 
   return (
     <section className="space-y-6">
-      <Link
-        href={`/patients/${patientId}/records`}
-        className="text-sm font-medium text-accent-text underline"
-      >
+      <NavLink href={`/patients/${patientId}/records`} icon="back">
         {tClinician("detail.back")}
-      </Link>
+      </NavLink>
 
       {state.status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
 
@@ -198,12 +197,9 @@ function EntryDetailView({ entry, patientId }: { entry: EntryDetail; patientId: 
       {entry.supersedesId && (
         <Callout tone="info" iconLabel={t("detail.title")}>
           <span>{t("detail.correctsNotice")}</span>{" "}
-          <Link
-            href={`/patients/${patientId}/records/${entry.supersedesId}`}
-            className="font-medium underline"
-          >
+          <InlineLink href={`/patients/${patientId}/records/${entry.supersedesId}`}>
             {t("detail.viewPrevious")}
-          </Link>
+          </InlineLink>
         </Callout>
       )}
 

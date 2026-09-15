@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { CheckCircleIcon, ClockIcon, XCircleIcon } from "@/components/ui/icons";
-import { Link, useRouter } from "@/i18n/navigation";
+import { NavLink } from "@/components/ui/NavLink";
+import { useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Consent, ConsentStatus, RevocationRequest } from "@/lib/consent";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -329,12 +330,9 @@ export default function ConsentListPage() {
           <h1 className="text-2xl font-bold text-foreground">{t("list.title")}</h1>
           <p className="text-sm text-muted">{t("list.subtitle")}</p>
         </div>
-        <Link
-          href="/consent/new"
-          className="shrink-0 text-sm font-medium text-accent-text underline"
-        >
+        <NavLink href="/consent/new" className="shrink-0" icon="forward">
           {t("list.grantCta")}
-        </Link>
+        </NavLink>
       </div>
 
       {revokedNotice && (

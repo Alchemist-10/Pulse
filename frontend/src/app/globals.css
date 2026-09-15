@@ -9,7 +9,13 @@
  */
 
 :root {
-  color-scheme: light dark;
+  /* Light is the default regardless of OS preference (P5 redesign) — dark
+     lives behind [data-theme="dark"] in tokens.css, not prefers-color-scheme. */
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
@@ -19,10 +25,38 @@ body {
   /* Latin face has tnum; keep interface figures aligned in dense tables. */
   font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Grainy paper texture (P5 redesign) — a fixed, viewport-covering noise
+   layer behind all content. SVG feTurbulence, not a shipped PNG, so it costs
+   no network request and scales losslessly. Opacity is intentionally low
+   (mix-blend: overlay reads it as texture, not pattern) and it never
+   intercepts pointer events. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] body::before {
+  opacity: 0.08;
+  mix-blend-mode: soft-light;
+}
+
+#__next,
+body > div:first-child {
+  position: relative;
+  z-index: 1;
 }
 
 /*
- * P4.4 redesign helpers — the two places a raw gradient/shadow composition
+ * P5 redesign helpers — the two places a raw gradient/shadow composition
  * would otherwise leak into components. Tokens only: --gradient-accent comes
  * from tokens.css, text on top is always a solid semantic colour.
  */
@@ -38,24 +72,22 @@ body {
   );
 }
 
-@media (prefers-color-scheme: dark) {
-  .bg-brand-wash {
-    background-image: radial-gradient(
-      48rem 20rem at 50% -20%,
-      rgb(38 136 125 / 0.16) 0%,
-      transparent 70%
-    );
-  }
+:root[data-theme="dark"] .bg-brand-wash {
+  background-image: radial-gradient(
+    48rem 20rem at 50% -20%,
+    rgb(6 95 70 / 0.2) 0%,
+    transparent 70%
+  );
 }
 
-/* Primary button/CTA sheen: the AA-safe accent gradient (teal-9 → teal-10).
+/* Primary button/CTA sheen: the AA-safe accent gradient (emerald-9 → emerald-10).
    Hover darkens via the overlay Button owns, so this stays presentational. */
 .bg-gradient-accent {
   background-image: var(--gradient-accent);
 }
 
-/* Soft teal wash behind cards that sit on plain background (hero feature
-   cards, quick-login panel). Decorative — content on it uses normal tokens. */
+/* Soft emerald wash behind cards that sit on plain background (hero feature
+   cards, quick-login panel). Decorative only — content on it uses normal tokens. */
 .bg-accent-tint {
   background-color: var(--color-accent-soft);
 }
@@ -77,10 +109,8 @@ body {
     radial-gradient(50rem 28rem at -10% 110%, var(--color-accent-soft) 0%, transparent 55%);
 }
 
-@media (prefers-color-scheme: dark) {
-  .auth-wash {
-    background-image:
-      radial-gradient(60rem 30rem at 85% -10%, rgb(38 136 125 / 0.18) 0%, transparent 60%),
-      radial-gradient(50rem 28rem at -10% 110%, rgb(38 136 125 / 0.14) 0%, transparent 55%);
-  }
+:root[data-theme="dark"] .auth-wash {
+  background-image:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(6 95 70 / 0.22) 0%, transparent 60%),
+    radial-gradient(50rem 28rem at -10% 110%, rgb(6 95 70 / 0.16) 0%, transparent 55%);
 }

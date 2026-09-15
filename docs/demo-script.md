@@ -29,28 +29,11 @@ migrations and seeds identity data automatically — no separate seed step.
 - App: `http://localhost`
 - Mailpit inbox (verification emails): `http://localhost:8025`
 
-**Known gap — no seeded Administrator.** `seed/data/identity/users.csv`
-seeds `CLINICIAN`, `PATIENT` and `PROVIDER_STAFF` rows (four of them
-marked `demo_login=1` and shown as quick-login buttons on `/en/login`),
-but no `ADMINISTRATOR` row, and there is no in-app path to become one —
-role assignment at registration only offers Patient/Provider/Clinician,
-and there is no role-change endpoint implemented yet (`architecture.md`
-mentions step-up verification for "administrator role changes" as a
-future requirement, not a built one). To reach `/admin` in the demo, promote
-one seeded user by hand, once, right after first boot:
-
-```bash
-docker compose exec postgres psql -U pulse -d pulse -c \
-  "UPDATE \"user\" SET role = 'ADMINISTRATOR' WHERE email = 'staff000@example.com';"
-```
-
-This trades `staff000@example.com`'s Provider-staff demo-login button for
-Administrator access — pick a seeded account you are not otherwise using
-in Part 1, since it also loses its original role's demo-login button
-matching. (`Pulse@demo1` is still its password; log in through the plain
-email/password form, not the quick-login button, since the button list is
-static and will still say "Provider staff" for it.) Do this once during
-setup, not on stage.
+**Gap closed.** `seed/data/identity/users.csv` now seeds an `ADMINISTRATOR`
+row (`admin0@example.com`, `Pulse@demo1`, `demo_login=1`) alongside
+`CLINICIAN`, `PATIENT` and `PROVIDER_STAFF` — it has its own quick-login
+button ("Administrator") on `/en/login`, no hand-promotion needed. No
+Patient row attached, by construction (ADR-0007).
 
 ## Part 1 — the demo spine (#56)
 
@@ -124,8 +107,8 @@ part if you started from a brand-new signup).
     consent-aware query path as the timeline — there is no stored insight
     table to go stale or leak.*
 
-11. **Admin dashboard.** Switch to the Administrator account set up above.
-    Go to `/en/admin`. Say: *an Administrator reads no clinical data on
+11. **Admin dashboard.** Switch to the **Administrator** quick-login
+    (`admin0@example.com`) on `/en/login`. Go to `/en/admin`. Say: *an Administrator reads no clinical data on
     any screen, ever — this dashboard only ever shows identity fields and
     counts.*
 
@@ -143,9 +126,6 @@ part if you started from a brand-new signup).
 - If Mailpit shows no email after signup, check `docker compose logs
   backend` for an SMTP connection error before assuming the account
   didn't register — registration and email delivery are decoupled.
-- If `/admin` says "Administrator access required" after logging in as
-  the promoted account, the session cookie may predate the SQL update —
-  log out and back in.
 - Locale switching (`/en` ↔ `/hi` ↔ `/ta` ↔ `/ml`) works on every screen
   above; see `docs/locale-review.md` before demonstrating Tamil or
   Malayalam screens, since neither has had a native-speaker review pass.
