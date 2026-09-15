@@ -1,9 +1,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { ClinicalText } from "@/components/ClinicalText";
@@ -17,6 +20,7 @@ import {
 } from "@/components/ui/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
+import type { Me } from "@/lib/auth";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import { ENTRY_TYPES, type EntrySummary, type EntryType, type Page } from "@/lib/records";
@@ -29,6 +33,8 @@ import { ENTRY_TYPES, type EntrySummary, type EntryType, type Page } from "@/lib
 // does not exist: both are a 404 from the same call, rendered by the same
 // `notFound` branch below with no distinguishing text
 // (.claude/rules/clinical-safety.md: a 403 would confirm the record exists).
+// A Clinician additionally gets the break-glass form under that 404: a
+// justified, audited, 60-minute emergency grant that notifies the Patient.
 const ENTRY_ICONS: Record<EntryType, typeof DiagnosisIcon> = {
   DIAGNOSIS: DiagnosisIcon,
   PRESCRIPTION: PrescriptionIcon,
@@ -88,6 +94,14 @@ export default function ClinicianPatientRecordsPage({
   const [typeFilter, setTypeFilter] = useState<EntryType | "">("");
   const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [role, setRole] = useState<Me["role"] | null>(null);
+
+  useEffect(() => {
+    api
+      .get<Me>("/auth/me")
+      .then((me) => setRole(me.role))
+      .catch(() => setRole(null));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -185,6 +199,10 @@ export default function ClinicianPatientRecordsPage({
         </Callout>
       )}
 
+      {state.status === "notFound" && role === "CLINICIAN" && (
+        <BreakGlassForm patientId={patientId} onGranted={() => setRetryToken((n) => n + 1)} />
+      )}
+
       {state.status === "error" && (
         <div className="space-y-3">
           <Callout tone="error" iconLabel={t("error.title")}>
@@ -230,6 +248,66 @@ export default function ClinicianPatientRecordsPage({
         </div>
       )}
     </section>
+  );
+}
+
+function BreakGlassForm({ patientId, onGranted }: { patientId: string; onGranted: () => void }) {
+  const t = useTranslations("clinicianRecords.breakGlass");
+  const errorMessage = useApiErrorMessage();
+  const [justification, setJustification] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    if (!justification.trim()) {
+      setError(t("required"));
+      return;
+    }
+    setSubmitting(true);
+    api
+      .post(`/patients/${patientId}/break-glass`, { justification: justification.trim() })
+      .then(onGranted)
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setSubmitting(false));
+  }
+
+  return (
+    <Card className="max-w-lg border-critical-border">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <AlertTriangleIcon className="size-5 text-critical" />
+          {t("title")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted">{t("body")}</p>
+        {error && (
+          <Callout tone="error" iconLabel={t("title")}>
+            {error}
+          </Callout>
+        )}
+        <form onSubmit={onSubmit} noValidate className="space-y-4">
+          <FormField label={t("justification")}>
+            {({ invalid, ...props }) => (
+              <textarea
+                {...props}
+                aria-invalid={invalid || undefined}
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                className="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+              />
+            )}
+          </FormField>
+          <Button type="submit" variant="secondary" loading={submitting}>
+            {t("submit")}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
