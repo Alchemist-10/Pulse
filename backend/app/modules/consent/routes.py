@@ -29,6 +29,7 @@ from app.modules.consent.dependencies import get_notification_provider
 from app.modules.consent.schemas import (
     BreakGlassGrant,
     BreakGlassRequest,
+    ClinicianLookup,
     Consent,
     ConsentCreate,
     RevocationRequest,
@@ -39,6 +40,18 @@ router = APIRouter(prefix="/api/v1", tags=["consent"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[AuthContext, Depends(current_user)]
 NotificationProviderDep = Annotated[NotificationProvider, Depends(get_notification_provider)]
+
+
+@router.get(
+    "/clinicians/lookup",
+    dependencies=[requires(Permission.CONSENT_MANAGE_SELF)],
+)
+async def lookup_clinician(
+    email: Annotated[str, Query(min_length=3, max_length=320)],
+    ctx: CurrentUser,
+    session: SessionDep,
+) -> ClinicianLookup:
+    return await service.lookup_clinician(session, ctx.actor, email)
 
 
 @router.get(

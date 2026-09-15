@@ -78,3 +78,11 @@ class BreakGlassGrant(PulseSchema):
     justification: str
     granted_at: datetime
     expires_at: datetime
+
+
+class ClinicianLookup(PulseSchema):
+    """Exact-email resolution of a Clinician for the grant form — the id a
+    `ConsentCreate.grantee_user_id` needs, and nothing more."""
+
+    user_id: UUID
+    email: str

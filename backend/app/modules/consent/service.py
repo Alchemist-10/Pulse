@@ -39,6 +39,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.notifications import NotificationProvider
 from app.core.actor import Actor
+from app.core.authz import Role
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
 from app.core.pagination import Page
@@ -49,6 +50,7 @@ from app.modules.consent.models import BreakGlassAccess
 from app.modules.consent.models import Consent as ConsentRow
 from app.modules.consent.schemas import (
     BreakGlassGrant,
+    ClinicianLookup,
     Consent,
     ConsentCreate,
     ConsentStatus,
@@ -112,12 +114,25 @@ def _break_glass_to_wire(row: BreakGlassAccess) -> BreakGlassGrant:
     )
 
 
+async def lookup_clinician(session: AsyncSession, actor: Actor, email: str) -> ClinicianLookup:
+    """Resolve an exact email to a Clinician for the grant form. An unknown
+    email and a non-Clinician's email are the same 404, so the lookup never
+    confirms that an address belongs to a Patient."""
+    user = await users_service.get_user_by_email(session, email.strip().lower())
+    if user is None or user.role != Role.CLINICIAN:
+        raise _not_found()
+    return ClinicianLookup(user_id=user.id, email=user.email)
+
+
 async def grant_consent(session: AsyncSession, actor: Actor, payload: ConsentCreate) -> Consent:
     """Step-up gated at the route. `expires_at` must be 1-365 days out;
     Consent + its derived AccessPermission are written in one transaction
     (`repository.create_consent_and_permission`)."""
     own = await users_service.get_own_patient_profile(session, actor)
     if own is None:
+        raise _not_found()
+    grantee = await users_service.get_user(session, payload.grantee_user_id)
+    if grantee is None or grantee.role != Role.CLINICIAN:
         raise _not_found()
     now = datetime.now(UTC)
     if not (now + _MIN_EXPIRY <= payload.expires_at <= now + _MAX_EXPIRY):

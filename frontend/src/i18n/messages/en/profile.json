@@ -4,6 +4,7 @@
   "loading": "Loading your profile…",
   "notFound": "We could not find a patient profile linked to your account.",
   "fields": {
+    "patientId": "Patient ID",
     "fullName": "Full name",
     "dateOfBirth": "Date of birth",
     "sex": "Sex",
@@ -23,5 +24,6 @@
     "consent": "Who has access to my records",
     "audit": "Who accessed my records",
     "analytics": "My health analytics"
-  }
+  },
+  "patientIdHint": "Share this with a clinician so they can open your record once you grant access."
 }

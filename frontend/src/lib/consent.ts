@@ -46,3 +46,8 @@ export interface ConsentCreate {
 export interface RevocationRequest {
   reason?: string | null;
 }
+
+export interface ClinicianLookup {
+  userId: string;
+  email: string;
+}

@@ -110,6 +110,21 @@ async def test_grant_with_expiry_beyond_365_days_is_rejected(
     assert resp.json()["error"]["code"] == "CONSENT_EXPIRY_OUT_OF_RANGE"
 
 
+async def test_grant_to_a_non_clinician_is_404(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await register_and_login(email="consent-other-patient@example.com")
+    other_id = str(
+        await rh.user_id_for_email(app_database_url, "consent-other-patient@example.com")
+    )
+    await register_and_login(email="consent-grant-bad@example.com")
+    await client.post("/api/v1/auth/step-up", json={"password": _PW})
+
+    resp = await client.post("/api/v1/consents", json=_grant_body(other_id))
+    assert resp.status_code == 404
+    assert (await client.get("/api/v1/consents")).json()["items"] == []
+
+
 async def test_grant_with_step_up_creates_a_live_permission(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:

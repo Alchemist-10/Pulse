@@ -102,6 +102,17 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
     }
 
     // --- Consent grant/list/revoke ---
+    if (url.pathname === "/api/v1/clinicians/lookup") {
+      return url.searchParams.get("email") === "fathima@example.com"
+        ? json(200, { userId: CLINICIAN_USER_ID, email: "fathima@example.com" })
+        : json(404, { error: { code: "NOT_FOUND", message: "not found" } });
+    }
+    if (url.pathname === "/api/v1/consents" && req.method() === "POST") {
+      const body = req.postDataJSON() as { granteeUserId: string };
+      if (body.granteeUserId !== CLINICIAN_USER_ID) {
+        return json(422, { error: { code: "VALIDATION_ERROR", message: "bad grantee" } });
+      }
+    }
     if (url.pathname === "/api/v1/consents" && req.method() === "POST") {
       consentStatus = "ACTIVE";
       return json(201, consentFixture("ACTIVE"));
@@ -139,6 +150,8 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
 
   // 1. Signup
   await page.goto("/en/register");
+  // Filling before hydration lets React reset the controlled inputs.
+  await page.waitForLoadState("networkidle");
   await page.getByLabel("Email address").fill("priya@example.com");
   await page.getByLabel("Password").fill("correct horse battery staple");
   await page.getByRole("combobox", { name: "I am registering as" }).click();
@@ -168,10 +181,14 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
 
   // 4. Grant consent to the clinician
   await page.goto("/en/consent/new");
-  await page.getByLabel("Clinician user ID").fill(CLINICIAN_USER_ID);
+  await page.getByLabel("Clinician email").fill("nobody@example.com");
   await page.getByRole("combobox", { name: "Purpose" }).click();
   await page.getByRole("option", { name: "Treatment" }).click();
   await page.locator('input[type="datetime-local"]').fill("2027-01-01T00:00");
+  await page.getByRole("button", { name: "Grant access" }).click();
+  await expect(page.getByText("No clinician is registered with that email.")).toBeVisible();
+
+  await page.getByLabel("Clinician email").fill("fathima@example.com");
   await page.getByRole("button", { name: "Grant access" }).click();
   await expect(page.getByText("Access granted")).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to who has access" })).toBeVisible();

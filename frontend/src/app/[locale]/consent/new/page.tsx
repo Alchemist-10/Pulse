@@ -9,17 +9,24 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { NavLink } from "@/components/ui/NavLink";
 import { Select } from "@/components/ui/Select";
-import { Link } from "@/i18n/navigation";
-import { api } from "@/lib/api";
-import { CONSENT_PURPOSES, type Consent, type ConsentCreate, type ConsentPurpose } from "@/lib/consent";
+import { api, ApiError } from "@/lib/api";
+import {
+  CONSENT_PURPOSES,
+  type ClinicianLookup,
+  type Consent,
+  type ConsentCreate,
+  type ConsentPurpose,
+} from "@/lib/consent";
 import { useApiErrorMessage, useFieldErrors } from "@/lib/errors";
 import { ENTRY_TYPES, type EntryType } from "@/lib/records";
 
 // Scope is an entry-type + date-window picker only — never a per-entry
 // checkbox list (.claude/rules/frontend.md, docs/domain-model.md). Leaving
 // every entry type unchecked grants all of them (`entryTypes: null` on the
-// wire), matching the backend's "no filter" meaning.
+// wire), matching the backend's "no filter" meaning. The grantee is entered
+// by email and resolved to a user id via `/clinicians/lookup` on submit.
 export default function GrantConsentPage() {
   const t = useTranslations("consent");
   const tTimeline = useTranslations("timeline");
@@ -28,7 +35,7 @@ export default function GrantConsentPage() {
   const formId = useId();
   const f = t.raw("new.fields") as Record<string, string>;
 
-  const [granteeUserId, setGranteeUserId] = useState("");
+  const [granteeEmail, setGranteeEmail] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<Set<EntryType>>(new Set());
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -55,7 +62,7 @@ export default function GrantConsentPage() {
     setFormError(null);
     setErrors({});
 
-    if (!granteeUserId || !purpose || !expiresAt) {
+    if (!granteeEmail.trim() || !purpose || !expiresAt) {
       setFormError(t("new.validation.requiredFields"));
       return;
     }
@@ -63,6 +70,21 @@ export default function GrantConsentPage() {
     const parsedExpiresAt = new Date(expiresAt);
     if (Number.isNaN(parsedExpiresAt.getTime())) {
       setFormError(t("new.validation.requiredFields"));
+      return;
+    }
+
+    setSubmitting(true);
+    let granteeUserId: string;
+    try {
+      const params = new URLSearchParams({ email: granteeEmail.trim() });
+      granteeUserId = (await api.get<ClinicianLookup>(`/clinicians/lookup?${params}`)).userId;
+    } catch (err) {
+      setFormError(
+        err instanceof ApiError && err.status === 404
+          ? t("new.validation.clinicianNotFound")
+          : errorMessage(err),
+      );
+      setSubmitting(false);
       return;
     }
 
@@ -76,7 +98,6 @@ export default function GrantConsentPage() {
       expiresAt: parsedExpiresAt.toISOString(),
     };
 
-    setSubmitting(true);
     try {
       const consent = await api.post<Consent>("/consents", payload);
       setGranted(consent);
@@ -95,9 +116,9 @@ export default function GrantConsentPage() {
         <Callout tone="success" iconLabel={t("new.success.title")}>
           {t("new.success.body")}
         </Callout>
-        <Link href="/consent" className="text-sm font-medium text-accent-text underline">
+        <NavLink href="/consent" icon="forward">
           {t("new.success.viewConsents")}
-        </Link>
+        </NavLink>
       </section>
     );
   }
@@ -116,12 +137,14 @@ export default function GrantConsentPage() {
       )}
 
       <form onSubmit={onSubmit} noValidate className="space-y-4">
-        <FormField label={f.granteeUserId} error={errors.granteeUserId}>
+        <FormField label={f.granteeEmail} error={errors.granteeUserId}>
           {(props) => (
             <Input
               {...props}
-              value={granteeUserId}
-              onChange={(e) => setGranteeUserId(e.target.value)}
+              type="email"
+              autoComplete="off"
+              value={granteeEmail}
+              onChange={(e) => setGranteeEmail(e.target.value)}
             />
           )}
         </FormField>
@@ -199,9 +222,9 @@ export default function GrantConsentPage() {
         </Button>
       </form>
 
-      <Link href="/consent" className="block text-sm font-medium text-accent-text underline">
+      <NavLink href="/consent" icon="back">
         {t("new.back")}
-      </Link>
+      </NavLink>
     </section>
   );
 }

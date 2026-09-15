@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Callout } from "@/components/ui/Callout";
-import { Link, useRouter } from "@/i18n/navigation";
+import { NavLink } from "@/components/ui/NavLink";
+import { useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -93,6 +94,7 @@ export default function ProfilePage() {
   const show = (value: string | null): string => value?.trim() || EMPTY;
 
   const rows: Array<[string, string]> = [
+    [t("fields.patientId"), profile.id],
     [t("fields.fullName"), show(profile.fullName)],
     [t("fields.dateOfBirth"), formatDate(profile.dateOfBirth) || EMPTY],
     [t("fields.sex"), show(profile.sex)],
@@ -124,17 +126,18 @@ export default function ProfilePage() {
           </div>
         ))}
       </dl>
+      <p className="text-xs text-muted">{t("patientIdHint")}</p>
 
       <div className="flex flex-wrap gap-4">
-        <Link href="/consent" className="text-sm font-medium text-accent-text underline">
+        <NavLink href="/consent" variant="soft" icon="forward">
           {t("links.consent")}
-        </Link>
-        <Link href="/audit" className="text-sm font-medium text-accent-text underline">
+        </NavLink>
+        <NavLink href="/audit" variant="soft" icon="forward">
           {t("links.audit")}
-        </Link>
-        <Link href="/analytics" className="text-sm font-medium text-accent-text underline">
+        </NavLink>
+        <NavLink href="/analytics" variant="soft" icon="forward">
           {t("links.analytics")}
-        </Link>
+        </NavLink>
       </div>
     </section>
   );
