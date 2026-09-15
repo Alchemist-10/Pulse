@@ -20,3 +20,67 @@ body {
   font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
 }
+
+/*
+ * P4.4 redesign helpers — the two places a raw gradient/shadow composition
+ * would otherwise leak into components. Tokens only: --gradient-accent comes
+ * from tokens.css, text on top is always a solid semantic colour.
+ */
+
+/* Soft ambient tint behind the home hero band and quick-login panel.
+   Decorative — content on it uses normal tokens; AA is computed against
+   --color-accent-soft, not the vivid accent. */
+.bg-brand-wash {
+  background-image: radial-gradient(
+    48rem 20rem at 50% -20%,
+    var(--color-accent-soft) 0%,
+    transparent 70%
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-brand-wash {
+    background-image: radial-gradient(
+      48rem 20rem at 50% -20%,
+      rgb(38 136 125 / 0.16) 0%,
+      transparent 70%
+    );
+  }
+}
+
+/* Primary button/CTA sheen: the AA-safe accent gradient (teal-9 → teal-10).
+   Hover darkens via the overlay Button owns, so this stays presentational. */
+.bg-gradient-accent {
+  background-image: var(--gradient-accent);
+}
+
+/* Soft teal wash behind cards that sit on plain background (hero feature
+   cards, quick-login panel). Decorative — content on it uses normal tokens. */
+.bg-accent-tint {
+  background-color: var(--color-accent-soft);
+}
+
+/* One elevation language: Card owns shadow-card via this shared class. */
+.elevated-card {
+  box-shadow: var(--shadow-card);
+}
+
+.elevated-card-hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Full-viewport ambient gradient behind the auth screens. Decorative only —
+   the auth forms themselves stay on Card surfaces with solid token text. */
+.auth-wash {
+  background-image:
+    radial-gradient(60rem 30rem at 85% -10%, var(--color-accent-soft) 0%, transparent 60%),
+    radial-gradient(50rem 28rem at -10% 110%, var(--color-accent-soft) 0%, transparent 55%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .auth-wash {
+    background-image:
+      radial-gradient(60rem 30rem at 85% -10%, rgb(38 136 125 / 0.18) 0%, transparent 60%),
+      radial-gradient(50rem 28rem at -10% 110%, rgb(38 136 125 / 0.14) 0%, transparent 55%);
+  }
+}

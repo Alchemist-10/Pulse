@@ -1,13 +1,31 @@
 {
   "home": {
     "title": "Pulse",
-    "description": "A lifelong electronic health record.",
+    "badge": "Your records. Your consent.",
+    "description": "A lifelong electronic health record. Your history in one place, shared only with the clinicians you choose — and every access recorded.",
     "registerCta": "Create an account",
-    "loginCta": "Sign in"
+    "loginCta": "Sign in",
+    "features": {
+      "label": "What Pulse does",
+      "history": {
+        "title": "A history that travels",
+        "body": "Diagnoses, prescriptions, lab reports and procedures — one timeline, in the order you lived it, for life."
+      },
+      "consent": {
+        "title": "Consent you control",
+        "body": "Clinicians read your history only with your explicit consent — scoped, time-boxed, and revoked in one click."
+      },
+      "audit": {
+        "title": "Every access recorded",
+        "body": "See exactly who viewed your records and when. The log is append-only — even we cannot rewrite it."
+      }
+    }
   },
   "app": {
     "name": "Pulse",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "tagline": "a lifelong health record",
+    "confidentialityNote": "Record access is consent-gated and audit-logged."
   },
   "locale": {
     "label": "Language",

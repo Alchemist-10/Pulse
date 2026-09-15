@@ -31,7 +31,7 @@ function VerifyPending() {
   }
 
   return (
-    <section className="mx-auto max-w-sm space-y-6">
+    <section className="auth-wash mx-auto max-w-sm space-y-6 rounded-3xl p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-foreground">
         {t("verifyPending.title")}
       </h1>

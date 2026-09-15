@@ -14,17 +14,18 @@ import { useApiErrorMessage } from "@/lib/errors";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Seeded dev accounts (seed/scripts/build.py `_mark_demo_logins` /
-// `build_providers`, DEV_PASSWORD in seed/scripts/common.py). Real rows from
-// the committed seed dataset — never invented — so the buttons below only
-// ever fill the form; the actual login still goes through normal validation
-// and `/auth/login`.
+// Seeded dev accounts (seed/scripts/build.py `_mark_demo_logins`,
+// `build_providers` and `build_administrator`, DEV_PASSWORD in
+// seed/scripts/common.py). Real rows from the committed seed dataset — never
+// invented — so the buttons below only ever fill the form; the actual login
+// still goes through normal validation and `/auth/login`.
 const DEMO_PASSWORD = "Pulse@demo1";
 const DEMO_ACCOUNTS = [
   { role: "Patient (EN)", email: "demo.patient.en@example.com" },
   { role: "Patient (HI)", email: "demo.patient.hi@example.com" },
   { role: "Provider staff", email: "staff000@example.com" },
   { role: "Clinician", email: "clinician0@example.com" },
+  { role: "Administrator", email: "admin0@example.com" },
 ] as const;
 
 export default function LoginPage() {
@@ -73,7 +74,7 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="mx-auto max-w-sm space-y-6">
+    <section className="auth-wash mx-auto max-w-sm space-y-6 rounded-3xl p-4 sm:p-6">
       <div className="space-y-1 text-center">
         <h1 className="text-2xl font-bold text-foreground">{t("login.title")}</h1>
       </div>
@@ -145,7 +146,7 @@ export default function LoginPage() {
             <Button
               key={account.email}
               type="button"
-              variant="secondary"
+              variant={account.role === "Administrator" ? "soft" : "secondary"}
               className="min-h-9 flex-col items-start gap-0 py-1.5 text-left"
               onClick={() => fillDemo(account)}
             >

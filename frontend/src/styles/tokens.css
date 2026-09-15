@@ -49,6 +49,10 @@
   --teal-10: #115e59;
   --teal-11: #134e4a;
   --teal-12: #042f2e;
+  /* Brand gradient stops (P4.4 redesign): accent-to-accent-soft is the
+     hero/login wash and the primary button's sheen. Decorative only — text
+     sitting on a gradient still uses solid tokens (AA is computed per stop). */
+  --teal-glow: #2ae3c8;
 
   /* Semantic hues — only the steps the design table calls for */
   --red-3: #feebec;
@@ -74,8 +78,10 @@
   --white: #ffffff;
 
   /* shadcn-style radius scale. One dial — bump this, everything rounds
-     together (Button, Input, Card, Select popover, badges). */
-  --radius: 0.65rem;
+     together (Button, Input, Card, Select popover, badges). Bumped one notch
+     in the P4.4 redesign: modern SaaS surfaces read softer, and cards are
+     chrome here rather than dense data tables (tables keep rounded-md). */
+  --radius: 0.75rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -102,9 +108,11 @@
        tinted backgrounds *do* swap, same as the Sand scale above. */
     --teal-1: #0d1514;
     --teal-2: #111c1b;
+    --teal-3: #14332f;
     --teal-7: #26887d;
     --teal-10: #14b8a6;
     --teal-11: #5eead4;
+    --teal-glow: #14b8a6;
 
     --red-3: #3b1219;
     --red-7: #8c333a;
@@ -163,6 +171,28 @@
   --color-accent-text: var(--teal-11);
   --color-accent-subtle: var(--teal-2);
   --color-focus-ring: var(--teal-7);
+  /* Redesign additions: the soft wash (cards-on-hero, ghost hover) and the
+     brand gradient. --color-accent-soft stays legible for accent-coloured
+     TEXT in both themes (teal-3 light / teal-7+ dark, same as focus-ring). */
+  --color-accent-soft: var(--teal-3);
+  --color-accent-glow: var(--teal-glow);
+  /* A gradient is an image, not a colour, so it lives outside the --color
+     namespace — components reach it with [background-image:var(--gradient-accent)].
+     Stops are both AA-passing under white text (teal-9 5.4:1, teal-10 6.4:1),
+     so text ON the gradient never drops below the bar — the brighter --teal-glow
+     is decorative-only and never sits under text. */
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    var(--color-accent-hover) 100%
+  );
+
+  /* Elevation — one soft shadow language for Card/headers. Two hard-coded
+     stop-values (black at 4%/8%) rather than token swaps: elevation is the
+     same physical idea in both themes and neither value is a colour a
+     component would ever need to reference directly. */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px -4px rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.05), 0 10px 28px -8px rgb(0 0 0 / 0.1);
 
   /* Semantic states — each also carries an icon or label in the component */
   --color-critical: var(--red-11);
@@ -170,6 +200,7 @@
   --color-critical-border: var(--red-7);
   --color-consent-active: var(--green-12);
   --color-consent-active-surface: var(--green-3);
+  --color-success: var(--green-11);
   --color-consent-revoked: var(--red-11);
   --color-consent-expired: var(--amber-12);
   --color-consent-expired-surface: var(--amber-3);
