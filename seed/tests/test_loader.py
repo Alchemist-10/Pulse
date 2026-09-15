@@ -120,6 +120,45 @@ async def test_at_least_one_unclaimed_patient(_migrated_db: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_seeded_administrator_exists_with_demo_login(_migrated_db: str) -> None:
+    """One ADMINISTRATOR row, demo-login enabled, with no Patient — the
+    demo used to promote a Provider-staff row by hand because the dataset
+    shipped none (demo-script.md's 'known gap'). Admin screens read
+    identity data and counts only (ADR-0007), so the seeded admin carries
+    no patient row by construction."""
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine(_migrated_db)
+    try:
+        async with engine.connect() as conn:
+            row = (
+                await conn.execute(  # type: ignore[attr-defined]
+                    text(
+                        "SELECT email, email_verified_at "
+                        "FROM \"user\" WHERE role = 'ADMINISTRATOR'"
+                    )
+                )
+            ).fetchall()
+            unclaimed_admins = (
+                await conn.execute(  # type: ignore[attr-defined]
+                    text(
+                        "SELECT count(*) FROM patient p "
+                        "JOIN \"user\" u ON u.id = p.user_id "
+                        "WHERE u.role = 'ADMINISTRATOR'"
+                    )
+                )
+            ).scalar_one()
+    finally:
+        await engine.dispose()
+
+    assert len(row) == 1
+    assert row[0][0] == "admin0@example.com"
+    assert row[0][1] is not None  # demo_login => verified at load time
+    assert unclaimed_admins == 0
+
+
+@pytest.mark.asyncio
 async def test_second_run_is_a_noop(_migrated_db: str) -> None:
     from app.db.seed_loader import run_seed
 

@@ -126,6 +126,39 @@ async def get_own_patient_profile(
     return _to_profile(patient)
 
 
+async def get_patient_profile_for_actor(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> PatientProfile | None:
+    """One Patient's identity profile, resolved through the same access
+    rules as the clinical read.
+
+    Identity fields only — no clinical content — but a bare `patient_id`
+    is still a capability (`.claude/errors.md`, 2026-09-12), so *who* may
+    resolve one is decided by `records.access.resolve_patient_access`, not
+    by this docstring: the owner sees their row, Provider Staff see rows
+    they filed against, a Clinician only with a live Consent or active
+    break-glass, and an Administrator gets None (ADR-0007) — surfacing to
+    the route as a 404, never a 403 (clinical-safety.md).
+
+    `records.service` (not `records.access`) is imported lazily here —
+    same pattern as `merge_patients` below: it already imports
+    `users.service` at module level, so a module-level import of anything
+    records-side risks a cycle at interpreter start-up. `access` itself is
+    records-internal (the cross-module lint allows only `service`,
+    `schemas` and `dependencies` to cross), so the resolution is reached
+    through `records.service`'s own gate helper.
+    """
+    from app.modules.records import service as records_service
+
+    resolved = await records_service.resolve_patient_access(session, actor, patient_id)
+    if not resolved.has_any_access:
+        return None
+    patient = await repository.get_patient_by_id(session, patient_id)
+    if patient is None:
+        return None
+    return _to_profile(patient)
+
+
 async def set_locale_preference(
     session: AsyncSession, actor: Actor, locale: str
 ) -> None:

@@ -54,6 +54,12 @@ from app.modules.records.schemas import (
 )
 from app.modules.users import service as users_service
 
+# Re-exported so other modules resolve patient access through the records
+# module's own seam (the cross-module lint allows only `service`, `schemas`
+# and `dependencies` to cross) — the same lookup `_authorize_entry_access`
+# uses.
+resolve_patient_access = access.resolve_patient_access
+
 # 25 MiB — larger than any scanned report; the Caddy body limit (P2.11)
 # is the outer guard, this is the app-level one.
 _MAX_UPLOAD_BYTES = 25 * 1024 * 1024
