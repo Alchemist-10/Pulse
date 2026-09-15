@@ -45,6 +45,7 @@ from app.modules.records.models import (
 from app.modules.records.schemas import (
     DocumentCreate,
     EntryCreate,
+    LabTest,
     LabTrendPoint,
     MedicationSummary,
     MonthlyVisitCount,
@@ -90,10 +91,14 @@ async def live_permissions_for(
         "AND expires_at > now()"
     )
     rows = (
-        await session.execute(
-            stmt, {"patient_id": patient_id, "grantee_user_id": grantee_user_id}
+        (
+            await session.execute(
+                stmt, {"patient_id": patient_id, "grantee_user_id": grantee_user_id}
+            )
         )
-    ).mappings().all()
+        .mappings()
+        .all()
+    )
     return [
         LivePermission(
             id=row["id"],
@@ -152,20 +157,16 @@ def _permission_condition(permission: LivePermission, patient_id: UUID) -> Any:
         parts.append(MedicalEntry.entry_type.in_(permission.entry_types))
     if permission.from_date is not None:
         parts.append(
-            MedicalEntry.occurred_at
-            >= datetime.combine(permission.from_date, time.min, tzinfo=UTC)
+            MedicalEntry.occurred_at >= datetime.combine(permission.from_date, time.min, tzinfo=UTC)
         )
     if permission.to_date is not None:
         parts.append(
-            MedicalEntry.occurred_at
-            <= datetime.combine(permission.to_date, time.max, tzinfo=UTC)
+            MedicalEntry.occurred_at <= datetime.combine(permission.to_date, time.max, tzinfo=UTC)
         )
     return and_(*parts)
 
 
-async def accessible_entries(
-    session: AsyncSession, actor: Actor, patient_id: UUID
-) -> Select[Any]:
+async def accessible_entries(session: AsyncSession, actor: Actor, patient_id: UUID) -> Select[Any]:
     """The subset of a Patient's Medical Entries `actor` may read.
 
     Composable filter, not a result set — each rule below is an `or_()`
@@ -257,9 +258,7 @@ async def list_timeline(
     return rows, next_cursor
 
 
-async def get_entry(
-    session: AsyncSession, actor: Actor, entry_id: UUID
-) -> MedicalEntry | None:
+async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> MedicalEntry | None:
     """One entry by id, subtype loaded, reachable even when superseded,
     gated by `accessible_entries` — the same rules the timeline applies.
 
@@ -301,18 +300,14 @@ async def get_entry_unfiltered(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def get_superseding_original_id(
-    session: AsyncSession, entry_id: UUID
-) -> UUID | None:
+async def get_superseding_original_id(session: AsyncSession, entry_id: UUID) -> UUID | None:
     """The id of the Entry that `entry_id` supersedes, if any (reverse of
     `superseded_by_id`). Non-clinical, no actor needed."""
     stmt = select(MedicalEntry.id).where(MedicalEntry.superseded_by_id == entry_id)
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def list_documents(
-    session: AsyncSession, entry_id: UUID
-) -> list[MedicalDocument]:
+async def list_documents(session: AsyncSession, entry_id: UUID) -> list[MedicalDocument]:
     """Document metadata for one Entry. Access is gated on the Entry by the
     caller; this is a plain child fetch."""
     stmt = select(MedicalDocument).where(MedicalDocument.entry_id == entry_id)
@@ -394,10 +389,7 @@ async def supersede_entry(
     replacement = await insert_entry(session, actor, patient_id, replacement_payload)
     result = await session.execute(
         update(MedicalEntry)
-        .where(
-            (MedicalEntry.id == original_id)
-            & MedicalEntry.superseded_by_id.is_(None)
-        )
+        .where((MedicalEntry.id == original_id) & MedicalEntry.superseded_by_id.is_(None))
         .values(superseded_by_id=replacement.id)
         .execution_options(synchronize_session=False)
     )
@@ -521,6 +513,26 @@ async def lab_trend(
     ]
 
 
+async def lab_tests(session: AsyncSession, actor: Actor, patient_id: UUID) -> list[LabTest]:
+    """Each distinct (code_system, code) among the actor-visible lab
+    reports, once, ordered by name — the lab-trend picker's options. Same
+    raw-table join as `lab_trend`, for the same reason."""
+    lab_report = LabReport.__table__
+    display_name = func.max(lab_report.c.display_name)
+    stmt = (
+        (await accessible_entries(session, actor, patient_id))
+        .with_only_columns(
+            lab_report.c.code_system, lab_report.c.code, display_name, maintain_column_froms=True
+        )
+        .join(lab_report, lab_report.c.id == MedicalEntry.id)
+        .where(MedicalEntry.entry_type == EntryType.LAB_REPORT)
+        .group_by(lab_report.c.code_system, lab_report.c.code)
+        .order_by(display_name, lab_report.c.code)
+    )
+    rows = (await session.execute(stmt)).all()
+    return [LabTest(code_system=r[0], code=r[1], display_name=r[2]) for r in rows]
+
+
 async def visit_frequency_by_month(
     session: AsyncSession, actor: Actor, patient_id: UUID
 ) -> list[MonthlyVisitCount]:
@@ -596,9 +608,7 @@ async def provider_entry_counts(
         .order_by(func.count(sub.c.id).desc())
     )
     rows = (await session.execute(stmt)).all()
-    return [
-        ProviderEntryCount(provider_id=row.source_provider_id, count=row.count) for row in rows
-    ]
+    return [ProviderEntryCount(provider_id=row.source_provider_id, count=row.count) for row in rows]
 
 
 async def future_dated_entry_count(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
@@ -625,8 +635,8 @@ async def count_entries_for_patient(session: AsyncSession, actor: Actor, patient
     caller (`records.service.entry_count_for_patient`) is what enforces
     Administrator-only before this ever runs; this is not a
     general-purpose count and must never be reused with a broader actor."""
-    stmt = select(func.count()).select_from(MedicalEntry).where(
-        MedicalEntry.patient_id == patient_id
+    stmt = (
+        select(func.count()).select_from(MedicalEntry).where(MedicalEntry.patient_id == patient_id)
     )
     result = await session.execute(stmt)
     return result.scalar_one()

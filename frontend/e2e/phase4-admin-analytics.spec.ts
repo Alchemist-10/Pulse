@@ -6,6 +6,7 @@ import { expect, test } from "@playwright/test";
 const PATIENT_ID = "66666666-6666-6666-6666-666666666666";
 
 test("analytics screen renders visit frequency and data-quality flags", async ({ page }) => {
+  const trendCodes: string[] = [];
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const json = (status: number, body: unknown) =>
@@ -26,8 +27,26 @@ test("analytics screen renders visit frequency and data-quality flags", async ({
     if (url.pathname === `/api/v1/patients/${PATIENT_ID}/analytics/data-quality-flags`) {
       return json(200, ["MISSING_CONTACT"]);
     }
-    if (url.pathname === `/api/v1/patients/${PATIENT_ID}/entries`) {
-      return json(200, { items: [], nextCursor: null });
+    if (url.pathname === `/api/v1/patients/${PATIENT_ID}/analytics/lab-tests`) {
+      return json(200, [
+        { codeSystem: "http://loinc.org", code: "2345-7", displayName: "Glucose" },
+        { codeSystem: "http://loinc.org", code: "789-8", displayName: "RBC" },
+      ]);
+    }
+    if (url.pathname === `/api/v1/patients/${PATIENT_ID}/analytics/lab-trend`) {
+      const code = url.searchParams.get("code") ?? "";
+      trendCodes.push(code);
+      return json(200, [
+        {
+          occurredAt: "2026-07-01T00:00:00Z",
+          valueNumeric: code === "789-8" ? 4.8 : 95,
+          valueText: null,
+          unit: null,
+          referenceLow: null,
+          referenceHigh: null,
+          isAbnormal: false,
+        },
+      ]);
     }
     return json(404, { error: { code: "NOT_FOUND", message: "not found" } });
   });
@@ -35,6 +54,14 @@ test("analytics screen renders visit frequency and data-quality flags", async ({
   await page.goto("/en/analytics");
   await expect(page.getByRole("heading", { name: "Your health analytics" })).toBeVisible();
   await expect(page.getByText("No contact phone number is on file for you.")).toBeVisible();
+
+  // Lab trend defaults to the first test and follows the picker.
+  const picker = page.getByRole("combobox", { name: "Lab test" });
+  await expect(picker).toContainText("Glucose");
+  await expect.poll(() => trendCodes).toContain("2345-7");
+  await picker.click();
+  await page.getByRole("option", { name: "RBC" }).click();
+  await expect.poll(() => trendCodes).toContain("789-8");
 });
 
 test("admin dashboard denies a non-Administrator and admits one", async ({ page }) => {

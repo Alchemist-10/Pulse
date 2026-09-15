@@ -26,6 +26,7 @@ from app.modules.analytics import service
 from app.modules.analytics.schemas import DataQualityFlag
 from app.modules.auth.dependencies import AuthContext, current_user, requires
 from app.modules.records.schemas import (
+    LabTest,
     LabTrendPoint,
     MedicationSummary,
     MonthlyVisitCount,
@@ -36,6 +37,11 @@ router = APIRouter(prefix="/api/v1/patients/{patient_id}/analytics", tags=["anal
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[AuthContext, Depends(current_user)]
+
+
+@router.get("/lab-tests", dependencies=[requires(Permission.RECORDS_READ)])
+async def get_lab_tests(patient_id: UUID, ctx: CurrentUser, session: SessionDep) -> list[LabTest]:
+    return await service.lab_tests(session, ctx.actor, patient_id)
 
 
 @router.get("/lab-trend", dependencies=[requires(Permission.RECORDS_READ)])

@@ -26,6 +26,7 @@ from app.core.exceptions import PulseError
 from app.modules.analytics.schemas import DataQualityFlag
 from app.modules.records import service as records_service
 from app.modules.records.schemas import (
+    LabTest,
     LabTrendPoint,
     MedicationSummary,
     MonthlyVisitCount,
@@ -77,6 +78,10 @@ async def lab_trend(
         )
         for p in points
     ]
+
+
+async def lab_tests(session: AsyncSession, actor: Actor, patient_id: UUID) -> list[LabTest]:
+    return await records_service.lab_tests(session, actor, patient_id)
 
 
 async def visit_frequency_by_month(

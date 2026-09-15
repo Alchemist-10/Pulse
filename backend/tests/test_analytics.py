@@ -80,6 +80,7 @@ async def test_unrelated_actor_gets_empty_series_everywhere(db_session: AsyncSes
         )
         == []
     )
+    assert await analytics_service.lab_tests(db_session, actor, patient.id) == []
     assert await analytics_service.visit_frequency_by_month(db_session, actor, patient.id) == []
     assert await analytics_service.active_medications(db_session, actor, patient.id) == []
     assert await analytics_service.provider_entry_counts(db_session, actor, patient.id) == []
@@ -176,6 +177,32 @@ async def test_lab_trend_returns_only_matching_code_in_order(db_session: AsyncSe
 
     assert [p.value_numeric for p in points] == [95, 110]
     assert points[0].occurred_at < points[1].occurred_at
+
+
+async def test_lab_tests_lists_each_code_once_by_name(db_session: AsyncSession) -> None:
+    owner = await _user(db_session)
+    patient = await _patient(db_session, owner)
+    for day, code, name in [
+        (1, "2345-7", "Glucose"),
+        (2, "2345-7", "Glucose"),
+        (3, "789-8", "RBC"),
+    ]:
+        db_session.add(
+            LabReport(
+                patient_id=patient.id,
+                occurred_at=datetime(2025, 1, day, tzinfo=UTC),
+                code_system="LOINC",
+                code=code,
+                display_name=name,
+                value_numeric=1,
+            )
+        )
+    await db_session.commit()
+
+    actor = Actor(user_id=owner.id, role=Role.PATIENT)
+    tests = await analytics_service.lab_tests(db_session, actor, patient.id)
+
+    assert [(t.code, t.display_name) for t in tests] == [("2345-7", "Glucose"), ("789-8", "RBC")]
 
 
 async def test_visit_frequency_groups_by_month_and_excludes_superseded(

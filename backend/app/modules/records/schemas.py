@@ -104,6 +104,15 @@ class DocumentCreate(PulseSchema):
     checksum_sha256: str
 
 
+class LabTest(PulseSchema):
+    """One distinct lab test on a Patient's record — the (code_system,
+    code) pair a lab-trend query needs, plus its display name."""
+
+    code_system: str
+    code: str
+    display_name: str
+
+
 class LabTrendPoint(PulseSchema):
     """One point in a lab/vital-sign trend (P4.2, #53). Vital signs have
     no separate subtype — Synthea observations, vitals included, land as

@@ -32,6 +32,7 @@
   "labTrend": {
     "title": "Recent lab trend",
     "aboveRange": "above reference range",
-    "belowRange": "below reference range"
+    "belowRange": "below reference range",
+    "picker": "Lab test"
   }
 }

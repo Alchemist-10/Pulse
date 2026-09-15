@@ -48,6 +48,7 @@ from app.modules.records.schemas import (
     EntryCreate,
     EntryDetail,
     EntrySummary,
+    LabTest,
     LabTrendPoint,
     MedicationSummary,
     MonthlyVisitCount,
@@ -81,6 +82,7 @@ def _sniff_mime(data: bytes) -> str | None:
             return mime
     return None
 
+
 _REQUIRED_FIELDS: dict[EntryType, tuple[str, ...]] = {
     EntryType.DIAGNOSIS: ("code_system", "code", "display_name"),
     EntryType.PROCEDURE: ("code_system", "code", "display_name"),
@@ -105,9 +107,7 @@ async def _provider_name(session: AsyncSession, provider_id: UUID | None) -> str
     return provider.name if provider is not None else None
 
 
-async def _authorize_entry_access(
-    session: AsyncSession, actor: Actor, patient_id: UUID
-) -> None:
+async def _authorize_entry_access(session: AsyncSession, actor: Actor, patient_id: UUID) -> None:
     """P3.3/P3.4 (#39, #40) access — rules 1–2 via `access.resolve_patient_access`.
 
     This is the identity gate ("does `actor` have any relationship to this
@@ -127,9 +127,7 @@ async def _authorize_entry_access(
 
 def _validate_payload(payload: EntryCreate) -> None:
     missing = [
-        field
-        for field in _REQUIRED_FIELDS[payload.entry_type]
-        if not getattr(payload, field, None)
+        field for field in _REQUIRED_FIELDS[payload.entry_type] if not getattr(payload, field, None)
     ]
     if missing:
         raise PulseError(
@@ -192,9 +190,7 @@ async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> Entr
         outcome=AuditOutcome.SUCCESS,
         metadata=AuditMetadata(entry_type=entry.entry_type.value, provider_name=provider_name),
     )
-    return projections.to_detail(
-        entry, supersedes_id=supersedes_id, documents=documents
-    )
+    return projections.to_detail(entry, supersedes_id=supersedes_id, documents=documents)
 
 
 async def insert_entry(
@@ -207,9 +203,7 @@ async def insert_entry(
         raise _not_found()
     _validate_payload(payload)
     if payload.source_provider_id is None:
-        provider_id = await users_service.get_provider_for_staff(
-            session, actor.user_id
-        )
+        provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
         payload = payload.model_copy(update={"source_provider_id": provider_id})
     entry = await repository.insert_entry(session, actor, patient_id, payload)
     await session.commit()
@@ -236,13 +230,9 @@ async def supersede_entry(
         raise _not_found()
     _validate_payload(payload)
     if payload.source_provider_id is None:
-        provider_id = await users_service.get_provider_for_staff(
-            session, actor.user_id
-        )
+        provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
         payload = payload.model_copy(update={"source_provider_id": provider_id})
-    replacement = await repository.supersede_entry(
-        session, actor, patient_id, original_id, payload
-    )
+    replacement = await repository.supersede_entry(session, actor, patient_id, original_id, payload)
     if replacement is None:
         raise PulseError(
             ErrorCode.ENTRY_ALREADY_SUPERSEDED,
@@ -381,6 +371,10 @@ async def lab_trend(
     return await repository.lab_trend(
         session, actor, patient_id, code_system=code_system, code=code
     )
+
+
+async def lab_tests(session: AsyncSession, actor: Actor, patient_id: UUID) -> list[LabTest]:
+    return await repository.lab_tests(session, actor, patient_id)
 
 
 async def visit_frequency_by_month(

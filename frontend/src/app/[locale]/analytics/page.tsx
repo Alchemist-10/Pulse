@@ -6,11 +6,14 @@ import { BarChart } from "@/components/charts/BarChart";
 import { LineChart } from "@/components/charts/LineChart";
 import { ClinicalText } from "@/components/ClinicalText";
 import { Callout } from "@/components/ui/Callout";
+import { Label } from "@/components/ui/Label";
+import { Select } from "@/components/ui/Select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { AlertTriangleIcon, InfoIcon } from "@/components/ui/icons";
 import { useRouter } from "@/i18n/navigation";
 import type {
   DataQualityFlag,
+  LabTest,
   LabTrendPoint,
   MedicationSummary,
   MonthlyVisitCount,
@@ -19,7 +22,6 @@ import type {
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate, formatNumber } from "@/lib/format";
-import type { EntryDetail, EntrySummary, Page as EntryPage } from "@/lib/records";
 
 // Patient-facing analytics screen (issue #55). Every series here reads
 // clinical data (`RECORDS_READ`) except data-quality flags
@@ -40,31 +42,19 @@ const FLAG_ICON: Record<DataQualityFlag, typeof InfoIcon> = {
   UNCLAIMED_LONG_LIVED: InfoIcon,
 };
 
-// The lab-trend endpoint needs a (codeSystem, code) pair — there is no "pick
-// a test" picker in this pass, so the most recent LAB_REPORT entry's own
-// code is used as a reasonable default trend to show. A patient with no lab
-// reports, or whose most recent one lacks a code, simply gets no trend
-// section: this never fails the rest of the page.
-async function discoverLabTrend(patientId: string): Promise<LabTrendPoint[] | null> {
-  const page = await api.get<EntryPage<EntrySummary>>(
-    `/patients/${patientId}/entries?entryType=LAB_REPORT&limit=1`,
-  );
-  const first = page.items[0];
-  if (!first) return null;
-  const detail = await api.get<EntryDetail>(`/entries/${first.id}`);
-  if (!detail.codeSystem || !detail.code) return null;
-  const params = new URLSearchParams({ codeSystem: detail.codeSystem, code: detail.code });
-  return api.get<LabTrendPoint[]>(
-    `/patients/${patientId}/analytics/lab-trend?${params.toString()}`,
-  );
-}
+// Lab trend: `/analytics/lab-tests` lists the patient's distinct tests for a
+// picker (default: the first); the chosen (codeSystem, code) pair drives
+// `/analytics/lab-trend`. Test names are clinical content, shown as recorded.
+// A patient with no lab reports gets no trend section, and a failed trend
+// load never fails the rest of the page.
+const testKey = (test: LabTest) => `${test.codeSystem}|${test.code}`;
 
 interface Loaded {
   visitFrequency: MonthlyVisitCount[];
   activeMedications: MedicationSummary[];
   providerEntryCounts: ProviderEntryCount[];
   dataQualityFlags: DataQualityFlag[];
-  labTrend: LabTrendPoint[] | null;
+  labTests: LabTest[];
 }
 
 type LoadState =
@@ -80,6 +70,8 @@ export default function AnalyticsPage() {
 
   const [patientId, setPatientId] = useState<string | null>(null);
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [selectedTest, setSelectedTest] = useState("");
+  const [labTrend, setLabTrend] = useState<LabTrendPoint[] | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -116,10 +108,11 @@ export default function AnalyticsPage() {
       api.get<MedicationSummary[]>(`${base}/active-medications`),
       api.get<ProviderEntryCount[]>(`${base}/provider-entry-counts`),
       api.get<DataQualityFlag[]>(`${base}/data-quality-flags`),
-      discoverLabTrend(patientId).catch(() => null),
+      api.get<LabTest[]>(`${base}/lab-tests`).catch(() => [] as LabTest[]),
     ])
-      .then(([visitFrequency, activeMedications, providerEntryCounts, dataQualityFlags, labTrend]) => {
+      .then(([visitFrequency, activeMedications, providerEntryCounts, dataQualityFlags, labTests]) => {
         if (!active) return;
+        setSelectedTest(labTests[0] ? testKey(labTests[0]) : "");
         setState({
           status: "ready",
           data: {
@@ -127,7 +120,7 @@ export default function AnalyticsPage() {
             activeMedications,
             providerEntryCounts,
             dataQualityFlags,
-            labTrend,
+            labTests,
           },
         });
       })
@@ -144,6 +137,24 @@ export default function AnalyticsPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
+
+  useEffect(() => {
+    if (!patientId || !selectedTest) return;
+    let active = true;
+    const [codeSystem, code] = selectedTest.split("|");
+    const params = new URLSearchParams({ codeSystem, code });
+    api
+      .get<LabTrendPoint[]>(`/patients/${patientId}/analytics/lab-trend?${params}`)
+      .then((points) => {
+        if (active) setLabTrend(points);
+      })
+      .catch(() => {
+        if (active) setLabTrend(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [patientId, selectedTest]);
 
   return (
     <section className="space-y-6">
@@ -267,38 +278,57 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          {state.data.labTrend && state.data.labTrend.length > 0 && (
+          {state.data.labTests.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>{t("labTrend.title")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <LineChart
-                  ariaLabel={t("labTrend.title")}
-                  data={state.data.labTrend.map((p) => ({
-                    x: formatDate(p.occurredAt),
-                    value: p.valueNumeric ?? 0,
-                    abnormal: p.isAbnormal ?? false,
-                  }))}
-                />
-                <ul className="space-y-1 text-sm">
-                  {state.data.labTrend
-                    .filter((p) => p.isAbnormal)
-                    .map((p, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-2 rounded-md border border-critical-border bg-critical-surface px-2 py-1 text-critical"
-                      >
-                        <AlertTriangleIcon className="shrink-0" />
-                        <span>
-                          {formatDate(p.occurredAt)} —{" "}
-                          {p.referenceHigh != null && (p.valueNumeric ?? 0) > p.referenceHigh
-                            ? t("labTrend.aboveRange")
-                            : t("labTrend.belowRange")}
-                        </span>
-                      </li>
-                    ))}
-                </ul>
+                <div className="max-w-xs space-y-1.5">
+                  <Label htmlFor="analytics-lab-test">{t("labTrend.picker")}</Label>
+                  <Select
+                    id="analytics-lab-test"
+                    value={selectedTest}
+                    onValueChange={setSelectedTest}
+                    placeholder={t("labTrend.picker")}
+                    options={state.data.labTests.map((test) => ({
+                      value: testKey(test),
+                      label: test.displayName,
+                    }))}
+                  />
+                </div>
+                {labTrend && labTrend.length > 0 ? (
+                  <>
+                    <LineChart
+                      ariaLabel={t("labTrend.title")}
+                      data={labTrend.map((p) => ({
+                        x: formatDate(p.occurredAt),
+                        value: p.valueNumeric ?? 0,
+                        abnormal: p.isAbnormal ?? false,
+                      }))}
+                    />
+                    <ul className="space-y-1 text-sm">
+                      {labTrend
+                        .filter((p) => p.isAbnormal)
+                        .map((p, i) => (
+                          <li
+                            key={i}
+                            className="flex items-center gap-2 rounded-md border border-critical-border bg-critical-surface px-2 py-1 text-critical"
+                          >
+                            <AlertTriangleIcon className="shrink-0" />
+                            <span>
+                              {formatDate(p.occurredAt)} —{" "}
+                              {p.referenceHigh != null && (p.valueNumeric ?? 0) > p.referenceHigh
+                                ? t("labTrend.aboveRange")
+                                : t("labTrend.belowRange")}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted">{t("empty")}</p>
+                )}
               </CardContent>
             </Card>
           )}

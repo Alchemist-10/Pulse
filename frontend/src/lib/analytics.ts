@@ -6,6 +6,14 @@
 // `ProviderEntryCount`) — same precedent as `lib/records.ts`: no
 // OpenAPI-to-TypeScript generation set up yet.
 
+/** One distinct lab test on the record. `displayName` is clinical content,
+ * rendered as recorded. */
+export interface LabTest {
+  codeSystem: string;
+  code: string;
+  displayName: string;
+}
+
 /** One point in a lab/vital-sign trend. `isAbnormal` is set by the backend
  * service against the row's own reference bounds — never recomputed here. */
 export interface LabTrendPoint {
