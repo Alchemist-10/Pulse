@@ -33,6 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.actor import Actor
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
+from app.core.middleware import get_request_id
 from app.core.pagination import Page
 from app.modules.audit import repository
 
@@ -90,7 +91,8 @@ async def emit(
     from `actor.role` at write time (roles change; history must not).
     Commits inline — matching `notifications/service.py`'s inline commits
     after each repository write — so a caller mid-request never has to
-    remember to flush the audit trail itself."""
+    remember to flush the audit trail itself. `request_id` defaults to the
+    one `RequestIdMiddleware` assigned to the current HTTP request."""
     await repository.insert_event(
         session,
         actor_user_id=actor.user_id,
@@ -100,7 +102,7 @@ async def emit(
         resource_id=resource_id,
         patient_id=patient_id,
         outcome=outcome,
-        request_id=request_id,
+        request_id=request_id if request_id is not None else get_request_id(),
         event_metadata=metadata.to_dict() if metadata is not None else {},
     )
     await session.commit()

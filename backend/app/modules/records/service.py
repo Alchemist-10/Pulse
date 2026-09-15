@@ -17,10 +17,9 @@ one `ENTRY_VIEWED`, `get_document` one `DOCUMENT_VIEWED`, via
 `app.modules.audit.service.emit` — never on a denied read, since a denial
 never reaches `accessible_entries` in the first place. `add_document` does
 not emit: it's a write (filing), not a view, and the audit action enum has
-no upload-shaped value for it (`AuditAction`, `audit/models.py`).
-`request_id` is not yet threaded through from the HTTP layer (no
-middleware assigns one), so every `emit()` call here passes it as `None`
-until that lands.
+no upload-shaped value for it (`AuditAction`, `audit/models.py`); it does
+notify the Patient in-app (`RECORD_UPLOADED`). `request_id` is filled by
+`emit()` from `RequestIdMiddleware`'s contextvar.
 """
 
 from __future__ import annotations
@@ -39,6 +38,8 @@ from app.core.exceptions import PulseError
 from app.core.pagination import Page
 from app.modules.audit import service as audit_service
 from app.modules.audit.service import AuditAction, AuditMetadata, AuditOutcome
+from app.modules.notifications import service as notifications_service
+from app.modules.notifications.schemas import NotificationType
 from app.modules.records import access, projections, repository
 from app.modules.records.models import EntryType
 from app.modules.records.schemas import (
@@ -297,7 +298,24 @@ async def add_document(
     )
     doc = await repository.add_document(session, actor, entry_id, meta)
     await session.commit()
+    await _notify_record_uploaded(session, actor, entry.patient_id, entry_id)
     return projections.to_document(doc)
+
+
+async def _notify_record_uploaded(
+    session: AsyncSession, actor: Actor, patient_id: UUID, entry_id: UUID
+) -> None:
+    """In-app `RECORD_UPLOADED` for a registered Patient (`patient.user_id`
+    is nullable). Params carry the entry id only — never the filename or
+    any clinical content (clinical-safety.md)."""
+    patient = await users_service.get_patient(session, patient_id)
+    if patient is not None and patient.user_id is not None:
+        await notifications_service.notify(
+            session,
+            patient.user_id,
+            NotificationType.RECORD_UPLOADED,
+            {"entryId": str(entry_id)},
+        )
 
 
 async def get_document(

@@ -234,3 +234,24 @@ async def test_non_latin1_filename_is_served_not_a_500(
     assert served.content == _PDF
     # RFC 5987 extended form, not a latin-1 `filename="..."` that would 500.
     assert "filename*=UTF-8''" in served.headers["content-disposition"]
+
+
+@pytest.mark.usefixtures("_storage_to_tmp")
+async def test_upload_notifies_the_registered_patient_without_clinical_params(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    pid, entry_id = await _patient_with_entry_authored_by_staff(
+        client, register_and_login, app_database_url
+    )
+    resp = await client.post(
+        f"/api/v1/patients/{pid}/entries/{entry_id}/documents",
+        files={"file": ("report.pdf", _PDF, "application/pdf")},
+    )
+    assert resp.status_code == 201
+
+    await register_and_login(email="doc-patient@example.com")
+    items = (await client.get("/api/v1/notifications")).json()["items"]
+    uploaded = [n for n in items if n["type"] == "RECORD_UPLOADED"]
+    assert len(uploaded) == 1
+    # Identifiers only, never the filename or clinical content (clinical-safety.md).
+    assert "report.pdf" not in uploaded[0]["title"] + uploaded[0]["body"]

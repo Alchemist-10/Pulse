@@ -281,3 +281,34 @@ async def test_get_document_emits_one_document_viewed(
         assert str(doc_viewed[0]["resource_id"]) == str(document_id)
     finally:
         main.app.dependency_overrides.pop(deps.get_storage_provider, None)
+
+
+async def test_audit_row_carries_the_http_request_id(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await register_and_login(email="audit-request-id@example.com")
+    pid = await _patient_id(client)
+    await rh.insert_entry(
+        app_database_url, patient_id=pid, occurred_at=datetime(2025, 1, 1, tzinfo=UTC)
+    )
+
+    resp = await client.get(
+        f"/api/v1/patients/{pid}/entries", headers={"X-Request-Id": "req-audit-42"}
+    )
+    assert resp.status_code == 200
+
+    rows = await ah.fetch_events_for_patient(app_database_url, pid)
+    assert [r["request_id"] for r in rows] == ["req-audit-42"]
+
+
+async def test_oversized_client_request_id_is_replaced_not_a_500(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await register_and_login(email="audit-request-id-long@example.com")
+    pid = await _patient_id(client)
+
+    resp = await client.get(f"/api/v1/patients/{pid}/entries", headers={"X-Request-Id": "x" * 500})
+    assert resp.status_code == 200
+    [row] = await ah.fetch_events_for_patient(app_database_url, pid)
+    assert row["request_id"] == resp.headers["X-Request-Id"]
+    assert len(row["request_id"]) <= 64
