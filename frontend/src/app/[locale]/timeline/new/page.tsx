@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import { NavLink } from "@/components/ui/NavLink";
 import { Select } from "@/components/ui/Select";
-import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useApiErrorMessage, useFieldErrors } from "@/lib/errors";
 import {
@@ -123,9 +123,9 @@ export default function NewEntryPage() {
         <Callout tone="success" iconLabel={t("new.success.title")}>
           {formError ?? t("new.success.body")}
         </Callout>
-        <Link href={`/timeline/${createdId}`} className="text-sm font-medium text-accent-text underline">
+        <NavLink href={`/timeline/${createdId}`} icon="forward">
           {t("new.success.viewEntry")}
-        </Link>
+        </NavLink>
       </section>
     );
   }
@@ -284,9 +284,10 @@ export default function NewEntryPage() {
 
         {entryType === "CLINICAL_NOTE" && (
           <FormField label={f.text} error={errors.text}>
-            {(props) => (
+            {({ invalid, ...props }) => (
               <textarea
                 {...props}
+                aria-invalid={invalid || undefined}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={5}
