@@ -112,9 +112,7 @@ async def test_oversized_upload_is_rejected_end_to_end(
     pid = str((await client.get("/api/v1/patients/me")).json()["id"])
     await register_and_login(email="spine-staff2@example.com", role="PROVIDER_STAFF")
     await rh.seed_provider_staff(app_database_url, user_email="spine-staff2@example.com")
-    entry_id = (
-        await client.post(f"/api/v1/patients/{pid}/entries", json=_LAB_ENTRY)
-    ).json()["id"]
+    entry_id = (await client.post(f"/api/v1/patients/{pid}/entries", json=_LAB_ENTRY)).json()["id"]
 
     huge = b"%PDF-1.4\n" + b"0" * (26 * 1024 * 1024)
     resp = await client.post(

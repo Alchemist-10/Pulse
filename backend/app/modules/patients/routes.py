@@ -57,9 +57,7 @@ async def read_profile_by_id(
     Patient exists (clinical-safety.md); identical shape to the timeline
     endpoint's guard. An Administrator is stopped right here by the guard
     (ADR-0007), and would resolve no access even if they weren't."""
-    profile = await users_service.get_patient_profile_for_actor(
-        session, ctx.actor, patient_id
-    )
+    profile = await users_service.get_patient_profile_for_actor(session, ctx.actor, patient_id)
     if profile is None:
         raise PulseError(
             ErrorCode.NOT_FOUND,

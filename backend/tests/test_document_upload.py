@@ -80,9 +80,7 @@ async def _become_provider_staff(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> str:
     await register_and_login(email="doc-staff@example.com", role="PROVIDER_STAFF")
-    provider_id = await rh.seed_provider_staff(
-        app_database_url, user_email="doc-staff@example.com"
-    )
+    provider_id = await rh.seed_provider_staff(app_database_url, user_email="doc-staff@example.com")
     return str(provider_id)
 
 

@@ -97,9 +97,7 @@ async def merge(
 ) -> MergeResult:
     """Human-admin-only, reversible (ADR-0011). `merge_patients` gates to
     Administrator and rejects any other caller, including a background job."""
-    result = await users_service.merge_patients(
-        session, actor, winner_patient_id, loser_patient_id
-    )
+    result = await users_service.merge_patients(session, actor, winner_patient_id, loser_patient_id)
     return _to_merge_result(result)
 
 

@@ -97,9 +97,7 @@ async def register_identity(
     )
     if role is Role.PATIENT:
         placeholder_name = email.split("@", 1)[0]
-        await repository.create_patient(
-            session, user_id=user.id, full_name=placeholder_name
-        )
+        await repository.create_patient(session, user_id=user.id, full_name=placeholder_name)
     await session.commit()
     return user
 
@@ -109,16 +107,12 @@ async def mark_verified(session: AsyncSession, user_id: UUID) -> None:
     await session.commit()
 
 
-async def change_password(
-    session: AsyncSession, user_id: UUID, new_password_hash: str
-) -> None:
+async def change_password(session: AsyncSession, user_id: UUID, new_password_hash: str) -> None:
     await repository.set_password_hash(session, user_id, new_password_hash)
     await session.commit()
 
 
-async def get_own_patient_profile(
-    session: AsyncSession, actor: Actor
-) -> PatientProfile | None:
+async def get_own_patient_profile(session: AsyncSession, actor: Actor) -> PatientProfile | None:
     """The signed-in Patient's own profile. None if the actor owns no Patient."""
     patient = await repository.get_patient_by_user_id(session, actor.user_id)
     if patient is None:
@@ -159,9 +153,7 @@ async def get_patient_profile_for_actor(
     return _to_profile(patient)
 
 
-async def set_locale_preference(
-    session: AsyncSession, actor: Actor, locale: str
-) -> None:
+async def set_locale_preference(session: AsyncSession, actor: Actor, locale: str) -> None:
     patient = await repository.get_patient_by_user_id(session, actor.user_id)
     if patient is None:
         return

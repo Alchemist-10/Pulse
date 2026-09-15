@@ -52,9 +52,7 @@ def test_no_administrator_permission_grants_a_clinical_data_read() -> None:
     # Structural ADR-0007: whatever the model grows to, the Administrator's
     # set never intersects a clinical read. Clinical reads are enforced
     # per-request by `accessible_entries`; this is the coarse backstop.
-    assert resolve_permissions(Role.ADMINISTRATOR).isdisjoint(
-        _CLINICAL_READ_PERMISSIONS
-    )
+    assert resolve_permissions(Role.ADMINISTRATOR).isdisjoint(_CLINICAL_READ_PERMISSIONS)
 
 
 def test_only_patient_and_care_roles_read_records() -> None:

@@ -167,9 +167,7 @@ async def list_notifications(
 
 
 async def mark_read(session: AsyncSession, actor: Actor, notification_id: UUID) -> Notification:
-    updated = await repository.mark_read(
-        session, actor.user_id, notification_id, datetime.now(UTC)
-    )
+    updated = await repository.mark_read(session, actor.user_id, notification_id, datetime.now(UTC))
     if updated is not None:
         await session.commit()
         return _to_wire(updated)

@@ -101,9 +101,7 @@ async def test_audit_event_app_role_cannot_update(app_database_url: str) -> None
     try:
         async with engine.connect() as conn:
             with pytest.raises(DBAPIError, match="(?i)permission denied"):
-                await conn.execute(
-                    text("UPDATE audit_event SET outcome = outcome WHERE false")
-                )
+                await conn.execute(text("UPDATE audit_event SET outcome = outcome WHERE false"))
     finally:
         await engine.dispose()
 

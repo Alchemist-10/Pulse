@@ -176,9 +176,7 @@ async def test_projection_rejects_a_patient_id_that_is_not_the_callers_own(
     other_patient_id = await ah.insert_bare_patient(app_database_url)
     await ah.seed_event_for_patient(app_database_url, patient_id=other_patient_id)
 
-    resp = await client.get(
-        "/api/v1/audit-events", params={"patientId": str(other_patient_id)}
-    )
+    resp = await client.get("/api/v1/audit-events", params={"patientId": str(other_patient_id)})
     assert resp.status_code == 404
 
 

@@ -107,21 +107,14 @@ class MailpitIdentityProvider(IdentityProvider):
         data = await self._redis.hgetall(_CHALLENGE_KEY.format(challenge_id))
         if not data:
             seen = await self._redis.exists(_TOMBSTONE_KEY.format(challenge_id))
-            return (
-                VerificationOutcome.EXPIRED if seen else VerificationOutcome.INVALID
-            ), None
+            return (VerificationOutcome.EXPIRED if seen else VerificationOutcome.INVALID), None
         if token_hash(token) != data["tokenHash"]:
             return VerificationOutcome.INVALID, None
         await self._redis.delete(_CHALLENGE_KEY.format(challenge_id))
         return VerificationOutcome.OK, UUID(str(data["userId"]))
 
-    async def _send_email(
-        self, email: str, locale: str, challenge_id: str, token: str
-    ) -> None:
-        link = (
-            f"{self._base_url}/{locale}/verify"
-            f"?challenge={challenge_id}&token={token}"
-        )
+    async def _send_email(self, email: str, locale: str, challenge_id: str, token: str) -> None:
+        link = f"{self._base_url}/{locale}/verify?challenge={challenge_id}&token={token}"
         msg = EmailMessage()
         msg["From"] = self._from
         msg["To"] = email

@@ -143,14 +143,10 @@ async def test_seed_includes_an_out_of_range_numeric_lab(
     body = resp.json()
     assert body["entryType"] == "LAB_REPORT"
     value = Decimal(str(body["valueNumeric"]))
-    assert value < Decimal(str(body["referenceLow"])) or value > Decimal(
-        str(body["referenceHigh"])
-    )
+    assert value < Decimal(str(body["referenceLow"])) or value > Decimal(str(body["referenceHigh"]))
 
 
-async def test_seed_includes_a_text_valued_lab(
-    client: AsyncClient, app_database_url: str
-) -> None:
+async def test_seed_includes_a_text_valued_lab(client: AsyncClient, app_database_url: str) -> None:
     await _run_seed()
     login = await client.post(
         "/api/v1/auth/login",

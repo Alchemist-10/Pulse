@@ -66,9 +66,7 @@ async def _patient_entry_and_staff(
 async def test_correction_supersedes_without_touching_the_original(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:
-    pid, entry_id = await _patient_entry_and_staff(
-        client, register_and_login, app_database_url
-    )
+    pid, entry_id = await _patient_entry_and_staff(client, register_and_login, app_database_url)
     before = await client.get(f"/api/v1/entries/{entry_id}")
     assert before.status_code == 200
     original_recorded_at = before.json()["recordedAt"]
@@ -92,9 +90,7 @@ async def test_correction_supersedes_without_touching_the_original(
 async def test_timeline_shows_the_correction_not_the_original(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:
-    pid, entry_id = await _patient_entry_and_staff(
-        client, register_and_login, app_database_url
-    )
+    pid, entry_id = await _patient_entry_and_staff(client, register_and_login, app_database_url)
     new_id = (
         await client.post(
             f"/api/v1/patients/{pid}/entries/{entry_id}/corrections",
@@ -113,9 +109,7 @@ async def test_timeline_shows_the_correction_not_the_original(
 async def test_second_correction_of_the_same_entry_is_409(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:
-    pid, entry_id = await _patient_entry_and_staff(
-        client, register_and_login, app_database_url
-    )
+    pid, entry_id = await _patient_entry_and_staff(client, register_and_login, app_database_url)
     first = await client.post(
         f"/api/v1/patients/{pid}/entries/{entry_id}/corrections", json=_CORRECTION_BODY
     )
@@ -131,9 +125,7 @@ async def test_second_correction_of_the_same_entry_is_409(
 async def test_clinician_cannot_correct(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:
-    pid, entry_id = await _patient_entry_and_staff(
-        client, register_and_login, app_database_url
-    )
+    pid, entry_id = await _patient_entry_and_staff(client, register_and_login, app_database_url)
     await register_and_login(email="corr-clin@example.com", role="CLINICIAN")
     resp = await client.post(
         f"/api/v1/patients/{pid}/entries/{entry_id}/corrections", json=_CORRECTION_BODY

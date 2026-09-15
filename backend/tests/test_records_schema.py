@@ -46,17 +46,14 @@ def test_trunk_and_subtype_tables_exist(schema: dict[str, Any]) -> None:
 
 
 @pytest.mark.parametrize("subtype", _SUBTYPES)
-def test_subtype_pk_is_a_cascading_fk_to_the_trunk(
-    schema: dict[str, Any], subtype: str
-) -> None:
+def test_subtype_pk_is_a_cascading_fk_to_the_trunk(schema: dict[str, Any], subtype: str) -> None:
     assert subtype in schema["tables"]
     pk_cols = schema["pk"][subtype]["constrained_columns"]
     assert pk_cols == ["id"], f"{subtype} PK is {pk_cols}, expected ['id']"
     to_trunk = [
         fk
         for fk in schema["fks"][subtype]
-        if fk["referred_table"] == "medical_entry"
-        and fk["constrained_columns"] == ["id"]
+        if fk["referred_table"] == "medical_entry" and fk["constrained_columns"] == ["id"]
     ]
     assert to_trunk, f"{subtype}.id is not an FK to medical_entry.id"
     assert (to_trunk[0].get("options") or {}).get("ondelete", "").upper() == "CASCADE"
@@ -88,9 +85,10 @@ def test_lab_report_carries_numeric_and_text_value_columns(
         assert name in cols, name
         assert "NUMERIC" in str(cols[name]["type"]).upper()
     assert "value_text" in cols
-    assert "TEXT" in str(cols["value_text"]["type"]).upper() or "VARCHAR" in str(
-        cols["value_text"]["type"]
-    ).upper()
+    assert (
+        "TEXT" in str(cols["value_text"]["type"]).upper()
+        or "VARCHAR" in str(cols["value_text"]["type"]).upper()
+    )
 
 
 def _has_index_on(indexes: list[dict[str, Any]], columns: list[str]) -> bool:
@@ -100,9 +98,7 @@ def _has_index_on(indexes: list[dict[str, Any]], columns: list[str]) -> bool:
 def test_the_five_named_indexes_exist(schema: dict[str, Any]) -> None:
     idx = schema["indexes"]
     assert _has_index_on(idx["medical_entry"], ["patient_id", "occurred_at"])
-    assert _has_index_on(
-        idx["medical_entry"], ["patient_id", "entry_type", "occurred_at"]
-    )
+    assert _has_index_on(idx["medical_entry"], ["patient_id", "entry_type", "occurred_at"])
     assert _has_index_on(idx["lab_report"], ["code_system", "code"])
     assert _has_index_on(idx["diagnosis"], ["code_system", "code"])
     assert _has_index_on(idx["prescription"], ["medication_name"])
@@ -121,7 +117,6 @@ def test_medical_document_metadata_columns(schema: dict[str, Any]) -> None:
     ):
         assert name in cols, name
     assert any(
-        fk["referred_table"] == "medical_entry"
-        and fk["constrained_columns"] == ["entry_id"]
+        fk["referred_table"] == "medical_entry" and fk["constrained_columns"] == ["entry_id"]
         for fk in schema["fks"]["medical_document"]
     )

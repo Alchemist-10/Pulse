@@ -85,9 +85,7 @@ async def revoke_consent(
         return None
     consent.revoked_at = revoked_at
     consent.revocation_reason = reason
-    await session.execute(
-        delete(AccessPermission).where(AccessPermission.consent_id == consent_id)
-    )
+    await session.execute(delete(AccessPermission).where(AccessPermission.consent_id == consent_id))
     await session.flush()
     return consent
 

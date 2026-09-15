@@ -129,9 +129,7 @@ async def test_lab_scoped_consent_granted_through_the_real_api_does_not_leak_a_n
         entry_type="CLINICAL_NOTE",
     )
     await register_and_login(email="adv-clinician-2@example.com", role="CLINICIAN")
-    clin_id = str(
-        await rh.user_id_for_email(app_database_url, "adv-clinician-2@example.com")
-    )
+    clin_id = str(await rh.user_id_for_email(app_database_url, "adv-clinician-2@example.com"))
     await register_and_login(email="adv-patient-3@example.com")
     await client.post("/api/v1/auth/step-up", json={"password": _PW})
     grant = await client.post(

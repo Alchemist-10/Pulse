@@ -51,9 +51,7 @@ async def list_duplicate_review_queue(
 async def decide_not_duplicate(
     payload: NotDuplicateRequest, ctx: CurrentUser, session: SessionDep
 ) -> None:
-    await service.mark_not_duplicate(
-        session, ctx.actor, payload.patient_id_a, payload.patient_id_b
-    )
+    await service.mark_not_duplicate(session, ctx.actor, payload.patient_id_a, payload.patient_id_b)
 
 
 @router.post(
@@ -81,7 +79,5 @@ async def list_reversible_merges(ctx: CurrentUser, session: SessionDep) -> list[
     "/merges/{merge_id}/reverse",
     dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)],
 )
-async def reverse_merge(
-    merge_id: UUID, ctx: CurrentUser, session: SessionDep
-) -> MergeResult:
+async def reverse_merge(merge_id: UUID, ctx: CurrentUser, session: SessionDep) -> MergeResult:
     return await service.reverse(session, ctx.actor, merge_id)

@@ -28,16 +28,20 @@ async def fetch_events_for_patient(
     try:
         async with engine.connect() as conn:
             rows = (
-                await conn.execute(
-                    text(
-                        "SELECT id, actor_user_id, actor_role, action, resource_type, "
-                        "resource_id, patient_id, outcome, request_id, metadata "
-                        "FROM audit_event WHERE patient_id = :patient_id "
-                        "ORDER BY occurred_at ASC"
-                    ),
-                    {"patient_id": patient_id},
+                (
+                    await conn.execute(
+                        text(
+                            "SELECT id, actor_user_id, actor_role, action, resource_type, "
+                            "resource_id, patient_id, outcome, request_id, metadata "
+                            "FROM audit_event WHERE patient_id = :patient_id "
+                            "ORDER BY occurred_at ASC"
+                        ),
+                        {"patient_id": patient_id},
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             result = []
             for row in rows:
                 d = dict(row)

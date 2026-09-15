@@ -68,9 +68,7 @@ async def list_notifications(
                 (Notification.created_at == c_at) & (Notification.id < c_id),
             )
         )
-    stmt = stmt.order_by(Notification.created_at.desc(), Notification.id.desc()).limit(
-        limit + 1
-    )
+    stmt = stmt.order_by(Notification.created_at.desc(), Notification.id.desc()).limit(limit + 1)
     rows = list((await session.execute(stmt)).scalars().all())
     next_cursor: str | None = None
     if len(rows) > limit:

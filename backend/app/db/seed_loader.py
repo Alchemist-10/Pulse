@@ -209,9 +209,7 @@ def _is_out_of_range(value: float, low: float, high: float) -> bool:
     return value < low or value > high
 
 
-def _pick_lab_rows(
-    rows: list[dict[str, str]], cap: int
-) -> list[dict[str, str]]:
+def _pick_lab_rows(rows: list[dict[str, str]], cap: int) -> list[dict[str, str]]:
     """At least one out-of-range numeric result (if the patient has one for
     a known panel) and at least one text result are prioritised first, so
     the seeded dataset as a whole always carries both lab-value shapes."""
@@ -220,14 +218,10 @@ def _pick_lab_rows(
         key=lambda r: (r["date"], r["code"]),
     )
     numeric_known = [
-        r
-        for r in candidates
-        if r["type"] == "numeric" and r["code"] in _LAB_REFERENCE_RANGES
+        r for r in candidates if r["type"] == "numeric" and r["code"] in _LAB_REFERENCE_RANGES
     ]
     numeric_other = [
-        r
-        for r in candidates
-        if r["type"] == "numeric" and r["code"] not in _LAB_REFERENCE_RANGES
+        r for r in candidates if r["type"] == "numeric" and r["code"] not in _LAB_REFERENCE_RANGES
     ]
     text_rows = [r for r in candidates if r["type"] != "numeric"]
     out_of_range = [
@@ -329,22 +323,30 @@ def _build_clinical_entries(
         provider_id = _provider_for_patient(pid, provider_ids)
         diagnoses = _dedupe_new(
             _build_coded_entries(
-                Diagnosis, conditions.get(pid, []), pid, EntryType.DIAGNOSIS,
-                _DIAGNOSIS_CAP, "conditions.csv", provider_id,
+                Diagnosis,
+                conditions.get(pid, []),
+                pid,
+                EntryType.DIAGNOSIS,
+                _DIAGNOSIS_CAP,
+                "conditions.csv",
+                provider_id,
             ),
             seen_ids,
         )
         procs = _dedupe_new(
             _build_coded_entries(
-                Procedure, procedures.get(pid, []), pid, EntryType.PROCEDURE,
-                _PROCEDURE_CAP, "procedures.csv", provider_id,
+                Procedure,
+                procedures.get(pid, []),
+                pid,
+                EntryType.PROCEDURE,
+                _PROCEDURE_CAP,
+                "procedures.csv",
+                provider_id,
             ),
             seen_ids,
         )
         rx = _dedupe_new(
-            _build_prescriptions(
-                medications.get(pid, []), pid, _PRESCRIPTION_CAP, provider_id
-            ),
+            _build_prescriptions(medications.get(pid, []), pid, _PRESCRIPTION_CAP, provider_id),
             seen_ids,
         )
         labs = _dedupe_new(
@@ -442,9 +444,7 @@ async def run_seed() -> SeedResult:
         await session.flush()  # Patients committed to the flush before entries FK to them
 
         patient_ids = [r["id"] for r in _rows(identity_dir / "patients.csv")]
-        provider_ids = [
-            uuid.UUID(r["id"]) for r in _rows(identity_dir / "providers.csv")
-        ]
+        provider_ids = [uuid.UUID(r["id"]) for r in _rows(identity_dir / "providers.csv")]
         entry_objects, entry_counts = _build_clinical_entries(
             clinical_dir, patient_ids, provider_ids
         )
@@ -453,9 +453,7 @@ async def run_seed() -> SeedResult:
         await session.flush()
 
         await session.execute(
-            text(
-                "INSERT INTO seed_marker (id, dataset_sha256) VALUES (1, :h)"
-            ),
+            text("INSERT INTO seed_marker (id, dataset_sha256) VALUES (1, :h)"),
             {"h": _dataset_checksum(identity_dir, clinical_dir)},
         )
         await session.commit()

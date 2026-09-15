@@ -49,9 +49,7 @@ async def test_login_wrong_password_and_unknown_email_are_identical(
 
     assert wrong_pw.status_code == unknown.status_code == 401
     assert (
-        wrong_pw.json()["error"]["code"]
-        == unknown.json()["error"]["code"]
-        == "INVALID_CREDENTIALS"
+        wrong_pw.json()["error"]["code"] == unknown.json()["error"]["code"] == "INVALID_CREDENTIALS"
     )
     assert wrong_pw.json()["error"]["message"] == unknown.json()["error"]["message"]
     assert "set-cookie" not in wrong_pw.headers

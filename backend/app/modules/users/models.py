@@ -46,9 +46,7 @@ class User(Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), default=None
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -62,9 +60,7 @@ class Provider(Base):
     kind: Mapped[ProviderKind] = mapped_column(SAEnum(ProviderKind, name="provider_kind"))
     city: Mapped[str] = mapped_column(String(120))
     state: Mapped[str] = mapped_column(String(120))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Patient(Base):
@@ -91,9 +87,7 @@ class Patient(Base):
     merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("patient.id"), default=None, index=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -115,9 +109,7 @@ class ProviderStaff(Base):
         ForeignKey("provider.id", ondelete="CASCADE"),
         index=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     provider: Mapped[Provider] = relationship(lazy="joined")
 
@@ -150,9 +142,7 @@ class DuplicateReviewItem(Base):
     )
     score: Mapped[Decimal] = mapped_column(Numeric(4, 3))
     status: Mapped[ReviewStatus] = mapped_column(String(20), default=ReviewStatus.PENDING)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     decided_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("user.id"), default=None

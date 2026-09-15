@@ -33,6 +33,10 @@ testpaths = ["tests"]
 target-version = "py313"
 line-length = 100
 
+[tool.ruff.format]
+# Applied migrations are never edited, not even for formatting (database.md).
+exclude = ["app/db/migrations/versions/*"]
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 

@@ -20,9 +20,7 @@ def get_request_id() -> str | None:
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         supplied = request.headers.get("X-Request-Id", "")
         request_id = supplied if _VALID_REQUEST_ID.fullmatch(supplied) else str(uuid.uuid4())
         token = _request_id.set(request_id)

@@ -99,9 +99,7 @@ async def db_session(db_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 # Tests that touch neither the app nor the database — the enforcement lints and
 # the route-coverage introspection — must not pay for a Postgres/Redis container.
 # They are recognised by requesting none of the infra fixtures below.
-_INFRA_FIXTURES = frozenset(
-    {"client", "db_session", "db_engine", "register_and_login", "fake_idp"}
-)
+_INFRA_FIXTURES = frozenset({"client", "db_session", "db_engine", "register_and_login", "fake_idp"})
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -129,9 +127,7 @@ async def fake_idp() -> object:
 
 
 @pytest_asyncio.fixture
-async def client(
-    db_engine: AsyncEngine, fake_idp: object
-) -> AsyncIterator[AsyncClient]:
+async def client(db_engine: AsyncEngine, fake_idp: object) -> AsyncIterator[AsyncClient]:
     from app.db.session import get_session
     from app.main import app
     from app.modules.auth.dependencies import get_identity_provider
@@ -153,9 +149,7 @@ async def client(
 
 
 @pytest_asyncio.fixture
-async def register_and_login(
-    client: AsyncClient, fake_idp: object
-) -> LoginFactory:
+async def register_and_login(client: AsyncClient, fake_idp: object) -> LoginFactory:
     """Register -> verify (via the fake) -> login. Returns the login Response
     (its cookie jar is already on `client`).
 

@@ -15,8 +15,9 @@ from typing import Any
 
 class NotificationProvider(ABC):
     @abstractmethod
-    async def send(self, channel: str, address: str, type_: str, params: dict[str, Any]) -> None:
-        ...
+    async def send(
+        self, channel: str, address: str, type_: str, params: dict[str, Any]
+    ) -> None: ...
 
 
 class FakeNotificationProvider(NotificationProvider):

@@ -134,8 +134,7 @@ async def list_for_patient(
     if cursor is not None:
         c_at, c_id = _unpack_cursor(cursor)
         cursor_clause = (
-            "AND (ae.occurred_at < :c_at "
-            "OR (ae.occurred_at = :c_at AND ae.id < :c_id)) "
+            "AND (ae.occurred_at < :c_at OR (ae.occurred_at = :c_at AND ae.id < :c_id)) "
         )
         params["c_at"] = c_at
         params["c_id"] = c_id

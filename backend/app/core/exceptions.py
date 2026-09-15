@@ -47,9 +47,7 @@ async def pulse_error_handler(request: Request, exc: PulseError) -> JSONResponse
     return _envelope_response(exc.http_status, exc.code, exc.message, exc.details)
 
 
-async def validation_error_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     details = [
         ErrorDetail(field=".".join(str(loc) for loc in err["loc"]), code=err["type"])
         for err in exc.errors()

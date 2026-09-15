@@ -94,9 +94,7 @@ async def complete_verification(
     await users_service.mark_verified(session, user_id)
 
 
-async def login(
-    session: AsyncSession, redis: Redis, *, email: str, password: str
-) -> str:
+async def login(session: AsyncSession, redis: Redis, *, email: str, password: str) -> str:
     """Return a fresh session token. Raises INVALID_CREDENTIALS, generically."""
     email = _normalise_email(email)
     user = await users_service.get_user_by_email(session, email)

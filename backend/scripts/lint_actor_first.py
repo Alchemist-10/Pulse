@@ -61,9 +61,7 @@ def main() -> int:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and _returns_entries(
-                node
-            ):
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and _returns_entries(node):
                 if not _has_actor_param(node):
                     rel = path.relative_to(_BACKEND_DIR)
                     offenders.append(f"{rel}:{node.lineno} -> {node.name}() takes no `actor`")

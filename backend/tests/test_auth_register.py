@@ -60,9 +60,7 @@ async def test_register_patient_creates_linked_patient_row(
 
     async with identity_session(app_database_url) as session:
         user = (
-            await session.execute(
-                select(User).where(User.email == "newpatient@example.com")
-            )
+            await session.execute(select(User).where(User.email == "newpatient@example.com"))
         ).scalar_one()
         assert str(user.id) == user_id
         assert user.email_verified_at is None
@@ -85,8 +83,6 @@ async def test_register_clinician_creates_no_patient_row(
 
     async with identity_session(app_database_url) as session:
         linked = (
-            await session.execute(
-                select(Patient).where(Patient.user_id == user_id)
-            )
+            await session.execute(select(Patient).where(Patient.user_id == user_id))
         ).scalar_one_or_none()
         assert linked is None

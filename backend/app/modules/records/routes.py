@@ -54,9 +54,7 @@ async def list_patient_entries(
     "/entries/{entry_id}",
     dependencies=[requires(Permission.RECORDS_READ)],
 )
-async def get_entry_detail(
-    entry_id: UUID, ctx: CurrentUser, session: SessionDep
-) -> EntryDetail:
+async def get_entry_detail(entry_id: UUID, ctx: CurrentUser, session: SessionDep) -> EntryDetail:
     return await service.get_entry(session, ctx.actor, entry_id)
 
 
@@ -86,9 +84,7 @@ async def correct_entry(
     ctx: CurrentUser,
     session: SessionDep,
 ) -> EntryDetail:
-    return await service.supersede_entry(
-        session, ctx.actor, patient_id, entry_id, payload
-    )
+    return await service.supersede_entry(session, ctx.actor, patient_id, entry_id, payload)
 
 
 @router.post(
@@ -126,9 +122,7 @@ async def serve_document(
     session: SessionDep,
     storage: StorageDep,
 ) -> Response:
-    doc, data = await service.get_document(
-        session, ctx.actor, document_id, storage=storage
-    )
+    doc, data = await service.get_document(session, ctx.actor, document_id, storage=storage)
     # RFC 5987: the filename can be non-Latin-1 (four Indian locales) and is
     # attacker-supplied — an ASCII `filename="..."` param would crash on
     # header encoding or allow parameter injection.

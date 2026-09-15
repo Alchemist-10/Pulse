@@ -19,7 +19,5 @@ CurrentUser = Annotated[AuthContext, Depends(current_user)]
 
 
 @router.get("/{provider_id}", dependencies=[requires(Permission.PROVIDER_READ)])
-async def get_provider(
-    provider_id: UUID, ctx: CurrentUser, session: SessionDep
-) -> Provider:
+async def get_provider(provider_id: UUID, ctx: CurrentUser, session: SessionDep) -> Provider:
     return await service.get_provider(session, ctx.actor, provider_id)

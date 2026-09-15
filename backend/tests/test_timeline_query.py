@@ -110,9 +110,7 @@ async def test_cursor_pages_do_not_overlap_or_skip(
         occurred_at=base + timedelta(days=10),
     )
 
-    second = await client.get(
-        f"/api/v1/patients/{pid}/entries?limit=2&cursor={body['nextCursor']}"
-    )
+    second = await client.get(f"/api/v1/patients/{pid}/entries?limit=2&cursor={body['nextCursor']}")
     assert second.status_code == 200
     page1 = {i["id"] for i in body["items"]}
     page2 = {i["id"] for i in second.json()["items"]}
@@ -138,9 +136,7 @@ async def test_entry_type_filter_narrows_the_timeline(
         entry_type="LAB_REPORT",
     )
 
-    resp = await client.get(
-        f"/api/v1/patients/{pid}/entries?entryType=LAB_REPORT"
-    )
+    resp = await client.get(f"/api/v1/patients/{pid}/entries?entryType=LAB_REPORT")
     assert resp.status_code == 200
     kinds = {item["entryType"] for item in resp.json()["items"]}
     assert kinds == {"LAB_REPORT"}

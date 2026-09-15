@@ -75,9 +75,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
     status_code=status.HTTP_201_CREATED,
     dependencies=[public()],
 )
-async def register(
-    body: RegisterRequest, session: SessionDep, idp: IdpDep
-) -> RegisterResponse:
+async def register(body: RegisterRequest, session: SessionDep, idp: IdpDep) -> RegisterResponse:
     user_id = await service.register(
         session,
         idp,
@@ -97,16 +95,12 @@ async def register(
 async def resend_verification(
     body: ResendVerificationRequest, session: SessionDep, idp: IdpDep
 ) -> dict[str, str]:
-    await service.resend_verification(
-        session, idp, email=body.email, locale="en"
-    )
+    await service.resend_verification(session, idp, email=body.email, locale="en")
     return {}
 
 
 @router.post("/verify", dependencies=[public()])
-async def verify(
-    body: VerifyRequest, session: SessionDep, idp: IdpDep
-) -> dict[str, str]:
+async def verify(body: VerifyRequest, session: SessionDep, idp: IdpDep) -> dict[str, str]:
     await service.complete_verification(
         session, idp, challenge_id=body.challenge_id, token=body.token
     )
@@ -117,9 +111,7 @@ async def verify(
 async def login(
     body: LoginRequest, response: Response, session: SessionDep, redis: RedisDep
 ) -> dict[str, str]:
-    token = await service.login(
-        session, redis, email=body.email, password=body.password
-    )
+    token = await service.login(session, redis, email=body.email, password=body.password)
     _set_session_cookie(response, token)
     return {}
 

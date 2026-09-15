@@ -34,26 +34,20 @@ async def get_user_by_id(session: AsyncSession, user_id: UUID) -> User | None:
     return await session.get(User, user_id)
 
 
-async def create_user(
-    session: AsyncSession, *, email: str, password_hash: str, role: Role
-) -> User:
+async def create_user(session: AsyncSession, *, email: str, password_hash: str, role: Role) -> User:
     user = User(email=email, password_hash=password_hash, role=role)
     session.add(user)
     await session.flush()
     return user
 
 
-async def set_password_hash(
-    session: AsyncSession, user_id: UUID, password_hash: str
-) -> None:
+async def set_password_hash(session: AsyncSession, user_id: UUID, password_hash: str) -> None:
     await session.execute(
         update(User).where(User.id == user_id).values(password_hash=password_hash)
     )
 
 
-async def mark_email_verified(
-    session: AsyncSession, user_id: UUID, verified_at: datetime
-) -> None:
+async def mark_email_verified(session: AsyncSession, user_id: UUID, verified_at: datetime) -> None:
     await session.execute(
         update(User).where(User.id == user_id).values(email_verified_at=verified_at)
     )
@@ -79,9 +73,7 @@ async def create_patient(
     return patient
 
 
-async def set_patient_locale(
-    session: AsyncSession, patient_id: UUID, locale: str
-) -> None:
+async def set_patient_locale(session: AsyncSession, patient_id: UUID, locale: str) -> None:
     await session.execute(
         update(Patient).where(Patient.id == patient_id).values(locale_preference=locale)
     )
@@ -94,9 +86,7 @@ async def get_provider_by_id(session: AsyncSession, provider_id: UUID) -> Provid
 async def get_provider_staff_by_user_id(
     session: AsyncSession, user_id: UUID
 ) -> ProviderStaff | None:
-    result = await session.execute(
-        select(ProviderStaff).where(ProviderStaff.user_id == user_id)
-    )
+    result = await session.execute(select(ProviderStaff).where(ProviderStaff.user_id == user_id))
     return result.scalar_one_or_none()
 
 

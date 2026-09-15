@@ -25,9 +25,7 @@ _ENTRY_RETURNING = ("list_timeline", "get_entry", "insert_entry", "supersede_ent
 
 
 def test_actor_first_lint_armed() -> None:
-    result = subprocess.run(
-        [sys.executable, str(_SCRIPT)], capture_output=True, text=True
-    )
+    result = subprocess.run([sys.executable, str(_SCRIPT)], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "actor-first lint armed for Phase 2" in result.stdout
 
@@ -45,9 +43,7 @@ def test_actor_first_lint_bites_on_a_missing_actor(tmp_path: Path) -> None:
         "assert m._returns_entries(fn) is True\n"
         "assert m._has_actor_param(fn) is False\n"
     )
-    result = subprocess.run(
-        [sys.executable, str(bad)], capture_output=True, text=True
-    )
+    result = subprocess.run([sys.executable, str(bad)], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
 
 

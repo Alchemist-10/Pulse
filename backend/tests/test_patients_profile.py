@@ -114,9 +114,7 @@ async def test_patient_by_id_serves_owner_and_consented_clinician(
 
     await register_and_login(email="id-owner@example.com")
     consent_id = grant.json()["id"]
-    revoked = await client.post(
-        f"/api/v1/consents/{consent_id}/revocation", json={"reason": None}
-    )
+    revoked = await client.post(f"/api/v1/consents/{consent_id}/revocation", json={"reason": None})
     assert revoked.status_code == 200
 
     await register_and_login(email="id-grantee@example.com")
