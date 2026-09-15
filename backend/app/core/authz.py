@@ -18,6 +18,8 @@ class Role(StrEnum):
 class Permission(StrEnum):
     # A signed-in Patient reading their own Patient profile.
     PATIENT_PROFILE_READ_SELF = "PATIENT_PROFILE_READ_SELF"
+    # A Patient changing their own non-clinical preferences (interface locale).
+    PATIENT_PROFILE_UPDATE_SELF = "PATIENT_PROFILE_UPDATE_SELF"
     # Changing one's own credentials (password / email). Step-up guarded.
     USER_CREDENTIALS_CHANGE = "USER_CREDENTIALS_CHANGE"
     # Reading Medical Entries. The route guard is coarse (a Role holds it or
@@ -62,6 +64,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
     Role.PATIENT: frozenset(
         {
             Permission.PATIENT_PROFILE_READ_SELF,
+            Permission.PATIENT_PROFILE_UPDATE_SELF,
             Permission.USER_CREDENTIALS_CHANGE,
             Permission.RECORDS_READ,
             Permission.CONSENT_READ_SELF,

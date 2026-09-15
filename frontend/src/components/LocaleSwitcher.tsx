@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 // Each language labelled in its own name, so a reader can always find their
@@ -16,7 +17,8 @@ const AUTONYMS: Record<string, string> = {
 };
 
 // EN / HI / TA / ML. Preserves the current path (next-intl navigation strips
-// and re-adds the locale prefix) and the query string.
+// and re-adds the locale prefix) and the query string. Also persists the
+// choice for a signed-in Patient; any other visitor's 401/403 is ignored.
 export function LocaleSwitcher() {
   const t = useTranslations("locale");
   const activeLocale = useLocale();
@@ -41,6 +43,7 @@ export function LocaleSwitcher() {
             disabled={active || isPending}
             onClick={() =>
               startTransition(() => {
+                api.put("/users/me/locale", { locale }).catch(() => {});
                 router.replace(pathname, { locale });
               })
             }

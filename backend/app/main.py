@@ -18,6 +18,7 @@ from app.modules.notifications.routes import router as notifications_router
 from app.modules.patients.routes import router as patients_router
 from app.modules.providers.routes import router as providers_router
 from app.modules.records.routes import router as records_router
+from app.modules.users.routes import router as users_router
 
 
 @asynccontextmanager
@@ -42,6 +43,7 @@ app.include_router(audit_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
 app.include_router(admin_router)
+app.include_router(users_router)
 
 
 @app.get("/api/v1/health")

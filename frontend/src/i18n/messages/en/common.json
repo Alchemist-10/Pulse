@@ -30,7 +30,9 @@
   "locale": {
     "label": "Language",
     "en": "English",
-    "hi": "Hindi"
+    "hi": "Hindi",
+    "ta": "Tamil",
+    "ml": "Malayalam"
   },
   "actions": {
     "submit": "Submit",

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Callout } from "@/components/ui/Callout";
 import { NavLink } from "@/components/ui/NavLink";
 import { useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -86,10 +87,9 @@ export default function ProfilePage() {
   }
 
   const { profile } = state;
-  const localeLabel =
-    profile.localePreference === "en" || profile.localePreference === "hi"
-      ? tLocale(profile.localePreference)
-      : profile.localePreference;
+  const localeLabel = (routing.locales as readonly string[]).includes(profile.localePreference)
+    ? tLocale(profile.localePreference as (typeof routing.locales)[number])
+    : profile.localePreference;
 
   const show = (value: string | null): string => value?.trim() || EMPTY;
 
