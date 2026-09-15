@@ -20,6 +20,7 @@ from app.db.session import get_session
 from app.modules.admin import service
 from app.modules.admin.schemas import (
     DuplicateReviewCandidate,
+    MergeRecord,
     MergeRequest,
     MergeResult,
     NotDuplicateRequest,
@@ -66,6 +67,14 @@ async def merge_patients(
     return await service.merge(
         session, ctx.actor, payload.winner_patient_id, payload.loser_patient_id
     )
+
+
+@router.get(
+    "/merges",
+    dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)],
+)
+async def list_reversible_merges(ctx: CurrentUser, session: SessionDep) -> list[MergeRecord]:
+    return await service.reversible_merges(session, ctx.actor)
 
 
 @router.post(

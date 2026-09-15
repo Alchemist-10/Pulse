@@ -28,10 +28,11 @@
     "empty": "No duplicate candidates are waiting for review.",
     "actionErrorTitle": "Action failed",
     "recentMerges": {
-      "title": "Merges this session",
-      "hint": "Only merges you performed in this browser session can be reversed here.",
+      "title": "Reversible merges",
+      "hint": "Every merge not yet reversed, by any administrator. Reversing moves the entries back.",
       "reversed": "Reversed",
-      "reverseCta": "Reverse merge"
+      "reverseCta": "Reverse merge",
+      "pair": "{loser} merged into {winner}"
     }
   }
 }

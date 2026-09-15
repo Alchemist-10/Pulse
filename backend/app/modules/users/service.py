@@ -372,6 +372,14 @@ async def merge_patients(
     return merge
 
 
+async def list_reversible_merges(session: AsyncSession, actor: Actor) -> list[PatientMerge]:
+    """Unreversed merges, newest first, so a reversal does not depend on
+    the merge id from the session that performed it (ADR-0011).
+    Human-admin-only, same gate as merge/reversal."""
+    _require_administrator(actor)
+    return await repository.list_unreversed_merges(session)
+
+
 async def reverse_merge(session: AsyncSession, actor: Actor, merge_id: UUID) -> PatientMerge:
     """Moves every entry in `moved_entry_ids` back to the loser and
     un-tombstones it. `actor` is accepted (not yet used beyond typing)

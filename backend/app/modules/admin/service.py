@@ -24,6 +24,7 @@ from app.core.actor import Actor
 from app.modules.admin.schemas import (
     AdminPatientIdentity,
     DuplicateReviewCandidate,
+    MergeRecord,
     MergeResult,
 )
 from app.modules.records import service as records_service
@@ -100,6 +101,24 @@ async def merge(
         session, actor, winner_patient_id, loser_patient_id
     )
     return _to_merge_result(result)
+
+
+async def reversible_merges(session: AsyncSession, actor: Actor) -> list[MergeRecord]:
+    """`list_reversible_merges` gates to Administrator."""
+    records: list[MergeRecord] = []
+    for merge in await users_service.list_reversible_merges(session, actor):
+        winner = await users_service.get_patient(session, merge.winner_patient_id)
+        loser = await users_service.get_patient(session, merge.loser_patient_id)
+        if winner is None or loser is None:  # pragma: no cover - FK-guaranteed
+            continue
+        records.append(
+            MergeRecord(
+                **_to_merge_result(merge).model_dump(),
+                winner_name=winner.full_name,
+                loser_name=loser.full_name,
+            )
+        )
+    return records
 
 
 async def reverse(session: AsyncSession, actor: Actor, merge_id: UUID) -> MergeResult:

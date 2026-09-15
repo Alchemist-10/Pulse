@@ -41,3 +41,8 @@ export interface MergeResult {
   occurredAt: string;
   reversedAt: string | null;
 }
+
+export interface MergeRecord extends MergeResult {
+  winnerName: string;
+  loserName: string;
+}

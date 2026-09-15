@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useRouter } from "@/i18n/navigation";
-import type { DuplicateReviewCandidate, MergeResult } from "@/lib/admin";
+import type { DuplicateReviewCandidate, MergeRecord, MergeResult } from "@/lib/admin";
 import { api, ApiError } from "@/lib/api";
 import type { Me } from "@/lib/auth";
 import { useApiErrorMessage } from "@/lib/errors";
@@ -21,14 +21,9 @@ import { formatDate } from "@/lib/format";
 // field capable of holding clinical content, and this screen fetches nothing
 // else about either patient.
 //
-// Reversing a merge needs a `merge_id`, and there is no GET endpoint listing
-// past merges (`backend/app/modules/admin/routes.py` only exposes
-// `POST /merges/{merge_id}/reverse`) — so "a way to reverse a merge" is
-// implemented as a running list of this session's own merge results, each
-// with its own reverse action. A merge performed in an earlier session (or
-// by another admin) has no `merge_id` for this screen to reverse; that is a
-// real gap against the ticket's "way to reverse a merge" criterion, flagged
-// here rather than silently worked around with an invented endpoint.
+// Reversal reads `GET /admin/merges` (every unreversed merge, by any
+// admin, in any session), so a merge stays reversible after a reload.
+// Names only — identity, never clinical content.
 type GateState = { status: "loading" } | { status: "denied" } | { status: "error"; message: string } | { status: "ready" };
 
 type QueueState =
@@ -48,7 +43,7 @@ export default function DuplicateReviewPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [busyKind, setBusyKind] = useState<RowBusy>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [recentMerges, setRecentMerges] = useState<MergeResult[]>([]);
+  const [merges, setMerges] = useState<MergeRecord[]>([]);
   const [reversingId, setReversingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -99,6 +94,18 @@ export default function DuplicateReviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gate.status, retryToken]);
 
+  function loadMerges() {
+    api
+      .get<MergeRecord[]>("/admin/merges")
+      .then(setMerges)
+      .catch((err) => setActionError(errorMessage(err)));
+  }
+
+  useEffect(() => {
+    if (gate.status === "ready") loadMerges();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.status]);
+
   function markNotDuplicate(candidate: DuplicateReviewCandidate) {
     setBusyId(candidate.id);
     setBusyKind("notDuplicate");
@@ -141,8 +148,8 @@ export default function DuplicateReviewPage() {
         winnerPatientId: winner.id,
         loserPatientId: loser.id,
       })
-      .then((result) => {
-        setRecentMerges((prev) => [result, ...prev]);
+      .then(() => {
+        loadMerges();
         setQueue((prev) =>
           prev.status === "ready"
             ? { ...prev, items: prev.items.filter((c) => c.id !== candidate.id) }
@@ -162,7 +169,9 @@ export default function DuplicateReviewPage() {
     api
       .post<MergeResult>(`/admin/merges/${mergeId}/reverse`)
       .then((result) => {
-        setRecentMerges((prev) => prev.map((m) => (m.id === result.id ? result : m)));
+        setMerges((prev) =>
+          prev.map((m) => (m.id === result.id ? { ...m, reversedAt: result.reversedAt } : m)),
+        );
       })
       .catch((err) => setActionError(errorMessage(err)))
       .finally(() => setReversingId(null));
@@ -269,7 +278,7 @@ export default function DuplicateReviewPage() {
           </Card>
         ))}
 
-      {recentMerges.length > 0 && (
+      {merges.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t("duplicateReview.recentMerges.title")}</CardTitle>
@@ -277,10 +286,11 @@ export default function DuplicateReviewPage() {
           <CardContent className="space-y-3">
             <p className="text-xs text-muted">{t("duplicateReview.recentMerges.hint")}</p>
             <ul className="divide-y divide-border">
-              {recentMerges.map((m) => (
+              {merges.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                   <span className="text-foreground">
-                    {formatDate(m.occurredAt)}
+                    {t("duplicateReview.recentMerges.pair", { winner: m.winnerName, loser: m.loserName })}
+                    <span className="ml-2 text-muted">{formatDate(m.occurredAt)}</span>
                     {m.reversedAt && (
                       <Badge variant="outline" className="ml-2">
                         {t("duplicateReview.recentMerges.reversed")}

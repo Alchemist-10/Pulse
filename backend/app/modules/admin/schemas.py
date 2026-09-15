@@ -46,3 +46,11 @@ class MergeResult(PulseSchema):
     loser_patient_id: UUID
     occurred_at: datetime
     reversed_at: datetime | None
+
+
+class MergeRecord(MergeResult):
+    """A reversible merge with both Patients' names — identity only, never
+    clinical content (ADR-0007)."""
+
+    winner_name: str
+    loser_name: str

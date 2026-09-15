@@ -80,6 +80,7 @@ test("admin dashboard denies a non-Administrator and admits one", async ({ page 
 test("admin duplicate review lists a candidate and merges it", async ({ page }) => {
   const CANDIDATE_ID = "cand-1";
   const mergedItems: string[] = [];
+  let reversed = false;
 
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request();
@@ -124,10 +125,41 @@ test("admin duplicate review lists a candidate and merges it", async ({ page }) 
     }
     if (url.pathname === "/api/v1/admin/duplicate-review/merge" && req.method() === "POST") {
       mergedItems.push(CANDIDATE_ID);
-      return json(200, {
+      return json(201, {
         id: "merge-1",
+        winnerPatientId: "pat-a",
+        loserPatientId: "pat-b",
         occurredAt: "2026-09-01T00:00:00Z",
         reversedAt: null,
+      });
+    }
+    // Persisted reversal queue: survives reloads, unlike in-memory results.
+    if (url.pathname === "/api/v1/admin/merges") {
+      return json(
+        200,
+        mergedItems.length && !reversed
+          ? [
+              {
+                id: "merge-1",
+                winnerPatientId: "pat-a",
+                loserPatientId: "pat-b",
+                occurredAt: "2026-09-01T00:00:00Z",
+                reversedAt: null,
+                winnerName: "Anand Kumar",
+                loserName: "Anand K.",
+              },
+            ]
+          : [],
+      );
+    }
+    if (url.pathname === "/api/v1/admin/merges/merge-1/reverse" && req.method() === "POST") {
+      reversed = true;
+      return json(200, {
+        id: "merge-1",
+        winnerPatientId: "pat-a",
+        loserPatientId: "pat-b",
+        occurredAt: "2026-09-01T00:00:00Z",
+        reversedAt: "2026-09-02T00:00:00Z",
       });
     }
     return json(404, { error: { code: "NOT_FOUND", message: "not found" } });
@@ -144,5 +176,11 @@ test("admin duplicate review lists a candidate and merges it", async ({ page }) 
 
   await page.getByRole("button", { name: "Merge" }).click();
   await expect(page.getByText("No duplicate candidates are waiting for review.")).toBeVisible();
-  await expect(page.getByText("Merges this session")).toBeVisible();
+  await expect(page.getByText("Reversible merges")).toBeVisible();
+
+  // A reload loses in-memory state; the merge must still be reversible.
+  await page.reload();
+  await expect(page.getByText("Anand K.")).toBeVisible();
+  await page.getByRole("button", { name: "Reverse merge" }).click();
+  await expect(page.getByText("Reversed")).toBeVisible();
 });

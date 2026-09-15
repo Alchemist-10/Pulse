@@ -25,7 +25,6 @@ _CLINICAL_TEXT = "Type 2 diabetes mellitus"
 @pytest_asyncio.fixture(autouse=True)
 async def _isolate(app_database_url: str):  # type: ignore[no-untyped-def]
     yield
-    await wipe_identity(app_database_url)
     engine = create_async_engine(app_database_url)
     try:
         async with engine.begin() as conn:
@@ -33,6 +32,7 @@ async def _isolate(app_database_url: str):  # type: ignore[no-untyped-def]
                 await conn.execute(text(f"DELETE FROM {table}"))
     finally:
         await engine.dispose()
+    await wipe_identity(app_database_url)
 
 
 async def _insert_duplicate_pair_with_entry(app_database_url: str) -> None:
@@ -104,6 +104,9 @@ async def test_non_administrator_forbidden_on_every_admin_route(
     reverse_resp = await client.post(f"/api/v1/admin/merges/{uuid.uuid4()}/reverse")
     assert reverse_resp.status_code == 403
 
+    merges_resp = await client.get("/api/v1/admin/merges")
+    assert merges_resp.status_code == 403
+
 
 async def test_administrator_duplicate_review_queue_carries_no_clinical_content(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
@@ -129,3 +132,32 @@ async def test_administrator_duplicate_review_queue_carries_no_clinical_content(
     assert {item["patientA"]["entryCount"], item["patientB"]["entryCount"]} == {1, 0}
     assert _CLINICAL_TEXT not in resp.text
     assert "44054006" not in resp.text
+
+
+async def test_reversible_merges_list_survives_sessions_and_drops_reversed(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await _insert_duplicate_pair_with_entry(app_database_url)
+    await register_and_login(email="admin-merges@example.com", role="ADMINISTRATOR")
+    pair = (await client.get("/api/v1/admin/duplicate-review")).json()[0]
+    winner, loser = pair["patientA"], pair["patientB"]
+    merged = await client.post(
+        "/api/v1/admin/duplicate-review/merge",
+        json={"winnerPatientId": winner["id"], "loserPatientId": loser["id"]},
+    )
+    assert merged.status_code == 201
+
+    # A fresh session has no in-memory merge id; the list must supply it.
+    client.cookies.clear()
+    await register_and_login(email="admin-merges@example.com", role="ADMINISTRATOR")
+    resp = await client.get("/api/v1/admin/merges")
+    assert resp.status_code == 200
+    [row] = resp.json()
+    assert row["id"] == merged.json()["id"]
+    assert row["winnerName"] == winner["fullName"]
+    assert row["loserName"] == loser["fullName"]
+    assert _CLINICAL_TEXT not in resp.text
+
+    reversed_resp = await client.post(f"/api/v1/admin/merges/{row['id']}/reverse")
+    assert reversed_resp.status_code == 200
+    assert (await client.get("/api/v1/admin/merges")).json() == []

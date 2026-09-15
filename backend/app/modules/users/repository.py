@@ -17,6 +17,7 @@ from app.core.authz import Role
 from app.modules.users.models import (
     DuplicateReviewItem,
     Patient,
+    PatientMerge,
     Provider,
     ProviderStaff,
     ReviewStatus,
@@ -186,3 +187,14 @@ async def set_review_status(
     item.decided_at = datetime.now(UTC)
     await session.flush()
     return item
+
+
+async def list_unreversed_merges(session: AsyncSession) -> list[PatientMerge]:
+    """Merges still open to reversal, newest first — the admin reversal
+    queue. Reversed merges drop out, as decided review items do."""
+    result = await session.execute(
+        select(PatientMerge)
+        .where(PatientMerge.reversed_at.is_(None))
+        .order_by(PatientMerge.occurred_at.desc())
+    )
+    return list(result.scalars().all())
