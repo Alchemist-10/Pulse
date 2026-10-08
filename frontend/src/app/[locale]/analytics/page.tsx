@@ -15,6 +15,7 @@ import type { LinePoint } from "@/components/charts/LineChart";
 import { ClinicalText } from "@/components/ClinicalText";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -152,6 +153,9 @@ export default function AnalyticsPage() {
   const errorMessage = useApiErrorMessage();
   const router = useRouter();
 
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [labError, setLabError] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [selectedTest, setSelectedTest] = useState("");
@@ -186,13 +190,18 @@ export default function AnalyticsPage() {
     if (!patientId) return;
     let active = true;
     const base = `/patients/${patientId}/analytics`;
+    const window = new URLSearchParams();
+    if (fromDate) window.set("fromDate", fromDate);
+    if (toDate) window.set("toDate", toDate);
+    const query = window.size ? `?${window}` : "";
+    Promise.resolve().then(() => { if (active) setState({ status: "loading" }); });
 
     Promise.all([
-      api.get<MonthlyVisitCount[]>(`${base}/visit-frequency`),
-      api.get<MedicationSummary[]>(`${base}/active-medications`),
-      api.get<ProviderEntryCount[]>(`${base}/provider-entry-counts`),
+      api.get<MonthlyVisitCount[]>(`${base}/visit-frequency${query}`),
+      api.get<MedicationSummary[]>(`${base}/active-medications${query}`),
+      api.get<ProviderEntryCount[]>(`${base}/provider-entry-counts${query}`),
       api.get<DataQualityFlag[]>(`${base}/data-quality-flags`),
-      api.get<LabTest[]>(`${base}/lab-tests`).catch(() => [] as LabTest[]),
+      api.get<LabTest[]>(`${base}/lab-tests${query}`),
     ])
       .then(([visitFrequency, activeMedications, providerEntryCounts, dataQualityFlags, labTests]) => {
         if (!active) return;
@@ -220,25 +229,29 @@ export default function AnalyticsPage() {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientId]);
+  }, [patientId, fromDate, toDate]);
 
   useEffect(() => {
     if (!patientId || !selectedTest) return;
     let active = true;
     const [codeSystem, code] = selectedTest.split("|");
     const params = new URLSearchParams({ codeSystem, code });
+    if (fromDate) params.set("fromDate", fromDate);
+    if (toDate) params.set("toDate", toDate);
+    Promise.resolve().then(() => { if (active) { setLabTrend(null); setLabError(null); } });
     api
       .get<LabTrendPoint[]>(`/patients/${patientId}/analytics/lab-trend?${params}`)
       .then((points) => {
         if (active) setLabTrend(points);
       })
-      .catch(() => {
-        if (active) setLabTrend(null);
+      .catch((error) => {
+        if (active) { setLabTrend(null); setLabError(errorMessage(error)); }
       });
     return () => {
       active = false;
     };
-  }, [patientId, selectedTest]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId, selectedTest, fromDate, toDate]);
 
   const selectedLabTest =
     state.status === "ready"
@@ -254,6 +267,16 @@ export default function AnalyticsPage() {
         <p className="text-sm text-pretty text-muted-foreground">{t("subtitle")}</p>
       </div>
 
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-4">
+          <div className="space-y-1"><Label htmlFor="analytics-from">{t("window.from")}</Label>
+            <Input id="analytics-from" type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor="analytics-to">{t("window.to")}</Label>
+            <Input id="analytics-to" type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></div>
+        </div>
+        <p className="text-sm text-muted-foreground">{t("window.hint")}</p>
+      </div>
+      {labError && <Alert variant="destructive"><AlertTitle>{t("error.title")}</AlertTitle><AlertDescription>{labError}</AlertDescription></Alert>}
       {state.status === "loading" && (
         <>
           <span className="sr-only">{t("loading")}</span>

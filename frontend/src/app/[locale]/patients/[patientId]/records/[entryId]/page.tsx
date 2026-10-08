@@ -16,6 +16,8 @@ import {
 import { ClinicalText } from "@/components/ClinicalText";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { Link, useRouter } from "@/i18n/navigation";
+import type { Me } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -69,7 +71,17 @@ export default function ClinicianEntryDetailPage({
   const tClinician = useTranslations("clinicianRecords");
   const errorMessage = useApiErrorMessage();
   const router = useRouter();
+  const [canCorrect, setCanCorrect] = useState(false);
+  const tEntry = useTranslations("entry");
   const [state, setState] = useState<LoadState>({ status: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    api.get<Me>("/auth/me").then(me => {
+      if (active) setCanCorrect(me.role === "PROVIDER_STAFF" && me.emailVerified);
+    }).catch(() => { if (active) setCanCorrect(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -138,6 +150,11 @@ export default function ClinicianEntryDetailPage({
         </Alert>
       )}
 
+      {state.status === "ready" && canCorrect && !state.entry.supersededById && (
+        <Button asChild variant="outline"><Link href={`/timeline/new?patientId=${patientId}&corrects=${entryId}`}>
+          {tEntry("correction.cta")}
+        </Link></Button>
+      )}
       {state.status === "ready" && <EntryDetailView entry={state.entry} patientId={patientId} />}
     </section>
   );

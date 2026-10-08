@@ -20,7 +20,24 @@
   },
   "entryTypeNone": "—",
   "actions": {
-    "ENTRY_VIEWED": "Viewed entries"
+    "ENTRY_VIEWED": "Viewed entries",
+    "ENTRY_CREATED": "Entry filed",
+    "ENTRY_CORRECTED": "Entry corrected",
+    "DOCUMENT_UPLOADED": "Document uploaded",
+    "ANALYTICS_VIEWED": "Analytics viewed",
+    "PATIENT_MERGED": "Patient identities merged",
+    "MERGE_REVERSED": "Merge reversed",
+    "ACCESS_DENIED": "Access denied",
+    "LOGOUT": "Signed out",
+    "LOGOUT_ALL": "All sessions ended",
+    "STEP_UP_SUCCESS": "Password reverified",
+    "STEP_UP_FAILURE": "Password reverification failed",
+    "DOCUMENT_VIEWED": "Document viewed",
+    "CONSENT_GRANTED": "Consent granted",
+    "CONSENT_REVOKED": "Consent revoked",
+    "LOGIN_SUCCESS": "Sign-in succeeded",
+    "LOGIN_FAILURE": "Sign-in failed",
+    "BREAK_GLASS_ACCESS": "Emergency access granted"
   },
   "loadMore": "Load more",
   "loadingMore": "Loading more…"

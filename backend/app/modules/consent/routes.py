@@ -23,6 +23,7 @@ from app.modules.auth.dependencies import (
     current_user,
     requires,
     requires_step_up,
+    throttled,
 )
 from app.modules.consent import service
 from app.modules.consent.dependencies import get_notification_provider
@@ -115,7 +116,7 @@ async def revoke_consent(
 @router.post(
     "/patients/{patient_id}/break-glass",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[requires(Permission.BREAK_GLASS_REQUEST)],
+    dependencies=[requires(Permission.BREAK_GLASS_REQUEST), throttled("break-glass", limit=5)],
 )
 async def request_break_glass(
     patient_id: UUID,

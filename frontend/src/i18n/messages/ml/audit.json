@@ -20,7 +20,24 @@
   },
   "entryTypeNone": "—",
   "actions": {
-    "ENTRY_VIEWED": "എൻട്രികൾ കണ്ടു"
+    "ENTRY_VIEWED": "എൻട്രികൾ കണ്ടു",
+    "ENTRY_CREATED": "രേഖ ചേർത്തു",
+    "ENTRY_CORRECTED": "രേഖ തിരുത്തി",
+    "DOCUMENT_UPLOADED": "പ്രമാണം അപ്‌ലോഡ് ചെയ്തു",
+    "ANALYTICS_VIEWED": "വിശകലനം കണ്ടു",
+    "PATIENT_MERGED": "രോഗിയുടെ തിരിച്ചറിയലുകൾ ലയിപ്പിച്ചു",
+    "MERGE_REVERSED": "ലയനം തിരിച്ചാക്കി",
+    "ACCESS_DENIED": "പ്രവേശനം നിരസിച്ചു",
+    "LOGOUT": "സൈൻ ഔട്ട് ചെയ്തു",
+    "LOGOUT_ALL": "എല്ലാ സെഷനുകളും അവസാനിപ്പിച്ചു",
+    "STEP_UP_SUCCESS": "പാസ്‌വേഡ് വീണ്ടും പരിശോധിച്ചു",
+    "STEP_UP_FAILURE": "പാസ്‌വേഡ് പുനഃപരിശോധന പരാജയപ്പെട്ടു",
+    "DOCUMENT_VIEWED": "രേഖ കണ്ടു",
+    "CONSENT_GRANTED": "സമ്മതം നൽകി",
+    "CONSENT_REVOKED": "സമ്മതം പിൻവലിച്ചു",
+    "LOGIN_SUCCESS": "സൈൻ ഇൻ വിജയിച്ചു",
+    "LOGIN_FAILURE": "സൈൻ ഇൻ പരാജയപ്പെട്ടു",
+    "BREAK_GLASS_ACCESS": "അടിയന്തര പ്രവേശനം നൽകി"
   },
   "loadMore": "കൂടുതൽ ലോഡ് ചെയ്യുക",
   "loadingMore": "കൂടുതൽ ലോഡ് ചെയ്യുന്നു…"

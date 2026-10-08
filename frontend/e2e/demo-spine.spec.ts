@@ -61,6 +61,7 @@ function consentFixture(status: "ACTIVE" | "REVOKED", revokedAt: string | null =
 test("full demo spine: signup, upload, grant, clinician read, audit, revoke, lockout", async ({
   page,
 }) => {
+  test.slow(); // Eight navigation and form steps against the development server.
   let consentStatus: "NONE" | "ACTIVE" | "REVOKED" = "NONE";
   // The mock can't tell "patient viewing their own timeline" apart from
   // "clinician viewing the same patient's record" by URL alone — both hit
@@ -82,6 +83,10 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
         contentType: "application/json",
         body: JSON.stringify(body),
       });
+
+    if (url.pathname.endsWith("/auth/me")) return json(200, {
+      userId: "u-staff", role: "PROVIDER_STAFF", email: "staff@example.com", emailVerified: true,
+    });
 
     // --- Signup ---
     if (url.pathname.endsWith("/auth/register") && req.method() === "POST") {

@@ -100,7 +100,8 @@ async def upload_document(
     storage: StorageDep,
     file: Annotated[UploadFile, File()],
 ) -> Document:
-    data = await file.read()
+    data = await file.read(25 * 1024 * 1024 + 1)
+    await file.close()
     return await service.add_document(
         session,
         ctx.actor,

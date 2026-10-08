@@ -19,7 +19,7 @@
     }
   },
   "visitFrequency": {
-    "title": "Visits per month"
+    "title": "Entries per month"
   },
   "providerEntryCounts": {
     "title": "Records by provider",
@@ -27,7 +27,7 @@
     "unknown": "Unknown provider"
   },
   "activeMedications": {
-    "title": "Active medications"
+    "title": "Recorded prescriptions"
   },
   "labTrend": {
     "title": "Recent lab trend",
@@ -36,9 +36,14 @@
     "picker": "Lab test"
   },
   "stats": {
-    "totalVisits": "Total visits",
-    "activeMedications": "Active medications",
+    "totalVisits": "Total entries",
+    "activeMedications": "Recorded prescriptions",
     "labTestsTracked": "Lab tests tracked",
     "dataQualityFlags": "Data quality notes"
+  },
+  "window": {
+    "from": "From date",
+    "to": "Through date",
+    "hint": "Leave dates empty for the full history. A series is limited to 5,000 rows; narrow the dates if requested."
   }
 }

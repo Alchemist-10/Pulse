@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useId, useState } from "react";
+import { use, useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,15 +18,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { Link } from "@/i18n/navigation";
-import { api } from "@/lib/api";
+import { Link, useRouter } from "@/i18n/navigation";
+import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage, useFieldErrors } from "@/lib/errors";
 import {
   ENTRY_TYPES,
   uploadDocument,
   type EntryCreate,
+  type EntryDetail,
   type EntryType,
 } from "@/lib/records";
+
+import type { Me } from "@/lib/auth";
 
 const CODED_TYPES = new Set<EntryType>(["DIAGNOSIS", "PROCEDURE", "LAB_REPORT"]);
 
@@ -59,14 +62,16 @@ const FIELD_ORDER = [
 export default function NewEntryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ patientId?: string }>;
+  searchParams: Promise<{ patientId?: string; corrects?: string }>;
 }) {
-  const { patientId: initialPatientId } = use(searchParams);
+  const { patientId: initialPatientId, corrects } = use(searchParams);
   const t = useTranslations("entry");
   const tTimeline = useTranslations("timeline");
   const errorMessage = useApiErrorMessage();
   const fieldErrors = useFieldErrors();
   const formId = useId();
+  const router = useRouter();
+  const [gate, setGate] = useState<"loading" | "ready" | "denied" | "error">("loading");
 
   const [patientId, setPatientId] = useState(initialPatientId ?? "");
   const [entryType, setEntryType] = useState<EntryType | "">("");
@@ -93,10 +98,55 @@ export default function NewEntryPage({
   const [uploadFraction, setUploadFraction] = useState<number | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    async function initialise() {
+      try {
+        const me = await api.get<Me>("/auth/me");
+        if (!active) return;
+        if (me.role !== "PROVIDER_STAFF" || !me.emailVerified) {
+          setGate("denied");
+          return;
+        }
+        if (corrects) {
+          const entry = await api.get<EntryDetail>(`/entries/${encodeURIComponent(corrects)}`);
+          if (!active) return;
+          if (entry.supersededById) {
+            setFormError(t("correction.alreadyCorrected"));
+            setGate("error");
+            return;
+          }
+          setPatientId(entry.patientId);
+          setEntryType(entry.entryType);
+          const local = new Date(entry.occurredAt);
+          setOccurredAt(new Date(local.getTime() - local.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+          setIsCritical(entry.isCritical);
+          setCodeSystem(entry.codeSystem ?? ""); setCode(entry.code ?? "");
+          setDisplayName(entry.displayName ?? ""); setValueNumeric(entry.valueNumeric?.toString() ?? "");
+          setValueText(entry.valueText ?? ""); setUnit(entry.unit ?? "");
+          setReferenceLow(entry.referenceLow?.toString() ?? "");
+          setReferenceHigh(entry.referenceHigh?.toString() ?? "");
+          setMedicationName(entry.medicationName ?? ""); setDosage(entry.dosage ?? "");
+          setFrequency(entry.frequency ?? ""); setRoute(entry.route ?? ""); setText(entry.text ?? "");
+        }
+        setGate("ready");
+      } catch (error) {
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) { router.replace("/login"); return; }
+        setFormError(errorMessage(error)); setGate("error");
+      }
+    }
+    void initialise();
+    return () => { active = false; };
+    // Translation and router functions are stable for this page lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [corrects]);
+
   const f = t.raw("new.fields") as Record<string, string>;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (gate !== "ready") return;
     setFormError(null);
     setErrors({});
 
@@ -132,7 +182,7 @@ export default function NewEntryPage({
 
     setSubmitting(true);
     try {
-      const entry = await api.post<{ id: string }>(`/patients/${patientId}/entries`, payload);
+      const entry = await api.post<{ id: string }>(`/patients/${encodeURIComponent(patientId)}/entries${corrects ? `/${encodeURIComponent(corrects)}/corrections` : ""}`, payload);
       setCreatedId(entry.id);
 
       if (file) {
@@ -160,12 +210,23 @@ export default function NewEntryPage({
     }
   }
 
+  if (gate !== "ready") {
+    return <section className="mx-auto max-w-lg space-y-4">
+      <h1 className="text-2xl font-semibold">{t("new.title")}</h1>
+      {gate === "loading" ? <p role="status">{t("gate.loading")}</p> :
+        <Alert variant={gate === "error" ? "destructive" : "default"}>
+          <AlertTitle>{t("gate.title")}</AlertTitle>
+          <AlertDescription>{formError ?? t("gate.denied")}</AlertDescription>
+        </Alert>}
+    </section>;
+  }
+
   if (createdId) {
     return (
       <section className="mx-auto max-w-lg animate-in fade-in-0 slide-in-from-bottom-1 space-y-4 duration-300 motion-reduce:animate-none">
         <Alert className="border-consent-active/40 text-consent-active">
-          <AlertTitle>{t("new.success.title")}</AlertTitle>
-          <AlertDescription>{formError ?? t("new.success.body")}</AlertDescription>
+          <AlertTitle>{t(corrects ? "correction.success" : "new.success.title")}</AlertTitle>
+          <AlertDescription>{formError ?? t(corrects ? "correction.successBody" : "new.success.body")}</AlertDescription>
         </Alert>
         <Button asChild>
           <Link href={`/patients/${patientId}/records/${createdId}`}>{t("new.success.viewEntry")}</Link>
@@ -178,9 +239,9 @@ export default function NewEntryPage({
     <section className="mx-auto max-w-lg animate-in fade-in-0 slide-in-from-bottom-1 space-y-8 duration-300 motion-reduce:animate-none">
       <div className="flex flex-col gap-1">
         <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-          {t("new.title")}
+          {t(corrects ? "correction.title" : "new.title")}
         </h1>
-        <p className="text-pretty text-muted-foreground">{t("new.subtitle")}</p>
+        <p className="text-pretty text-muted-foreground">{t(corrects ? "correction.subtitle" : "new.subtitle")}</p>
       </div>
 
       {formError && (
@@ -198,6 +259,7 @@ export default function NewEntryPage({
           value={patientId}
           onChange={setPatientId}
           error={errors.patientId}
+          readOnly={!!corrects}
         />
 
         <EntryTypeField
@@ -370,7 +432,7 @@ export default function NewEntryPage({
 
         <Button type="submit" disabled={submitting} aria-busy={submitting} className="w-full">
           {submitting && <Spinner />}
-          {submitting ? t("new.submitting") : t("new.submit")}
+          {submitting ? t("new.submitting") : t(corrects ? "correction.submit" : "new.submit")}
         </Button>
       </form>
     </section>
@@ -386,6 +448,7 @@ function TextField({
   error,
   type = "text",
   inputMode,
+  readOnly = false,
 }: {
   formId: string;
   name: string;
@@ -395,6 +458,7 @@ function TextField({
   error?: string;
   type?: string;
   inputMode?: "decimal";
+  readOnly?: boolean;
 }) {
   const inputId = `${formId}-${name}`;
   const errorId = `${inputId}-error`;
@@ -404,6 +468,7 @@ function TextField({
       <Input
         id={inputId}
         type={type}
+        readOnly={readOnly}
         inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}

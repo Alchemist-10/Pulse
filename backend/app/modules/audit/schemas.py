@@ -11,6 +11,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.core.schema import PulseSchema
+from app.modules.audit.models import AuditAction
 
 
 class AuditEventProjection(PulseSchema):
@@ -19,5 +20,5 @@ class AuditEventProjection(PulseSchema):
     actor_name: str
     actor_role: str
     provider_name: str | None = None
-    action: str
+    action: AuditAction
     entry_type: str | None = None

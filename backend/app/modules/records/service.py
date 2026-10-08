@@ -1,31 +1,19 @@
-"""Records business rules (P2.5).
+"""Clinical records business rules.
 
-No SQL, no FastAPI imports (backend.md). Every entry-returning function
-takes an `Actor`; there are no "internal" helpers that skip it — the pure
-ORM->wire mappers live in `projections.py` precisely so they are not
-somewhere a filter could have been dropped.
-
-Read access (P3.3/P3.4, #39/#40) — a Patient reads their own history; a
-Provider Staff user reads entries authored by their own Provider. Writes
-(`insert_entry`/`supersede_entry`) stay the Phase 2 coarse Provider Staff
-allowance — any patient — pending a decision on narrowing them too. A
-Clinician with no live permission, an Administrator, or an unrelated actor
-gets **404, never 403**: a 403 would confirm the record exists
-(clinical-safety.md). Clinician consent/break-glass matching landed in #41
-(P3.5). Audit emission (P3.8, #45): `list_timeline`/`get_entry` each emit
-one `ENTRY_VIEWED`, `get_document` one `DOCUMENT_VIEWED`, via
-`app.modules.audit.service.emit` — never on a denied read, since a denial
-never reaches `accessible_entries` in the first place. `add_document` does
-not emit: it's a write (filing), not a view, and the audit action enum has
-no upload-shaped value for it (`AuditAction`, `audit/models.py`); it does
-notify the Patient in-app (`RECORD_UPLOADED`). `request_id` is filled by
-`emit()` from `RequestIdMiddleware`'s contextvar.
+Staff attribution comes from authenticated membership. Staff may file for
+existing identities, but may only correct or attach documents to their own
+provider's entries. Reads compose from accessible_entries; denied and absent
+resources return the same 404. Reads commit their audit before returning data;
+writes commit state, audit and required in-app history together. Uploaded
+bytes are deleted on database failure and verified before serving.
 """
 
 from __future__ import annotations
 
 import hashlib
+from datetime import date, datetime
 from pathlib import PurePosixPath
+from typing import NoReturn
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +24,7 @@ from app.core.authz import Role
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
 from app.core.pagination import Page
+from app.core.transactions import transactional
 from app.modules.audit import service as audit_service
 from app.modules.audit.service import AuditAction, AuditMetadata, AuditOutcome
 from app.modules.notifications import service as notifications_service
@@ -108,21 +97,13 @@ async def _provider_name(session: AsyncSession, provider_id: UUID | None) -> str
 
 
 async def _authorize_entry_access(session: AsyncSession, actor: Actor, patient_id: UUID) -> None:
-    """P3.3/P3.4 (#39, #40) access — rules 1–2 via `access.resolve_patient_access`.
-
-    This is the identity gate ("does `actor` have any relationship to this
-    patient at all"), not `repository.accessible_entries` itself —
-    `accessible_entries` decides which *entries* are visible and would
-    wrongly 404 a Patient or Provider Staff member whose history is
-    genuinely empty. Both are built from the same rule-1/rule-2 lookups
-    (`repository.actor_owns_patient` / `provider_id_for_staff_actor`), so
-    they can't drift apart. Everyone else — Clinician with no live
-    permission yet, Administrator, an unrelated Patient — gets 404, never
-    403 (clinical-safety.md, ADR-0007). Rules 3–4 land in #41 (P3.5).
+    """Authorize a patient relationship independently of a possibly empty
+    clinical result. Membership alone is insufficient for provider staff;
+    owners and clinicians with live grants may have an empty history.
     """
     resolved = await access.resolve_patient_access(session, actor, patient_id)
     if not resolved.has_any_access:
-        raise _not_found()
+        await _deny_access(session, actor, patient_id)
 
 
 def _validate_payload(payload: EntryCreate) -> None:
@@ -137,6 +118,7 @@ def _validate_payload(payload: EntryCreate) -> None:
         )
 
 
+@transactional
 async def list_timeline(
     session: AsyncSession,
     actor: Actor,
@@ -172,10 +154,11 @@ async def list_timeline(
     )
 
 
+@transactional
 async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> EntryDetail:
     entry = await repository.get_entry(session, actor, entry_id)
     if entry is None:
-        raise _not_found()
+        await _deny_access(session, actor, entry_id)
     await _authorize_entry_access(session, actor, entry.patient_id)
     supersedes_id = await repository.get_superseding_original_id(session, entry_id)
     documents = await repository.list_documents(session, entry_id)
@@ -193,6 +176,7 @@ async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> Entr
     return projections.to_detail(entry, supersedes_id=supersedes_id, documents=documents)
 
 
+@transactional
 async def insert_entry(
     session: AsyncSession, actor: Actor, patient_id: UUID, payload: EntryCreate
 ) -> EntryDetail:
@@ -202,17 +186,33 @@ async def insert_entry(
     if patient is None:
         raise _not_found()
     _validate_payload(payload)
-    if payload.source_provider_id is None:
-        provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
-        payload = payload.model_copy(update={"source_provider_id": provider_id})
+    provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
+    if (
+        actor.role is not Role.PROVIDER_STAFF
+        or provider_id is None
+        or (payload.source_provider_id is not None and payload.source_provider_id != provider_id)
+    ):
+        raise PulseError(
+            ErrorCode.FORBIDDEN, "An associated provider is required.", http_status=403
+        )
+    payload = payload.model_copy(update={"source_provider_id": provider_id})
     entry = await repository.insert_entry(session, actor, patient_id, payload)
-    await session.commit()
-    fresh = await repository.get_entry_unfiltered(session, actor, entry.id)
+    await audit_service.emit(
+        session,
+        actor=actor,
+        action=AuditAction.ENTRY_CREATED,
+        resource_type="medical_entry",
+        resource_id=entry.id,
+        patient_id=patient_id,
+        outcome=AuditOutcome.SUCCESS,
+    )
+    fresh = await repository.get_entry(session, actor, entry.id)
     if fresh is None:  # pragma: no cover - just inserted
         raise _not_found()
     return projections.to_detail(fresh, supersedes_id=None, documents=[])
 
 
+@transactional
 async def supersede_entry(
     session: AsyncSession,
     actor: Actor,
@@ -225,13 +225,21 @@ async def supersede_entry(
     restricts this to Provider Staff (RECORDS_WRITE)."""
     if await users_service.get_patient(session, patient_id) is None:
         raise _not_found()
-    original = await repository.get_entry_unfiltered(session, actor, original_id)
+    await users_service.lock_patient_for_write(session, patient_id)
+    original = await repository.get_entry(session, actor, original_id)
     if original is None or original.patient_id != patient_id:
-        raise _not_found()
+        await _deny_access(session, actor, original_id)
     _validate_payload(payload)
-    if payload.source_provider_id is None:
-        provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
-        payload = payload.model_copy(update={"source_provider_id": provider_id})
+    provider_id = await users_service.get_provider_for_staff(session, actor.user_id)
+    if (
+        actor.role is not Role.PROVIDER_STAFF
+        or provider_id is None
+        or (payload.source_provider_id is not None and payload.source_provider_id != provider_id)
+    ):
+        raise PulseError(
+            ErrorCode.FORBIDDEN, "An associated provider is required.", http_status=403
+        )
+    payload = payload.model_copy(update={"source_provider_id": provider_id})
     replacement = await repository.supersede_entry(session, actor, patient_id, original_id, payload)
     if replacement is None:
         raise PulseError(
@@ -239,8 +247,16 @@ async def supersede_entry(
             "This entry has already been corrected.",
             http_status=409,
         )
-    await session.commit()
-    fresh = await repository.get_entry_unfiltered(session, actor, replacement.id)
+    await audit_service.emit(
+        session,
+        actor=actor,
+        action=AuditAction.ENTRY_CORRECTED,
+        resource_type="medical_entry",
+        resource_id=replacement.id,
+        patient_id=patient_id,
+        outcome=AuditOutcome.SUCCESS,
+    )
+    fresh = await repository.get_entry(session, actor, replacement.id)
     if fresh is None:  # pragma: no cover - just inserted
         raise _not_found()
     return projections.to_detail(fresh, supersedes_id=original_id, documents=[])
@@ -272,11 +288,12 @@ async def add_document(
             "Only PDF, PNG and JPEG documents are accepted.",
             http_status=422,
         )
+    await users_service.lock_patient_for_write(session, patient_id)
     entry = await repository.get_entry(session, actor, entry_id)
     if entry is None or entry.patient_id != patient_id:
-        raise _not_found()
+        await _deny_access(session, actor, entry_id)
     await _authorize_entry_access(session, actor, entry.patient_id)
-    safe_name = PurePosixPath(filename).name or "upload"
+    safe_name = (PurePosixPath(filename).name or "upload")[:255]
     key = f"{entry_id}/{uuid4()}-{safe_name}"
     storage_path = await storage.put(key, data, sniffed)
     meta = DocumentCreate(
@@ -286,9 +303,23 @@ async def add_document(
         storage_path=storage_path,
         checksum_sha256=hashlib.sha256(data).hexdigest(),
     )
-    doc = await repository.add_document(session, actor, entry_id, meta)
-    await session.commit()
-    await _notify_record_uploaded(session, actor, entry.patient_id, entry_id)
+    try:
+        doc = await repository.add_document(session, actor, entry_id, meta)
+        await audit_service.emit(
+            session,
+            actor=actor,
+            action=AuditAction.DOCUMENT_UPLOADED,
+            resource_type="medical_document",
+            resource_id=doc.id,
+            patient_id=patient_id,
+            outcome=AuditOutcome.SUCCESS,
+        )
+        await _notify_record_uploaded(session, actor, entry.patient_id, entry_id)
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        await storage.delete(storage_path)
+        raise
     return projections.to_document(doc)
 
 
@@ -308,6 +339,7 @@ async def _notify_record_uploaded(
         )
 
 
+@transactional
 async def get_document(
     session: AsyncSession,
     actor: Actor,
@@ -319,10 +351,10 @@ async def get_document(
     Entry — a denied caller gets 404, never a hint that it exists."""
     doc = await repository.get_document(session, actor, document_id)
     if doc is None:
-        raise _not_found()
+        await _deny_access(session, actor, document_id)
     entry = await repository.get_entry(session, actor, doc.entry_id)
     if entry is None:
-        raise _not_found()
+        await _deny_access(session, actor, doc.entry_id)
     await _authorize_entry_access(session, actor, entry.patient_id)
     provider_name = await _provider_name(session, entry.source_provider_id)
     await audit_service.emit(
@@ -335,7 +367,14 @@ async def get_document(
         outcome=AuditOutcome.SUCCESS,
         metadata=AuditMetadata(entry_type=entry.entry_type.value, provider_name=provider_name),
     )
-    data = await storage.get(doc.storage_path)
+    try:
+        data = await storage.get(doc.storage_path)
+    except FileNotFoundError as exc:
+        raise _not_found() from exc
+    if hashlib.sha256(data).hexdigest() != doc.checksum_sha256:
+        raise PulseError(
+            ErrorCode.INTERNAL_ERROR, "Document integrity check failed.", http_status=500
+        )
     return projections.to_document(doc), data
 
 
@@ -366,33 +405,76 @@ async def reverse_entry_reassignment(
 
 
 async def lab_trend(
-    session: AsyncSession, actor: Actor, patient_id: UUID, *, code_system: str, code: str
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    *,
+    code_system: str,
+    code: str,
+    from_date: date | None = None,
+    to_date: date | None = None,
 ) -> list[LabTrendPoint]:
     return await repository.lab_trend(
-        session, actor, patient_id, code_system=code_system, code=code
+        session,
+        actor,
+        patient_id,
+        code_system=code_system,
+        code=code,
+        from_date=from_date,
+        to_date=to_date,
     )
 
 
-async def lab_tests(session: AsyncSession, actor: Actor, patient_id: UUID) -> list[LabTest]:
-    return await repository.lab_tests(session, actor, patient_id)
+async def lab_tests(
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    *,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[LabTest]:
+    return await repository.lab_tests(
+        session, actor, patient_id, from_date=from_date, to_date=to_date
+    )
 
 
 async def visit_frequency_by_month(
-    session: AsyncSession, actor: Actor, patient_id: UUID
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    *,
+    from_date: date | None = None,
+    to_date: date | None = None,
 ) -> list[MonthlyVisitCount]:
-    return await repository.visit_frequency_by_month(session, actor, patient_id)
+    return await repository.visit_frequency_by_month(
+        session, actor, patient_id, from_date=from_date, to_date=to_date
+    )
 
 
 async def active_medications(
-    session: AsyncSession, actor: Actor, patient_id: UUID
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    *,
+    from_date: date | None = None,
+    to_date: date | None = None,
 ) -> list[MedicationSummary]:
-    return await repository.active_medications(session, actor, patient_id)
+    return await repository.active_medications(
+        session, actor, patient_id, from_date=from_date, to_date=to_date
+    )
 
 
 async def provider_entry_counts(
-    session: AsyncSession, actor: Actor, patient_id: UUID
+    session: AsyncSession,
+    actor: Actor,
+    patient_id: UUID,
+    *,
+    from_date: date | None = None,
+    to_date: date | None = None,
 ) -> list[ProviderEntryCount]:
-    return await repository.provider_entry_counts(session, actor, patient_id)
+    return await repository.provider_entry_counts(
+        session, actor, patient_id, from_date=from_date, to_date=to_date
+    )
 
 
 async def future_dated_entry_count(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
@@ -410,3 +492,42 @@ async def entry_count_for_patient(session: AsyncSession, actor: Actor, patient_i
             http_status=403,
         )
     return await repository.count_entries_for_patient(session, actor, patient_id)
+
+
+async def entry_reassignment_conflicts(
+    session: AsyncSession,
+    actor: Actor,
+    entry_ids: list[UUID],
+    expected_patient_id: UUID,
+    merged_at: datetime,
+) -> bool:
+    return await repository.entry_reassignment_conflicts(
+        session, actor, entry_ids, expected_patient_id, merged_at
+    )
+
+
+async def authorize_patient_access(session: AsyncSession, actor: Actor, patient_id: UUID) -> None:
+    await _authorize_entry_access(session, actor, patient_id)
+
+
+async def _deny_access(session: AsyncSession, actor: Actor, resource_id: UUID) -> NoReturn:
+    # No patient FK: a nonexistent id and a denied id have the same response.
+    await audit_service.emit(
+        session,
+        actor=actor,
+        action=AuditAction.ACCESS_DENIED,
+        resource_type="clinical_resource",
+        resource_id=resource_id,
+        patient_id=None,
+        outcome=AuditOutcome.DENIED,
+    )
+    await session.commit()
+    raise _not_found()
+
+
+async def entry_counts_for_patients(
+    session: AsyncSession, actor: Actor, patient_ids: list[UUID]
+) -> dict[UUID, int]:
+    if actor.role is not Role.ADMINISTRATOR:
+        raise PulseError(ErrorCode.FORBIDDEN, "Administrator access required.", http_status=403)
+    return await repository.entry_counts_for_patients(session, actor, patient_ids)

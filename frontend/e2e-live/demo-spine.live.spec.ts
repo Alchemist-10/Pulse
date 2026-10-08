@@ -7,9 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
 // collide, mirroring three separate people in the demo.
 
 const PATIENT_ID = "0c96112a-1653-5403-999c-30ec1ef6dda8";
-// clinician0's user id (seed/data/identity). The consent list titles each
-// row with the grantee's user id (granteeName is not populated yet).
-const CLINICIAN_USER_ID = "44e4531e-4149-513f-95d5-343a942af00b";
+
 const STAFF_EMAIL = "staff000@example.com";
 const PATIENT_EMAIL = "demo.patient.en@example.com";
 const CLINICIAN_EMAIL = "clinician0@example.com";
@@ -93,15 +91,14 @@ test("full demo spine against the live stack: file, grant, read, audit, revoke, 
     await patientPage.waitForLoadState("networkidle");
     await expect(patientPage.locator("table tbody tr").first()).toBeVisible();
 
-    // 5. Patient revokes the clinician's consent. Rows are titled with the
-    //    grantee's user id; revoke every ACTIVE grant to this clinician —
+    // 5. Revoke every ACTIVE consent to this clinician —
     //    CI sees exactly one, but a long-lived demo volume can carry stale
     //    grants from earlier rehearsals, and any survivor defeats step 6.
     await patientPage.goto("/en/consent");
     await patientPage.waitForLoadState("networkidle");
     for (let i = 0; i < 3; i++) {
       const row = patientPage
-        .locator("li", { hasText: CLINICIAN_USER_ID })
+        .locator("li", { hasText: CLINICIAN_EMAIL })
         .filter({ has: patientPage.getByRole("button", { name: "Revoke" }) });
       if ((await row.count()) === 0) break;
       await row.first().getByRole("button", { name: "Revoke" }).click();

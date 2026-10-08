@@ -93,13 +93,12 @@ function NotificationRow({
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            {typeLabel(notification.type, t)}
-          </span>
+          <p className="text-sm font-medium text-pretty text-foreground">{typeLabel(notification.type, t)}</p>
           <ReadBadge readAt={notification.readAt} />
         </div>
-        <p className="text-sm font-medium text-pretty text-foreground">{notification.title}</p>
-        <p className="text-sm text-pretty text-muted-foreground">{notification.body}</p>
+        <p className="text-sm text-pretty text-muted-foreground">{notification.type === "DAILY_DIGEST"
+          ? t("content.DAILY_DIGEST", { count: typeof notification.params?.viewCount === "number" ? notification.params.viewCount : 0 })
+          : t(`content.${notification.type}`)}</p>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs tabular-nums text-muted-foreground">
             {formatDate(notification.createdAt)}
