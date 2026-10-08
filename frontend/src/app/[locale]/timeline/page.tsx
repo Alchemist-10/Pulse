@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BreakGlassBanner } from "@/components/BreakGlassBanner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -100,12 +100,15 @@ export default function TimelinePage() {
   const [typeFilter, setTypeFilter] = useState<EntryType | "">("");
   const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const paginationRequest = useRef<AbortController | null>(null);
 
   // Resolve the current patient id once — the entries endpoint is nested
   // under it (docs/api-conventions.md: entries are meaningless without a
   // patient).
   useEffect(() => {
+    if (patientId) return;
     let active = true;
+    Promise.resolve().then(() => { if (active) setState({ status: "loading" }); });
     api
       .get<{ id: string }>("/patients/me")
       .then((profile) => {
@@ -128,7 +131,7 @@ export default function TimelinePage() {
     };
     // errorMessage / router are stable for the page lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [patientId, retryToken]);
 
   // Fetch (or re-fetch) the first page whenever the patient id, the type
   // filter, or an explicit retry changes. Inlined rather than built from a
@@ -164,6 +167,7 @@ export default function TimelinePage() {
         setState({ status: "error", message: errorMessage(err) });
       });
     return () => {
+      paginationRequest.current?.abort();
       active = false;
     };
     // errorMessage / router are stable for the page lifetime.
@@ -173,10 +177,14 @@ export default function TimelinePage() {
   function loadMore() {
     if (!patientId || state.status !== "ready" || !state.nextCursor) return;
     const cursor = state.nextCursor;
+    paginationRequest.current?.abort();
+    const controller = new AbortController();
+    paginationRequest.current = controller;
     setState({ ...state, loadingMore: true, loadMoreError: null });
     api
-      .get<Page<EntrySummary>>(`/patients/${patientId}/entries?${entriesQuery(typeFilter, cursor)}`)
+      .get<Page<EntrySummary>>(`/patients/${patientId}/entries?${entriesQuery(typeFilter, cursor)}`, { signal: controller.signal })
       .then((page) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? {
@@ -190,6 +198,7 @@ export default function TimelinePage() {
         );
       })
       .catch((err) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? { ...prev, loadingMore: false, loadMoreError: errorMessage(err) }
@@ -215,7 +224,7 @@ export default function TimelinePage() {
         <Label htmlFor={filterId}>{t("filter.label")}</Label>
         <Select
           value={typeFilter || ALL_TYPES}
-          onValueChange={(value) => setTypeFilter(value === ALL_TYPES ? "" : (value as EntryType))}
+          onValueChange={(value) => { paginationRequest.current?.abort(); setTypeFilter(value === ALL_TYPES ? "" : (value as EntryType)); }}
         >
           <SelectTrigger id={filterId} aria-label={t("filter.label")} className="w-full">
             <SelectValue placeholder={t("filter.label")} />
@@ -254,11 +263,7 @@ export default function TimelinePage() {
             <AlertTitle>{t("error.title")}</AlertTitle>
             <AlertDescription>{state.message}</AlertDescription>
           </Alert>
-          {patientId && (
-            <Button variant="outline" onClick={() => setRetryToken((n) => n + 1)}>
-              {t("error.retry")}
-            </Button>
-          )}
+          <Button variant="outline" onClick={() => setRetryToken((n) => n + 1)}>{t("error.retry")}</Button>
         </div>
       )}
 

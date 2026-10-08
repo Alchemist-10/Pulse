@@ -33,7 +33,17 @@
     "title": "Recent lab trend",
     "aboveRange": "above reference range",
     "belowRange": "below reference range",
-    "picker": "Lab test"
+    "picker": "Lab test",
+    "unitUnknown": "Unit not recorded",
+    "series": "Lab trend — {unit}",
+    "results": "Lab results",
+    "date": "Date",
+    "value": "Result",
+    "unit": "Unit",
+    "referenceRange": "Reference range",
+    "status": "Range status",
+    "missing": "Result not recorded",
+    "withinRange": "within reference range"
   },
   "stats": {
     "totalVisits": "Total entries",

@@ -14,6 +14,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ClinicalText } from "@/components/ClinicalText";
+import { DocumentAttachmentForm } from "@/components/DocumentAttachmentForm";
+import { EntryStatus } from "@/components/EntryStatus";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { Me } from "@/lib/auth";
@@ -155,7 +157,8 @@ export default function ClinicianEntryDetailPage({
           {tEntry("correction.cta")}
         </Link></Button>
       )}
-      {state.status === "ready" && <EntryDetailView entry={state.entry} patientId={patientId} />}
+      {state.status === "ready" && canCorrect && !state.entry.supersededById && <DocumentAttachmentForm patientId={state.entry.patientId} entryId={state.entry.id} onAttached={doc => setState(prev => prev.status === "ready" && prev.entry.id === doc.entryId ? { ...prev, entry: { ...prev.entry, documents: [...prev.entry.documents, doc] } } : prev)} />}
+      {state.status === "ready" && <EntryDetailView entry={state.entry} />}
     </section>
   );
 }
@@ -169,7 +172,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function EntryDetailView({ entry, patientId }: { entry: EntryDetail; patientId: string }) {
+function EntryDetailView({ entry }: { entry: EntryDetail }) {
   const t = useTranslations("timeline");
   const Icon = ENTRY_ICONS[entry.entryType];
   const f = t.raw("detail.fields") as Record<string, string>;
@@ -231,21 +234,7 @@ function EntryDetailView({ entry, patientId }: { entry: EntryDetail; patientId: 
         </h1>
       </div>
 
-      {entry.supersedesId && (
-        <Alert>
-          <CircleAlertIcon />
-          <AlertTitle>{t("detail.title")}</AlertTitle>
-          <AlertDescription>
-            <span>{t("detail.correctsNotice")}</span>{" "}
-            <Link
-              href={`/patients/${patientId}/records/${entry.supersedesId}`}
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              {t("detail.viewPrevious")}
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
+      <EntryStatus entry={entry} hrefPrefix={`/patients/${entry.patientId}/records`} />
 
       <dl className="divide-y divide-border rounded-xl border bg-card text-card-foreground">
         {rows.map(([label, value]) => (

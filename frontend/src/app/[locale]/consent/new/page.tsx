@@ -65,9 +65,11 @@ export default function GrantConsentPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [granted, setGranted] = useState<Consent | null>(null);
 
   function toggleType(type: EntryType, checked: boolean) {
+    setDirty(true);
     setSelectedTypes((prev) => {
       const next = new Set(prev);
       if (checked) next.add(type);
@@ -198,7 +200,7 @@ export default function GrantConsentPage() {
         </Alert>
       )}
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate data-unsaved-changes={dirty || submitting} onChange={() => setDirty(true)} className="space-y-4">
         <Field data-invalid={!!errors.granteeUserId}>
           <FieldLabel htmlFor={granteeEmailId}>{f.granteeEmail}</FieldLabel>
           <Input
@@ -265,7 +267,7 @@ export default function GrantConsentPage() {
 
         <Field data-invalid={!!errors.purpose}>
           <FieldLabel htmlFor={purposeTriggerId}>{f.purpose}</FieldLabel>
-          <Select value={purpose ?? ""} onValueChange={(value) => setPurpose(value as ConsentPurpose)}>
+          <Select value={purpose ?? ""} onValueChange={(value) => { setPurpose(value as ConsentPurpose); setDirty(true); }}>
             <SelectTrigger
               id={purposeTriggerId}
               aria-label={f.purpose}

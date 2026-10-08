@@ -97,6 +97,8 @@ export default function NewEntryPage({
   const [submitting, setSubmitting] = useState(false);
   const [uploadFraction, setUploadFraction] = useState<number | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "failed" | "attached">("idle");
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -144,9 +146,30 @@ export default function NewEntryPage({
 
   const f = t.raw("new.fields") as Record<string, string>;
 
+  async function uploadSavedDocument(entryId: string, document: File) {
+    setUploadFraction(0);
+    setUploadStatus("uploading");
+    setFormError(null);
+    try {
+      await uploadDocument(patientId, entryId, document, setUploadFraction);
+      setUploadStatus("attached"); setFile(null); setDirty(false);
+    } catch (error) {
+      setUploadStatus("failed");
+      setFormError(t("new.upload.failed", { reason: errorMessage(error) }));
+    } finally { setUploadFraction(null); }
+  }
+
+  async function retryUpload(event: FormEvent) {
+    event.preventDefault();
+    if (!createdId || !file || submitting) return;
+    setSubmitting(true);
+    try { await uploadSavedDocument(createdId, file); }
+    finally { setSubmitting(false); }
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (gate !== "ready") return;
+    if (gate !== "ready" || submitting || createdId) return;
     setFormError(null);
     setErrors({});
 
@@ -185,16 +208,9 @@ export default function NewEntryPage({
       const entry = await api.post<{ id: string }>(`/patients/${encodeURIComponent(patientId)}/entries${corrects ? `/${encodeURIComponent(corrects)}/corrections` : ""}`, payload);
       setCreatedId(entry.id);
 
-      if (file) {
-        setUploadFraction(0);
-        try {
-          await uploadDocument(patientId, entry.id, file, setUploadFraction);
-        } catch (err) {
-          setFormError(t("new.upload.failed", { reason: errorMessage(err) }));
-        } finally {
-          setUploadFraction(null);
-        }
-      }
+      setDirty(false);
+      if (file) await uploadSavedDocument(entry.id, file);
+
     } catch (err) {
       const fields = fieldErrors(err);
       if (Object.keys(fields).length > 0) {
@@ -224,12 +240,17 @@ export default function NewEntryPage({
   if (createdId) {
     return (
       <section className="mx-auto max-w-lg animate-in fade-in-0 slide-in-from-bottom-1 space-y-4 duration-300 motion-reduce:animate-none">
-        <Alert className="border-consent-active/40 text-consent-active">
+        <Alert variant={uploadStatus === "failed" ? "destructive" : "default"}>
           <AlertTitle>{t(corrects ? "correction.success" : "new.success.title")}</AlertTitle>
-          <AlertDescription>{formError ?? t(corrects ? "correction.successBody" : "new.success.body")}</AlertDescription>
+          <AlertDescription>{uploadStatus === "uploading" ? t("new.upload.keepOpen") : formError ?? (uploadStatus === "attached" ? t("new.upload.attached") : t(corrects ? "correction.successBody" : "new.success.body"))}</AlertDescription>
         </Alert>
+        {uploadStatus !== "idle" && uploadStatus !== "attached" && <form onSubmit={retryUpload} data-unsaved-changes={!!file} className="space-y-4">
+          <DocumentDropzone label={f.file} hint={t("new.fileHint")} file={file} onFileChange={setFile} disabled={submitting} uploadFraction={uploadFraction} />
+          {uploadStatus === "failed" && <Button type="submit" disabled={submitting || !file} aria-busy={submitting}>{t("new.upload.retry")}</Button>}
+        </form>}
+
         <Button asChild>
-          <Link href={`/patients/${patientId}/records/${createdId}`}>{t("new.success.viewEntry")}</Link>
+          <Link href={`/patients/${patientId}/records/${createdId}`} onClick={event => { if (submitting && !window.confirm(t("new.upload.leaveWarning"))) event.preventDefault(); }}>{t("new.success.viewEntry")}</Link>
         </Button>
       </section>
     );
@@ -251,7 +272,7 @@ export default function NewEntryPage({
         </Alert>
       )}
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate data-unsaved-changes={dirty || submitting} onChange={() => setDirty(true)} className="space-y-4">
         <TextField
           formId={formId}
           name="patientId"
@@ -266,7 +287,7 @@ export default function NewEntryPage({
           formId={formId}
           label={f.entryType}
           value={entryType}
-          onChange={setEntryType}
+          onChange={value => { setEntryType(value); setDirty(true); }}
           error={errors.entryType}
           options={ENTRY_TYPES.map((type) => ({
             value: type,
@@ -288,7 +309,7 @@ export default function NewEntryPage({
           <Checkbox
             id={`${formId}-critical`}
             checked={isCritical}
-            onCheckedChange={(checked) => setIsCritical(checked === true)}
+            onCheckedChange={(checked) => { setIsCritical(checked === true); setDirty(true); }}
           />
           <Label htmlFor={`${formId}-critical`}>{f.isCritical}</Label>
         </div>
@@ -425,7 +446,7 @@ export default function NewEntryPage({
           label={f.file}
           hint={t("new.fileHint")}
           file={file}
-          onFileChange={setFile}
+          onFileChange={value => { setFile(value); setDirty(true); }}
           disabled={submitting}
           uploadFraction={uploadFraction}
         />

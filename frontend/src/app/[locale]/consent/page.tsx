@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CircleCheckIcon, CircleXIcon, ClockIcon, ShieldCheckIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -254,10 +254,13 @@ export default function ConsentListPage() {
   const [patientId, setPatientId] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const paginationRequest = useRef<AbortController | null>(null);
   const [revokedNotice, setRevokedNotice] = useState(false);
 
   useEffect(() => {
+    if (patientId) return;
     let active = true;
+    Promise.resolve().then(() => { if (active) setState({ status: "loading" }); });
     api
       .get<{ id: string }>("/patients/me")
       .then((profile) => {
@@ -280,7 +283,7 @@ export default function ConsentListPage() {
     };
     // errorMessage / router are stable for the page lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [patientId, retryToken]);
 
   useEffect(() => {
     if (!patientId) return;
@@ -309,6 +312,7 @@ export default function ConsentListPage() {
         setState({ status: "error", message: errorMessage(err) });
       });
     return () => {
+      paginationRequest.current?.abort();
       active = false;
     };
     // errorMessage / router are stable for the page lifetime.
@@ -318,10 +322,14 @@ export default function ConsentListPage() {
   function loadMore() {
     if (!patientId || state.status !== "ready" || !state.nextCursor) return;
     const cursor = state.nextCursor;
+    paginationRequest.current?.abort();
+    const controller = new AbortController();
+    paginationRequest.current = controller;
     setState({ ...state, loadingMore: true, loadMoreError: null });
     api
-      .get<Page<Consent>>(`/consents?patientId=${patientId}&limit=${LIMIT}&cursor=${cursor}`)
+      .get<Page<Consent>>(`/consents?patientId=${patientId}&limit=${LIMIT}&cursor=${cursor}`, { signal: controller.signal })
       .then((page) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? {
@@ -335,6 +343,7 @@ export default function ConsentListPage() {
         );
       })
       .catch((err) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? { ...prev, loadingMore: false, loadMoreError: errorMessage(err) }
@@ -402,11 +411,7 @@ export default function ConsentListPage() {
             <AlertTitle>{t("list.error.title")}</AlertTitle>
             <AlertDescription>{state.message}</AlertDescription>
           </Alert>
-          {patientId && (
-            <Button variant="outline" onClick={() => setRetryToken((n) => n + 1)}>
-              {t("list.error.retry")}
-            </Button>
-          )}
+          <Button variant="outline" onClick={() => setRetryToken((n) => n + 1)}>{t("list.error.retry")}</Button>
         </div>
       )}
 

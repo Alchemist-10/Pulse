@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BellIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -153,6 +153,7 @@ export default function NotificationsPage() {
 
   const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const paginationRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -180,6 +181,7 @@ export default function NotificationsPage() {
         setState({ status: "error", message: errorMessage(err) });
       });
     return () => {
+      paginationRequest.current?.abort();
       active = false;
     };
     // errorMessage / router are stable for the page lifetime.
@@ -197,10 +199,14 @@ export default function NotificationsPage() {
   function loadMore() {
     if (state.status !== "ready" || !state.nextCursor) return;
     const cursor = state.nextCursor;
+    paginationRequest.current?.abort();
+    const controller = new AbortController();
+    paginationRequest.current = controller;
     setState({ ...state, loadingMore: true, loadMoreError: null });
     api
-      .get<Page<Notification>>(`/notifications?limit=${LIMIT}&cursor=${cursor}`)
+      .get<Page<Notification>>(`/notifications?limit=${LIMIT}&cursor=${cursor}`, { signal: controller.signal })
       .then((page) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? {
@@ -214,6 +220,7 @@ export default function NotificationsPage() {
         );
       })
       .catch((err) => {
+        if (controller.signal.aborted) return;
         setState((prev) =>
           prev.status === "ready"
             ? { ...prev, loadingMore: false, loadMoreError: errorMessage(err) }

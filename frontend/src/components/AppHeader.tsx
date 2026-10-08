@@ -29,7 +29,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { api } from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useApiErrorMessage } from "@/lib/errors";
+import { api, ApiError } from "@/lib/api";
 import type { Me, Role } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +73,9 @@ export function AppHeader() {
   const { resolvedTheme, setTheme } = useTheme();
   const [me, setMe] = useState<Me | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const errorMessage = useApiErrorMessage();
 
   useEffect(() => {
     let active = true;
@@ -88,9 +93,23 @@ export function AppHeader() {
     pathname === href || pathname.startsWith(`${href}/`);
 
   async function signOut() {
-    await api.post("/auth/logout").catch(() => {});
-    setMe(null);
-    router.replace("/login");
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await api.post("/auth/logout");
+      setMe(null);
+      router.replace("/login");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setMe(null);
+        router.replace("/login");
+      } else {
+        setSignOutError(errorMessage(error));
+      }
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   const navLinks = (onNavigate?: () => void) =>
@@ -126,7 +145,7 @@ export function AppHeader() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="xl:hidden"
                 aria-label={t("nav.openMenu")}
               >
                 <MenuIcon />
@@ -159,7 +178,7 @@ export function AppHeader() {
         {links.length > 0 && (
           <nav
             aria-label={t("nav.label")}
-            className="hidden items-center gap-1 md:flex"
+            className="hidden items-center gap-1 xl:flex"
           >
             {navLinks()}
           </nav>
@@ -194,7 +213,7 @@ export function AppHeader() {
                   {me.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={signOut}>
+                <DropdownMenuItem onSelect={signOut} disabled={signingOut}>
                   <LogOutIcon />
                   {t("nav.signOut")}
                 </DropdownMenuItem>
@@ -209,6 +228,12 @@ export function AppHeader() {
           )}
         </div>
       </div>
+      {signOutError && <Alert variant="destructive" className="mx-auto max-w-6xl rounded-none border-x-0 border-b-0">
+        <AlertDescription>
+          <p>{t("nav.signOutFailed")}</p><p>{signOutError}</p>
+          <Button variant="outline" disabled={signingOut} aria-busy={signingOut} onClick={signOut}>{t("nav.retrySignOut")}</Button>
+        </AlertDescription>
+      </Alert>}
     </header>
   );
 }

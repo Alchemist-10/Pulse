@@ -124,13 +124,15 @@ async def list_for_patient(
     *,
     cursor: str | None = None,
     limit: int = 50,
+    action: AuditAction | None = None,
+    since: datetime | None = None,
 ) -> Page[AuditEventProjection]:
     """Read the signed-in patient's own current identity scope."""
     own = await users_service.get_own_patient_profile(session, actor)
     if own is None or (patient_id is not None and patient_id != own.id):
         raise _not_found()
     rows, next_cursor = await repository.list_for_patient(
-        session, own.id, cursor=cursor, limit=limit
+        session, own.id, cursor=cursor, limit=limit, action=action, since=since
     )
     emails = await users_service.user_email_map(
         session, list({row.actor_user_id for row in rows if row.actor_user_id})

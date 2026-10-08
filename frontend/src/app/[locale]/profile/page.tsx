@@ -44,12 +44,15 @@ function ProfileSkeleton() {
 export default function ProfilePage() {
   const t = useTranslations("profile");
   const tLocale = useTranslations("locale");
+  const tActions = useTranslations("actions");
   const errorMessage = useApiErrorMessage();
   const router = useRouter();
+  const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
     let active = true;
+    Promise.resolve().then(() => { if (active) setState({ status: "loading" }); });
     api
       .get<PatientProfile>("/patients/me")
       .then((profile) => {
@@ -72,7 +75,7 @@ export default function ProfilePage() {
     };
     // errorMessage / router are stable for the page lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [retryToken]);
 
   const header = (
     <div className="space-y-1">
@@ -112,7 +115,7 @@ export default function ProfilePage() {
           <InfoIcon />
           <AlertTitle>{t("title")}</AlertTitle>
           <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
+        </Alert><Button variant="outline" onClick={() => setRetryToken(n => n + 1)}>{tActions("retry")}</Button>
       </section>
     );
   }

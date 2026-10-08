@@ -60,6 +60,8 @@
       "loading": "Loading document…",
       "unsupported": "Preview is not available for this file type.",
       "close": "Close preview"
-    }
+    },
+    "supersededNotice": "This entry has been superseded by a correction.",
+    "viewCurrent": "View current version"
   }
 }

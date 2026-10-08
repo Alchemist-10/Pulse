@@ -8,6 +8,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import AwareDatetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.authz import Permission
@@ -30,7 +31,9 @@ async def list_audit_events(
     patient_id: Annotated[UUID | None, Query(alias="patientId")] = None,
     cursor: str | None = None,
     limit: int = 50,
+    action: service.AuditAction | None = None,
+    since: AwareDatetime | None = None,
 ) -> Page[AuditEventProjection]:
     return await service.list_for_patient(
-        session, ctx.actor, patient_id, cursor=cursor, limit=limit
+        session, ctx.actor, patient_id, cursor=cursor, limit=limit, action=action, since=since
     )
