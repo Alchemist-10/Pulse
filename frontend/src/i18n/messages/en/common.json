@@ -57,6 +57,7 @@
     "toggleTheme": "Toggle theme",
     "account": "Account",
     "signOutFailed": "Could not sign out. Try again before leaving this device.",
-    "retrySignOut": "Retry sign out"
+    "retrySignOut": "Retry sign out",
+    "patientTasks": "Patient tasks"
   }
 }

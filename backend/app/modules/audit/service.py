@@ -31,6 +31,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.actor import Actor
+from app.core.authz import Role
 from app.core.errors import ErrorCode
 from app.core.exceptions import PulseError
 from app.core.middleware import get_request_context, get_request_id
@@ -105,9 +106,12 @@ async def emit(
     )
 
 
-def _to_projection(row: repository.PatientAuditRow) -> AuditEventProjection:
+def _to_projection(
+    row: repository.PatientAuditRow, *, is_self: bool = False
+) -> AuditEventProjection:
     return AuditEventProjection(
         id=row.id,
+        is_self=is_self,
         occurred_at=row.occurred_at,
         actor_name=row.actor_email or "Unknown",
         actor_role=row.actor_role.value if row.actor_role is not None else "Unknown",
@@ -126,20 +130,34 @@ async def list_for_patient(
     limit: int = 50,
     action: AuditAction | None = None,
     since: datetime | None = None,
+    until: datetime | None = None,
+    actor_role: Role | None = None,
 ) -> Page[AuditEventProjection]:
     """Read the signed-in patient's own current identity scope."""
     own = await users_service.get_own_patient_profile(session, actor)
     if own is None or (patient_id is not None and patient_id != own.id):
         raise _not_found()
+    if since and until and since >= until:
+        raise PulseError(
+            ErrorCode.VALIDATION_ERROR, "Date window must be ordered.", http_status=422
+        )
     rows, next_cursor = await repository.list_for_patient(
-        session, own.id, cursor=cursor, limit=limit, action=action, since=since
+        session,
+        own.id,
+        cursor=cursor,
+        limit=limit,
+        action=action,
+        since=since,
+        until=until,
+        actor_role=actor_role,
     )
     emails = await users_service.user_email_map(
         session, list({row.actor_user_id for row in rows if row.actor_user_id})
     )
     projections = [
         _to_projection(
-            replace(row, actor_email=emails.get(row.actor_user_id) if row.actor_user_id else None)
+            replace(row, actor_email=emails.get(row.actor_user_id) if row.actor_user_id else None),
+            is_self=row.actor_user_id == actor.user_id,
         )
         for row in rows
     ]

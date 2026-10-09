@@ -18,6 +18,7 @@ export type AuditEventProjection = {
   "id": string;
   "occurredAt": string;
   "actorName": string;
+  "isSelf": boolean;
   "actorRole": string;
   "providerName": (string | null);
   "action": AuditAction;
@@ -138,6 +139,7 @@ export type EntryDetail = {
   "isCritical": boolean;
   "supersededById": (string | null);
   "sourceProviderId": (string | null);
+  "providerName": (string | null);
   "summary": (string | null);
   "metadata": {
   [key: string]: unknown;
@@ -159,6 +161,11 @@ export type EntryDetail = {
   "text": (string | null);
 };
 
+export type EntryProvider = {
+  "id": string;
+  "name": string;
+};
+
 export type EntrySummary = {
   "id": string;
   "patientId": string;
@@ -168,6 +175,7 @@ export type EntrySummary = {
   "isCritical": boolean;
   "supersededById": (string | null);
   "sourceProviderId": (string | null);
+  "providerName": (string | null);
   "summary": (string | null);
 };
 

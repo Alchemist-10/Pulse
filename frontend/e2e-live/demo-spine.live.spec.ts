@@ -47,7 +47,9 @@ test("full demo spine against the live stack: file, grant, read, audit, revoke, 
     await expect(staffPage.getByLabel("Patient ID")).toHaveValue(PATIENT_ID);
     await staffPage.getByRole("combobox", { name: "Entry type" }).click();
     await staffPage.getByRole("option", { name: "Diagnosis" }).click();
-    await staffPage.locator('input[type="datetime-local"]').fill("2026-08-01T10:00");
+    await staffPage
+      .locator('input[type="datetime-local"]')
+      .fill("2026-08-01T10:00");
     await staffPage.getByLabel("Code system").fill("ICD-10");
     await staffPage.getByLabel("Code", { exact: true }).fill("E11");
     await staffPage.getByLabel("Display name").fill(displayName);
@@ -66,6 +68,15 @@ test("full demo spine against the live stack: file, grant, read, audit, revoke, 
     const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const expiryValue = expiry.toISOString().slice(0, 16);
     await patientPage.locator('input[type="datetime-local"]').fill(expiryValue);
+    await patientPage
+      .getByRole("radio", { name: "All entry types", exact: true })
+      .check();
+    await patientPage
+      .getByRole("button", { name: "Review access", exact: true })
+      .click();
+    await expect(
+      patientPage.getByRole("heading", { name: "Review before sharing" }),
+    ).toBeVisible();
     await patientPage.getByLabel("Confirm with your password").fill(PASSWORD);
     await patientPage.getByRole("button", { name: "Grant access" }).click();
     await expect(patientPage.getByText("Access granted")).toBeVisible();
@@ -83,7 +94,9 @@ test("full demo spine against the live stack: file, grant, read, audit, revoke, 
     // .first() keeps reruns safe if a crashed earlier run left a grant.
     await clinicianPage.getByRole("link", { name: PATIENT_ID }).first().click();
     await clinicianPage.waitForLoadState("networkidle");
-    await expect(clinicianPage.getByRole("heading", { name: "Patient record" })).toBeVisible();
+    await expect(
+      clinicianPage.getByRole("heading", { name: "Patient record" }),
+    ).toBeVisible();
     await expect(clinicianPage.getByText(displayName)).toBeVisible();
 
     // 4. Patient's own audit view shows at least one row
@@ -103,7 +116,11 @@ test("full demo spine against the live stack: file, grant, read, audit, revoke, 
       if ((await row.count()) === 0) break;
       await row.first().getByRole("button", { name: "Revoke" }).click();
       await row.first().getByRole("button", { name: "Confirm revoke" }).click();
-      await expect(patientPage.getByText("Access revoked.")).toBeVisible();
+      await expect(
+        patientPage.getByText(
+          "Consent revoked. Check remaining current access below.",
+        ),
+      ).toBeVisible();
     }
 
     // 6. Clinician is now locked out

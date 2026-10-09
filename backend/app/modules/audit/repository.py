@@ -113,6 +113,8 @@ async def list_for_patient(
     limit: int = 50,
     action: AuditAction | None = None,
     since: datetime | None = None,
+    until: datetime | None = None,
+    actor_role: Role | None = None,
 ) -> tuple[list[PatientAuditRow], str | None]:
     """`occurred_at DESC` keyset over `(occurred_at, id)` — never offset
     (api-conventions.md). Scoped to `patient_id` only: another patient's
@@ -126,6 +128,10 @@ async def list_for_patient(
         stmt = stmt.where(AuditEvent.action == action)
     if since is not None:
         stmt = stmt.where(AuditEvent.occurred_at >= since)
+    if until is not None:
+        stmt = stmt.where(AuditEvent.occurred_at < until)
+    if actor_role is not None:
+        stmt = stmt.where(AuditEvent.actor_role == actor_role)
     if cursor is not None:
         c_at, c_id = _unpack_cursor(cursor)
         stmt = stmt.where(

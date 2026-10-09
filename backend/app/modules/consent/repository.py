@@ -11,7 +11,7 @@ cached permission" mechanism (clinical-safety.md), not a TTL.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, Date, String, cast, delete, func, or_, select
@@ -105,10 +105,20 @@ async def revoke_consent(
 
 
 async def list_consents_for_patient(
-    session: AsyncSession, patient_id: UUID, *, cursor: str | None, limit: int
+    session: AsyncSession,
+    patient_id: UUID,
+    *,
+    cursor: str | None,
+    limit: int,
+    view: Literal["active", "history"] | None = None,
 ) -> tuple[list[Consent], str | None]:
     limit = max(1, min(limit, _MAX_LIMIT))
     stmt = select(Consent).where(Consent.patient_id == patient_id)
+    active = (Consent.revoked_at.is_(None)) & (Consent.expires_at > func.statement_timestamp())
+    if view == "active":
+        stmt = stmt.where(active)
+    elif view == "history":
+        stmt = stmt.where(~active)
     if cursor is not None:
         c_at, c_id = _unpack_cursor(cursor)
         stmt = stmt.where(

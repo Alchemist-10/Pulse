@@ -29,9 +29,15 @@ class EntrySummary(PulseSchema):
     is_critical: bool = False
     superseded_by_id: UUID | None = None
     source_provider_id: UUID | None = None
+    provider_name: str | None = None
     # A short human label for the row — the diagnosis/lab/medication name, or
     # a note snippet. Recorded text, never translated.
     summary: str | None = None
+
+
+class EntryProvider(PulseSchema):
+    id: UUID
+    name: str
 
 
 class Document(PulseSchema):

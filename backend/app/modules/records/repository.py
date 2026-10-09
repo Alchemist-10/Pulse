@@ -148,6 +148,10 @@ async def list_timeline(
     patient_id: UUID,
     *,
     entry_type: EntryType | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    provider_id: UUID | None = None,
+    q: str | None = None,
     cursor: str | None = None,
     limit: int = 50,
 ) -> tuple[list[MedicalEntry], str | None]:
@@ -160,6 +164,30 @@ async def list_timeline(
     )
     if entry_type is not None:
         stmt = stmt.where(MedicalEntry.entry_type == entry_type)
+    stmt = _in_window(stmt, from_date, to_date)
+    if provider_id is not None:
+        stmt = stmt.where(MedicalEntry.source_provider_id == provider_id)
+    if q and q.strip():
+        # Literal, case-insensitive search across owned subtype tables. Escaping
+        # wildcard characters avoids turning a user's '%' into an all-row match.
+        needle = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        matches = []
+        for subtype in _SUBTYPES:
+            table = subtype.__table__
+            columns = [
+                table.c[name]
+                for name in ("display_name", "medication_name", "text")
+                if name in table.c
+            ]
+            matches.append(
+                select(table.c.id)
+                .where(
+                    table.c.id == MedicalEntry.id,
+                    or_(*(column.ilike(f"%{needle}%", escape="\\") for column in columns)),
+                )
+                .exists()
+            )
+        stmt = stmt.where(or_(*matches))
     if cursor is not None:
         c_at, c_id = _unpack_cursor(cursor)
         stmt = stmt.where(
@@ -180,6 +208,21 @@ async def list_timeline(
         tail = rows[-1]
         next_cursor = _pack_cursor(tail.occurred_at, tail.id)
     return rows, next_cursor
+
+
+async def timeline_provider_ids(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> list[UUID]:
+    stmt = (
+        (await accessible_entries(session, actor, patient_id))
+        .where(
+            MedicalEntry.superseded_by_id.is_(None), MedicalEntry.source_provider_id.is_not(None)
+        )
+        .with_only_columns(MedicalEntry.source_provider_id)
+        .distinct()
+    )
+    rows = _bounded_rows((await session.scalars(stmt.limit(_MAX_SERIES_ROWS + 1))).all())
+    return [row for row in rows if row is not None]
 
 
 async def get_entry(session: AsyncSession, actor: Actor, entry_id: UUID) -> MedicalEntry | None:

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.exceptions import HTTPException
 
 from app.core import readiness
+from app.core.access_logging import configure_access_logging
 from app.core.errors import ErrorCode, ErrorEnvelope
 from app.core.exceptions import (
     PulseError,
@@ -34,6 +35,7 @@ from app.modules.users.routes import router as users_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    configure_access_logging()
     yield
     await close_redis()
 

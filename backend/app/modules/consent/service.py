@@ -32,7 +32,7 @@ the enum already carries.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 from uuid import UUID
 
 from sqlalchemy import ColumnElement
@@ -230,6 +230,7 @@ async def list_consents(
     actor: Actor,
     patient_id: UUID | None,
     *,
+    view: Literal["active", "history"] | None = None,
     cursor: str | None = None,
     limit: int = 50,
 ) -> Page[Consent]:
@@ -241,7 +242,7 @@ async def list_consents(
     if own is None or (patient_id is not None and patient_id != own.id):
         raise _not_found()
     rows, next_cursor = await repository.list_consents_for_patient(
-        session, own.id, cursor=cursor, limit=limit
+        session, own.id, cursor=cursor, limit=limit, view=view
     )
     emails = await users_service.user_email_map(
         session, list({row.grantee_user_id for row in rows})

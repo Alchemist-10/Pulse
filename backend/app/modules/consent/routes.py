@@ -8,7 +8,7 @@ are the coarse role/permission gate (`requires(...)`), not that rule —
 Patient-scoped consent ownership is checked in `service`.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
@@ -64,10 +64,13 @@ async def list_consents(
     ctx: CurrentUser,
     session: SessionDep,
     patient_id: Annotated[UUID | None, Query(alias="patientId")] = None,
+    view: Literal["active", "history"] | None = None,
     cursor: str | None = None,
     limit: int = 50,
 ) -> Page[Consent]:
-    return await service.list_consents(session, ctx.actor, patient_id, cursor=cursor, limit=limit)
+    return await service.list_consents(
+        session, ctx.actor, patient_id, cursor=cursor, limit=limit, view=view
+    )
 
 
 @router.get(

@@ -36,6 +36,7 @@ from app.modules.records.schemas import (
     DocumentCreate,
     EntryCreate,
     EntryDetail,
+    EntryProvider,
     EntrySummary,
     LabTest,
     LabTrendPoint,
@@ -125,12 +126,29 @@ async def list_timeline(
     patient_id: UUID,
     *,
     entry_type: EntryType | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    provider_id: UUID | None = None,
+    q: str | None = None,
     cursor: str | None = None,
     limit: int = 50,
 ) -> Page[EntrySummary]:
     await _authorize_entry_access(session, actor, patient_id)
+    if from_date and to_date and from_date > to_date:
+        raise PulseError(
+            ErrorCode.VALIDATION_ERROR, "Date window must be ordered.", http_status=422
+        )
     rows, next_cursor = await repository.list_timeline(
-        session, actor, patient_id, entry_type=entry_type, cursor=cursor, limit=limit
+        session,
+        actor,
+        patient_id,
+        entry_type=entry_type,
+        cursor=cursor,
+        limit=limit,
+        from_date=from_date,
+        to_date=to_date,
+        provider_id=provider_id,
+        q=q,
     )
     # One ENTRY_VIEWED per call regardless of page size (#45 acceptance) —
     # this describes the query, not a row, so `resource_id` is patient-level
@@ -149,9 +167,44 @@ async def list_timeline(
             count=len(rows),
         ),
     )
+    provider_names = {
+        pid: await _provider_name(session, pid)
+        for pid in {r.source_provider_id for r in rows}
+        if pid is not None
+    }
     return Page[EntrySummary](
-        items=[projections.to_summary(r) for r in rows], next_cursor=next_cursor
+        items=[
+            projections.to_summary(
+                r, provider_names.get(r.source_provider_id) if r.source_provider_id else None
+            )
+            for r in rows
+        ],
+        next_cursor=next_cursor,
     )
+
+
+@transactional
+async def timeline_providers(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> list[EntryProvider]:
+    await _authorize_entry_access(session, actor, patient_id)
+    provider_ids = await repository.timeline_provider_ids(session, actor, patient_id)
+    providers = []
+    for provider_id in provider_ids:
+        name = await _provider_name(session, provider_id)
+        if name is not None:
+            providers.append(EntryProvider(id=provider_id, name=name))
+    await audit_service.emit(
+        session,
+        actor=actor,
+        action=AuditAction.ENTRY_VIEWED,
+        resource_type="medical_entry",
+        resource_id=None,
+        patient_id=patient_id,
+        outcome=AuditOutcome.SUCCESS,
+        metadata=AuditMetadata(count=len(providers)),
+    )
+    return sorted(providers, key=lambda provider: provider.name.casefold())
 
 
 @transactional

@@ -18,6 +18,7 @@ class AuditEventProjection(PulseSchema):
     id: UUID
     occurred_at: datetime
     actor_name: str
+    is_self: bool = False
     actor_role: str
     provider_name: str | None = None
     action: AuditAction
