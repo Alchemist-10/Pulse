@@ -45,3 +45,23 @@ Locale navigation uses the [next-intl navigation API](https://next-intl.dev/docs
 These changes do not implement a patient directory, profile editing, password
 reset, or provider onboarding. Those are separate product capabilities, rather
 than failures in the reviewed workflows.
+
+## Follow-up entry safety checks
+
+The entry form retains drafts when switching types, but sends only the selected
+subtype's fields. An unfinished lab reference range cannot invalidate a clinical
+note, and hidden medication/note values do not enter another subtype's payload.
+Optional prescription coding is visible and preserved when correcting an
+imported prescription. All entry controls are disabled during save and restored
+with their draft intact after a failed request.
+
+Clinician/provider detail also verifies that the returned entry belongs to the
+patient in the route. A mismatch uses the same not-found presentation and exposes
+neither the entry nor correction/attachment controls. Both route identifiers
+participate in loading cleanup; UUID comparison accepts letter-case differences.
+This UI consistency check complements the existing server authorization.
+
+Four additional browser regressions cover subtype switching, in-flight save
+locking and recovery, patient-route mismatch, and coded prescription corrections.
+Form grouping follows the native
+[`fieldset` disabled behavior](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/fieldset).

@@ -630,3 +630,197 @@ test("staff attach a document to an existing entry without creating another entr
   ).toBeVisible();
   expect(posts).toBe(1);
 });
+
+test("switching entry types submits only the visible subtype while preserving its draft", async ({
+  page,
+}) => {
+  await base(page, "PROVIDER_STAFF");
+  let payload: Record<string, unknown> | undefined;
+  await page.route(`**/api/v1/patients/${PID}/entries`, (r) => {
+    payload = r.request().postDataJSON();
+    return json(r, { id: RID }, 201);
+  });
+  await page.goto(`/en/timeline/new?patientId=${PID}`);
+  await page.getByRole("combobox", { name: "Entry type", exact: true }).click();
+  await page.getByRole("option", { name: "Lab report", exact: true }).click();
+  await page
+    .getByLabel("Occurred at", { exact: true })
+    .fill("2026-08-01T10:00");
+  await page.getByLabel("Code system", { exact: true }).fill("LOINC");
+  await page.getByLabel("Code", { exact: true }).fill("synthetic-test");
+  await page.getByLabel("Display name", { exact: true }).fill("Synthetic lab");
+  await page.getByLabel("Result (numeric)", { exact: true }).fill("5.6");
+  await page.getByLabel("Reference range — low", { exact: true }).fill("10");
+  await page.getByLabel("Reference range — high", { exact: true }).fill("1");
+  await page.getByRole("combobox", { name: "Entry type", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Clinical note", exact: true })
+    .click();
+  await page.getByLabel("Note text", { exact: true }).fill("Synthetic note");
+  await page.getByRole("combobox", { name: "Entry type", exact: true }).click();
+  await page.getByRole("option", { name: "Lab report", exact: true }).click();
+  await expect(
+    page.getByLabel("Result (numeric)", { exact: true }),
+  ).toHaveValue("5.6");
+  await page.getByRole("combobox", { name: "Entry type", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Clinical note", exact: true })
+    .click();
+  await page.getByRole("button", { name: "File entry", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "View entry", exact: true }),
+  ).toBeVisible();
+  expect(payload).toMatchObject({
+    entryType: "CLINICAL_NOTE",
+    text: "Synthetic note",
+  });
+  for (const key of [
+    "codeSystem",
+    "code",
+    "displayName",
+    "valueNumeric",
+    "valueText",
+    "unit",
+    "referenceLow",
+    "referenceHigh",
+    "medicationName",
+    "dosage",
+    "frequency",
+    "route",
+  ]) {
+    expect(payload?.[key], key).toBeNull();
+  }
+});
+
+test("entry fields stay locked during save and recover unchanged after a failure", async ({
+  page,
+}) => {
+  await base(page, "PROVIDER_STAFF");
+  let started = false;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let posts = 0;
+  await page.route(`**/api/v1/patients/${PID}/entries`, async (r) => {
+    posts++;
+    if (posts === 1) {
+      started = true;
+      await held;
+      return json(r, { error: { code: "GENERIC" } }, 503);
+    }
+    return json(r, { id: RID }, 201);
+  });
+  await page.goto(`/en/timeline/new?patientId=${PID}`);
+  await page.getByRole("combobox", { name: "Entry type", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Clinical note", exact: true })
+    .click();
+  await page
+    .getByLabel("Occurred at", { exact: true })
+    .fill("2026-08-01T10:00");
+  await page
+    .getByLabel("Note text", { exact: true })
+    .fill("Synthetic pending note");
+  await page.getByRole("button", { name: "File entry", exact: true }).click();
+  try {
+    await expect.poll(() => started).toBe(true);
+    await expect(page.getByLabel("Patient ID", { exact: true })).toBeDisabled();
+    await expect(
+      page.getByRole("combobox", { name: "Entry type", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("checkbox", { name: "Mark as critical", exact: true }),
+    ).toBeDisabled();
+    await expect(page.getByLabel("Note text", { exact: true })).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(page.getByLabel("Patient ID", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Note text", { exact: true })).toHaveValue(
+    "Synthetic pending note",
+  );
+  await expect(page.locator('[data-slot="alert"]')).toBeVisible();
+  await page.getByRole("button", { name: "File entry", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "View entry", exact: true }),
+  ).toHaveAttribute("href", `/en/patients/${PID}/records/${RID}`);
+  expect(posts).toBe(2);
+});
+
+test("entry detail rejects a different patient in the route", async ({
+  page,
+}) => {
+  await base(page, "PROVIDER_STAFF");
+  await page.goto(`/en/patients/${PID}/records/${EID}`);
+  await expect(
+    page.getByText("Synthetic original", { exact: true }),
+  ).toBeVisible();
+  await page.goto(`/en/patients/${RID}/records/${EID}`);
+  await expect(
+    page.getByText("Record not found", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Synthetic original", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Attach document", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Correct this entry", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("prescription correction exposes and preserves its existing optional coding", async ({
+  page,
+}) => {
+  await base(page, "PROVIDER_STAFF");
+  await page.route(`**/api/v1/entries/${EID}`, (r) =>
+    json(r, {
+      ...entry,
+      entryType: "PRESCRIPTION",
+      codeSystem: "RxNorm",
+      code: "synthetic-medication",
+      displayName: "Synthetic coded medication",
+      medicationName: "Synthetic medication",
+      dosage: "Synthetic dosage",
+      text: null,
+    }),
+  );
+  let payload: Record<string, unknown> | undefined;
+  await page.route(
+    `**/api/v1/patients/${PID}/entries/${EID}/corrections`,
+    (r) => {
+      payload = r.request().postDataJSON();
+      return json(r, { id: RID }, 201);
+    },
+  );
+  await page.goto(`/en/timeline/new?patientId=${PID}&corrects=${EID}`);
+  await expect(page.getByLabel("Code system", { exact: true })).toHaveValue(
+    "RxNorm",
+  );
+  await expect(page.getByLabel("Code", { exact: true })).toHaveValue(
+    "synthetic-medication",
+  );
+  await page
+    .getByLabel("Dosage", { exact: true })
+    .fill("Synthetic corrected dosage");
+  await page
+    .getByRole("button", { name: "File correction", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "View entry", exact: true }),
+  ).toBeVisible();
+  expect(payload).toMatchObject({
+    entryType: "PRESCRIPTION",
+    codeSystem: "RxNorm",
+    code: "synthetic-medication",
+    displayName: "Synthetic coded medication",
+    medicationName: "Synthetic medication",
+    dosage: "Synthetic corrected dosage",
+    valueNumeric: null,
+    referenceLow: null,
+    referenceHigh: null,
+    text: null,
+  });
+});
