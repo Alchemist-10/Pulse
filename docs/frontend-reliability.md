@@ -65,3 +65,44 @@ Four additional browser regressions cover subtype switching, in-flight save
 locking and recovery, patient-route mismatch, and coded prescription corrections.
 Form grouping follows the native
 [`fieldset` disabled behavior](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/fieldset).
+
+## Header notification preview
+
+Signed-in Patients have a 44px bell before the language selector. It opens a
+nonmodal, anchored preview that retains the existing Noto typography, jade
+accent, and light/dark surfaces. The default trigger is a plain bell; a dot
+appears only when the latest five API items include an unread notification. This
+indicates unread recent activity, not the total unread count. Staff and signed-out
+headers do not mount the preview.
+
+The preview reads real data from `GET /api/v1/notifications?limit=5`. Notification
+types, bodies, read/unread labels, controls, and recovery text use the selected
+English, Hindi, Tamil, or Malayalam translations rather than legacy server title
+and body strings. Digest content uses the API's view count. Each row includes a
+semantic `time` element with the original timestamp and an exact local display
+including seconds and timezone, formatted with the selected `locale-IN` locale.
+Opening the panel does not mark anything read. Its footer opens the full
+notifications list, where an explicit successful “Mark as read” action updates
+the row and refreshes the header indicator.
+
+The named dialog supports keyboard opening, Escape and a labeled close button,
+with focus returned to the bell on dismissal. Read state has a text label as well
+as an icon or dot. The panel fits the viewport with collision padding and a
+scrollable height; rows and the footer wrap on narrow screens. Loading is
+announced through a polite live region with a busy state and hidden decorative
+skeletons. Empty and error states remain distinct, and errors offer retry. Motion
+respects reduced-motion preferences.
+
+Data refreshes on mount, pathname changes, panel opening, visible-window focus,
+visibility returning to visible, successful read changes, and retry. A new request
+aborts its predecessor; effect cleanup cancels pending setup, aborts the active
+request, and removes event listeners. Cancelled responses and errors are ignored.
+The Patient's user ID keys the component, and session-expiry responses clear its
+items and close the panel.
+
+Regression coverage is in `frontend/e2e/notification-bell.spec.ts`: the five-item
+request, unread semantics without preview writes, keyboard dismissal and focus,
+loading/error/retry, full-list read synchronization, all four locales at phone
+and desktop widths, staff exclusion, logout, and cancelled stale responses.
+This section describes the implementation and regression scope, not a full CI
+result. Native-language copy still requires human locale review.

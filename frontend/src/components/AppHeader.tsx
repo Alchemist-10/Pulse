@@ -12,6 +12,7 @@ import {
   UserIcon,
 } from "lucide-react";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -187,6 +188,7 @@ export function AppHeader() {
           )}
 
           <div className="ml-auto flex items-center gap-1">
+            {me?.role === "PATIENT" && <NotificationBell key={me.userId} />}
             <LocaleSwitcher />
             <Button
               variant="ghost"

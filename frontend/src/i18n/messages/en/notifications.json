@@ -47,5 +47,11 @@
     "RECORD_UPLOADED": "A provider attached a document to your record.",
     "BREAK_GLASS_ACCESS": "A clinician used emergency access to your records without consent.",
     "DAILY_DIGEST": "Your records were viewed {count, plural, one {# time} other {# times}} since your last check."
+  },
+  "preview": {
+    "recent": "Recent activity",
+    "unreadLabel": "Notifications, unread recent activity",
+    "close": "Close notifications",
+    "viewAll": "View all notifications"
   }
 }

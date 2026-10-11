@@ -20,7 +20,10 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
-import type { Notification } from "@/lib/notifications";
+import {
+  NOTIFICATIONS_CHANGED_EVENT,
+  type Notification,
+} from "@/lib/notifications";
 import type { Page } from "@/lib/records";
 
 const LIMIT = 20;
@@ -44,7 +47,9 @@ function ReadBadge({ readAt }: { readAt: string | null }) {
   return (
     <Badge
       variant="outline"
-      className={readAt ? "text-muted-foreground" : "border-primary text-primary"}
+      className={
+        readAt ? "text-muted-foreground" : "border-primary text-primary"
+      }
     >
       <Icon className="size-3" />
       {readAt ? t("list.read") : t("list.unread")}
@@ -76,7 +81,9 @@ function NotificationRow({
     setMarking(true);
     setError(null);
     try {
-      const updated = await api.post<Notification>(`/notifications/${notification.id}/read`);
+      const updated = await api.post<Notification>(
+        `/notifications/${notification.id}/read`,
+      );
       onRead(notification.id, updated);
       toast.success(t("list.read"));
     } catch (err) {
@@ -93,12 +100,21 @@ function NotificationRow({
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium text-pretty text-foreground">{typeLabel(notification.type, t)}</p>
+          <p className="text-sm font-medium text-pretty text-foreground">
+            {typeLabel(notification.type, t)}
+          </p>
           <ReadBadge readAt={notification.readAt} />
         </div>
-        <p className="text-sm text-pretty text-muted-foreground">{notification.type === "DAILY_DIGEST"
-          ? t("content.DAILY_DIGEST", { count: typeof notification.params?.viewCount === "number" ? notification.params.viewCount : 0 })
-          : t(`content.${notification.type}`)}</p>
+        <p className="text-sm text-pretty text-muted-foreground">
+          {notification.type === "DAILY_DIGEST"
+            ? t("content.DAILY_DIGEST", {
+                count:
+                  typeof notification.params?.viewCount === "number"
+                    ? notification.params.viewCount
+                    : 0,
+              })
+            : t(`content.${notification.type}`)}
+        </p>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs tabular-nums text-muted-foreground">
             {formatDate(notification.createdAt)}
@@ -132,7 +148,10 @@ function NotificationListSkeleton() {
   return (
     <ul className="space-y-3" aria-hidden="true">
       {Array.from({ length: 3 }).map((_, i) => (
-        <li key={i} className="flex gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
+        <li
+          key={i}
+          className="flex gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm"
+        >
           <Skeleton className="size-9 shrink-0 rounded-md" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3 w-24" />
@@ -174,7 +193,10 @@ export default function NotificationsPage() {
       })
       .catch((err) => {
         if (!active) return;
-        if (err instanceof ApiError && (err.status === 401 || err.code === "SESSION_EXPIRED")) {
+        if (
+          err instanceof ApiError &&
+          (err.status === 401 || err.code === "SESSION_EXPIRED")
+        ) {
           router.replace("/login");
           return;
         }
@@ -189,6 +211,7 @@ export default function NotificationsPage() {
   }, [retryToken]);
 
   function handleRead(id: string, updated: Notification) {
+    window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
     setState((prev) =>
       prev.status === "ready"
         ? { ...prev, items: prev.items.map((n) => (n.id === id ? updated : n)) }
@@ -204,7 +227,10 @@ export default function NotificationsPage() {
     paginationRequest.current = controller;
     setState({ ...state, loadingMore: true, loadMoreError: null });
     api
-      .get<Page<Notification>>(`/notifications?limit=${LIMIT}&cursor=${cursor}`, { signal: controller.signal })
+      .get<Page<Notification>>(
+        `/notifications?limit=${LIMIT}&cursor=${cursor}`,
+        { signal: controller.signal },
+      )
       .then((page) => {
         if (controller.signal.aborted) return;
         setState((prev) =>
@@ -236,7 +262,9 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
             {t("title")}
           </h1>
-          <p className="text-sm text-pretty text-muted-foreground">{t("subtitle")}</p>
+          <p className="text-sm text-pretty text-muted-foreground">
+            {t("subtitle")}
+          </p>
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/notifications/preferences">{t("preferencesCta")}</Link>

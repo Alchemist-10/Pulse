@@ -1,6 +1,15 @@
 import type { NotificationType } from "./generated/api";
-export { NotificationTypeValues as NOTIFICATION_TYPES, NotificationChannelValues as NOTIFICATION_CHANNELS } from "./generated/api";
-export type { NotificationType, NotificationChannel, Notification, NotificationPreference } from "./generated/api";
+export const NOTIFICATIONS_CHANGED_EVENT = "pulse:notifications-changed";
+export {
+  NotificationTypeValues as NOTIFICATION_TYPES,
+  NotificationChannelValues as NOTIFICATION_CHANNELS,
+} from "./generated/api";
+export type {
+  NotificationType,
+  NotificationChannel,
+  Notification,
+  NotificationPreference,
+} from "./generated/api";
 
 /**
  * Mandatory types — never subject to a preference check, never shown in the
@@ -10,7 +19,5 @@ export type { NotificationType, NotificationChannel, Notification, NotificationP
  * consent revocation must always reach the Patient; consent-granted,
  * record-uploaded and the daily digest are all opt-outable.
  */
-export const MANDATORY_NOTIFICATION_TYPES: ReadonlySet<NotificationType> = new Set([
-  "BREAK_GLASS_ACCESS",
-  "CONSENT_REVOKED",
-]);
+export const MANDATORY_NOTIFICATION_TYPES: ReadonlySet<NotificationType> =
+  new Set(["BREAK_GLASS_ACCESS", "CONSENT_REVOKED"]);
