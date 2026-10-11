@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CopyIcon, InfoIcon, UserRoundIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  CopyIcon,
+  InfoIcon,
+  LanguagesIcon,
+  MapPinIcon,
+  PhoneIcon,
+  UserRoundIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,6 +29,8 @@ import { useApiErrorMessage } from "@/lib/errors";
 // (issue #23, PatientProfile schema; .claude/rules/clinical-safety.md).
 import type { PatientProfile } from "@/lib/generated/api";
 
+import styles from "./profile.module.css";
+
 const EMPTY = "—"; // em dash for a missing identity field
 
 type LoadState =
@@ -30,13 +41,18 @@ type LoadState =
 
 function ProfileSkeleton() {
   return (
-    <Card aria-hidden="true" className="gap-0 py-0">
-      <div className="flex flex-col gap-6 border-b p-6 sm:flex-row sm:items-center sm:p-8">
-        <Skeleton className="size-24 shrink-0 rounded-full" />
+    <Card aria-hidden="true" className={cn(styles.card, "gap-0 py-0")}>
+      <div
+        className={cn(
+          styles.header,
+          "flex flex-wrap items-center gap-4 border-b p-6 sm:gap-6 sm:p-8",
+        )}
+      >
+        <Skeleton className="size-20 shrink-0 rounded-full sm:size-24" />
         <div className="min-w-0 flex-1 space-y-3">
           <Skeleton className="h-8 w-48 max-w-full" />
         </div>
-        <div className="space-y-2">
+        <div className="basis-full space-y-2 border-t pt-4 sm:basis-auto sm:border-0 sm:pt-0">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-8 w-24" />
         </div>
@@ -54,20 +70,25 @@ function ProfileSkeleton() {
           <div
             key={group}
             className={cn(
-              "min-w-0 space-y-5",
+              "min-w-0 space-y-4",
               group === 1 &&
                 "border-t pt-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12",
             )}
           >
             <Skeleton className="h-6 w-40" />
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div
+              className={cn(
+                "grid grid-cols-1",
+                group === 1 && "sm:grid-cols-2",
+              )}
+            >
               {Array.from({ length: count }).map((_, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "min-w-0 space-y-1.5",
-                    ((group === 0 && i === 2) || (group === 1 && i < 2)) &&
-                      "sm:col-span-2",
+                    "min-w-0 space-y-1.5 border-b py-4 first:pt-0 last:border-b-0 last:pb-0",
+                    group === 1 && i < 2 && "sm:col-span-2",
+                    group === 1 && i === 2 && "sm:border-b-0 sm:pb-0",
                   )}
                 >
                   <Skeleton className="h-4 w-20 max-w-full" />
@@ -86,15 +107,36 @@ function ProfileField({
   label,
   value,
   className,
+  icon: Icon,
 }: {
   label: string;
   value: string;
   className?: string;
+  icon?: LucideIcon;
 }) {
   return (
-    <div className={cn("min-w-0 space-y-1.5", className)}>
-      <dt className="text-sm leading-relaxed text-muted-foreground">{label}</dt>
-      <dd className="text-base leading-relaxed font-medium text-foreground [overflow-wrap:anywhere]">
+    <div
+      className={cn(
+        "min-w-0 space-y-1.5 border-b py-4 first:pt-0 last:border-b-0 last:pb-0",
+        className,
+      )}
+    >
+      <dt className="flex items-center gap-2 text-sm leading-relaxed text-muted-foreground">
+        {Icon && (
+          <Icon
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary/80"
+            strokeWidth={1.75}
+          />
+        )}
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "text-base leading-relaxed font-medium text-foreground [overflow-wrap:anywhere]",
+          Icon && "pl-6",
+        )}
+      >
         {value}
       </dd>
     </div>
@@ -203,13 +245,33 @@ export default function ProfilePage() {
     <section className="space-y-8">
       {header}
 
-      <Card className="gap-0 py-0">
-        <div className="flex flex-col gap-6 border-b p-6 sm:flex-row sm:items-center sm:p-8">
+      <Card className={cn(styles.card, styles.arrive, "gap-0 py-0")}>
+        <div
+          className={cn(
+            styles.header,
+            "flex flex-wrap items-center gap-4 border-b p-6 sm:gap-6 sm:p-8",
+          )}
+        >
+          <svg
+            aria-hidden="true"
+            className={styles.contours}
+            viewBox="0 0 640 320"
+            fill="none"
+          >
+            <path
+              d="M88 320C88 188 234 206 234 92S398-16 466-60M152 350C152 222 296 232 296 118S448 12 530-36M216 380C216 258 358 256 358 144S498 40 594-12"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          </svg>
           <div
             aria-hidden="true"
-            className="flex size-24 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-primary-soft text-primary"
+            className={cn(
+              styles.avatar,
+              "flex size-20 shrink-0 items-center justify-center rounded-full text-primary sm:size-24",
+            )}
           >
-            <UserRoundIcon className="size-12" strokeWidth={1.5} />
+            <UserRoundIcon className="size-10 sm:size-12" strokeWidth={1.5} />
           </div>
           <dl className="min-w-0 flex-1">
             <div>
@@ -221,14 +283,14 @@ export default function ProfilePage() {
               </dd>
             </div>
           </dl>
-          <dl className="min-w-0 space-y-2 sm:text-right">
+          <dl className="flex min-w-0 basis-full flex-wrap items-center justify-between gap-2 border-t border-primary/10 pt-4 sm:block sm:basis-auto sm:space-y-2 sm:border-0 sm:pt-0 sm:text-right">
             <dt className="text-sm text-muted-foreground">
               {t("claimed.label")}
             </dt>
             <dd>
               <Badge
                 variant="secondary"
-                className="h-auto max-w-full px-3 py-1.5 whitespace-normal text-sm leading-relaxed"
+                className="h-auto max-w-full border border-primary/15 bg-card/80 px-3 py-1.5 whitespace-normal text-sm leading-relaxed"
               >
                 {profile.claimed ? t("claimed.true") : t("claimed.false")}
               </Badge>
@@ -236,7 +298,7 @@ export default function ProfilePage() {
           </dl>
         </div>
 
-        <div className="space-y-3 border-b bg-muted/30 px-6 py-5 sm:px-8">
+        <div className="space-y-3 border-b bg-muted/20 px-6 py-5 sm:px-8">
           <dl>
             <dt className="text-sm text-muted-foreground">
               {t("fields.patientId")}
@@ -270,7 +332,7 @@ export default function ProfilePage() {
         <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-2 lg:gap-12">
           <section
             aria-labelledby="profile-personal-heading"
-            className="min-w-0 space-y-5"
+            className="min-w-0 space-y-4"
           >
             <h2
               id="profile-personal-heading"
@@ -278,22 +340,27 @@ export default function ProfilePage() {
             >
               {t("sections.personal")}
             </h2>
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <dl>
               <ProfileField
                 label={t("fields.dateOfBirth")}
+                icon={CalendarDaysIcon}
                 value={formatDate(profile.dateOfBirth) || EMPTY}
               />
-              <ProfileField label={t("fields.sex")} value={show(profile.sex)} />
+              <ProfileField
+                label={t("fields.sex")}
+                icon={UserRoundIcon}
+                value={show(profile.sex)}
+              />
               <ProfileField
                 label={t("fields.localePreference")}
+                icon={LanguagesIcon}
                 value={localeLabel}
-                className="sm:col-span-2"
               />
             </dl>
           </section>
           <section
             aria-labelledby="profile-contact-heading"
-            className="min-w-0 space-y-5 border-t pt-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12"
+            className="min-w-0 space-y-4 border-t pt-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12"
           >
             <h2
               id="profile-contact-heading"
@@ -301,24 +368,28 @@ export default function ProfilePage() {
             >
               {t("sections.contact")}
             </h2>
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 sm:grid-cols-2">
               <ProfileField
                 label={t("fields.phone")}
+                icon={PhoneIcon}
                 value={show(profile.phone)}
                 className="sm:col-span-2"
               />
               <ProfileField
                 label={t("fields.addressLine")}
+                icon={MapPinIcon}
                 value={show(profile.addressLine)}
                 className="sm:col-span-2"
               />
               <ProfileField
                 label={t("fields.city")}
                 value={show(profile.city)}
+                className="sm:border-b-0 sm:pb-0"
               />
               <ProfileField
                 label={t("fields.state")}
                 value={show(profile.state)}
+                className="sm:pt-4"
               />
             </dl>
           </section>
