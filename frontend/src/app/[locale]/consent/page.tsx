@@ -219,7 +219,7 @@ function ConsentRow({
   const { types, window } = scopeSummary(consent, t, tTimeline);
 
   return (
-    <li className="space-y-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-colors hover:bg-muted/50">
+    <li className="space-y-4 rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted/50">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <ConsentRowLeadIcon status={consent.status} />
@@ -445,12 +445,10 @@ export default function ConsentListPage() {
   }
 
   return (
-    <section className="animate-in fade-in-0 slide-in-from-bottom-1 motion-reduce:animate-none space-y-8 duration-300">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+    <section className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("list.title")}
-          </h1>
+          <h1 className="workspace-heading">{t("list.title")}</h1>
           <p className="text-pretty text-sm text-muted-foreground">
             {t("list.subtitle")}
           </p>

@@ -268,20 +268,18 @@ export default function TimelinePage() {
   }
 
   return (
-    <section className="animate-in fade-in-0 slide-in-from-bottom-1 space-y-8 duration-300 motion-reduce:animate-none">
+    <section className="space-y-8">
       {patientId && <BreakGlassBanner patientId={patientId} />}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("title")}
-          </h1>
+          <h1 className="workspace-heading">{t("title")}</h1>
           <p className="text-pretty text-muted-foreground">{t("subtitle")}</p>
         </div>
       </div>
 
       <form
-        className="space-y-3"
+        className="workspace-toolbar space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
           if (
@@ -336,7 +334,7 @@ export default function TimelinePage() {
             </Select>
           </div>
         </div>
-        <details className="rounded-lg border px-3 py-2">
+        <details className="border-t pt-3">
           <summary className="cursor-pointer text-sm font-medium">
             {t("search.more")}
           </summary>
@@ -460,7 +458,7 @@ export default function TimelinePage() {
         <div className="space-y-6">
           {groupByDate(state.items).map((group) => (
             <div key={group.dateKey} className="space-y-2">
-              <h2 className="text-sm font-medium tabular-nums text-muted-foreground">
+              <h2 className="mb-3 text-sm font-semibold tabular-nums text-foreground">
                 {formatDate(group.date)}
               </h2>
               <ul className="space-y-2">
@@ -542,7 +540,7 @@ function EntryRow({ entry }: { entry: EntrySummary }) {
         href={`/timeline/${entry.id}`}
         className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm shadow-sm outline-none transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
           <Icon className="size-4" />
         </span>
         <div className="min-w-0 flex-1 space-y-0.5">

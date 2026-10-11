@@ -120,9 +120,9 @@ export function AppHeader() {
         variant="ghost"
         size="sm"
         className={cn(
-          "justify-start",
+          "justify-start px-3",
           isActive(href)
-            ? "bg-accent text-accent-foreground"
+            ? "bg-primary-soft text-primary"
             : "text-muted-foreground",
         )}
       >
@@ -138,8 +138,8 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-4">
+      <header className="sticky top-0 z-40 border-b bg-card">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4 sm:px-6">
           {links.length > 0 && (
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
@@ -169,9 +169,9 @@ export function AppHeader() {
           <Link
             href="/"
             aria-label={t("app.name")}
-            className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"
+            className="flex shrink-0 items-center gap-2.5 text-lg font-semibold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           >
-            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <ActivityIcon className="size-4" strokeWidth={2.5} />
             </span>
             <span className="hidden sm:inline">{t("app.name")}</span>
@@ -253,7 +253,7 @@ export function AppHeader() {
       {me?.role === "PATIENT" && (
         <nav
           aria-label={t("nav.patientTasks")}
-          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t bg-background px-2 pb-[env(safe-area-inset-bottom)] sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t bg-card px-2 pb-[env(safe-area-inset-bottom)] sm:hidden"
         >
           {links
             .filter((link) =>
@@ -267,7 +267,7 @@ export function AppHeader() {
                 className={cn(
                   "flex min-h-14 items-center justify-center rounded-lg px-2 py-2 text-center text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring",
                   isActive(href)
-                    ? "bg-accent text-accent-foreground"
+                    ? "bg-primary-soft text-primary"
                     : "text-muted-foreground",
                 )}
               >
