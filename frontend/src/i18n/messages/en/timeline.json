@@ -78,6 +78,10 @@
     "apply": "Search history",
     "reset": "Reset filters",
     "emptyTitle": "No matching Medical Entries",
-    "emptyBody": "Change or reset your search, dates or Provider filter."
-  }
+    "emptyBody": "Change or reset your search, dates or Provider filter.",
+    "active": "Applied filters",
+    "remove": "Remove {filter}",
+    "showAll": "Show all entries"
+  },
+  "superseded": "Superseded"
 }

@@ -30,6 +30,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { ClinicalText } from "@/components/ClinicalText";
 import {
   ChevronRightIcon,
+  ChevronDownIcon,
+  Building2Icon,
+  SearchIcon,
+  SlidersHorizontalIcon,
+  HistoryIcon,
+  XIcon,
   ClockIcon,
   FlaskConicalIcon,
   NotebookPenIcon,
@@ -61,6 +67,15 @@ const ENTRY_ICONS: Record<EntryType, typeof StethoscopeIcon> = {
 
 const LIMIT = 20;
 const ALL_TYPES = "ALL";
+
+type TimelineFilters = {
+  q: string;
+  fromDate: string;
+  toDate: string;
+  providerId: string;
+};
+type FilterKey = keyof TimelineFilters | "type";
+type FilterChip = { key: FilterKey; label: string };
 
 type LoadState =
   | { status: "loading" }
@@ -112,6 +127,7 @@ export default function TimelinePage() {
   const errorMessage = useApiErrorMessage();
   const router = useRouter();
   const filterId = useId();
+  const searchInput = useRef<HTMLInputElement>(null);
 
   const [patientId, setPatientId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<EntryType | "">("");
@@ -267,6 +283,54 @@ export default function TimelinePage() {
       });
   }
 
+  function resetFilters() {
+    paginationRequest.current?.abort();
+    const empty = { q: "", fromDate: "", toDate: "", providerId: "" };
+    setTypeFilter("");
+    setFilters(empty);
+    setApplied(empty);
+    setFilterError(false);
+    searchInput.current?.focus();
+  }
+
+  function removeFilter(key: FilterKey) {
+    paginationRequest.current?.abort();
+    if (key === "type") {
+      setTypeFilter("");
+    } else {
+      // Remove the applied value without discarding a newer, unfinished draft.
+      setFilters((prev) =>
+        prev[key] === applied[key] ? { ...prev, [key]: "" } : prev,
+      );
+      setApplied((prev) => ({ ...prev, [key]: "" }));
+    }
+    setFilterError(false);
+    searchInput.current?.focus();
+  }
+
+  const activeChips: FilterChip[] = [];
+  if (typeFilter)
+    activeChips.push({ key: "type", label: t(`entryTypes.${typeFilter}`) });
+  if (applied.q)
+    activeChips.push({ key: "q", label: `${t("search.label")}: ${applied.q}` });
+  if (applied.fromDate)
+    activeChips.push({
+      key: "fromDate",
+      label: `${t("search.from")}: ${formatDate(applied.fromDate)}`,
+    });
+  if (applied.toDate)
+    activeChips.push({
+      key: "toDate",
+      label: `${t("search.through")}: ${formatDate(applied.toDate)}`,
+    });
+  if (applied.providerId) {
+    const provider = providers.find((item) => item.id === applied.providerId);
+    activeChips.push({
+      key: "providerId",
+      label: `${t("search.provider")}: ${provider?.name ?? applied.providerId}`,
+    });
+  }
+
   return (
     <section className="space-y-8">
       {patientId && <BreakGlassBanner patientId={patientId} />}
@@ -295,17 +359,25 @@ export default function TimelinePage() {
           setApplied({ ...filters, q: filters.q.trim() });
         }}
       >
-        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)_auto]">
           <div className="space-y-1.5">
             <Label htmlFor={`${filterId}-search`}>{t("search.label")}</Label>
-            <Input
-              id={`${filterId}-search`}
-              type="search"
-              maxLength={100}
-              value={filters.q}
-              placeholder={t("search.placeholder")}
-              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-            />
+            <div className="relative">
+              <SearchIcon
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                ref={searchInput}
+                className="pl-10"
+                id={`${filterId}-search`}
+                type="search"
+                maxLength={100}
+                value={filters.q}
+                placeholder={t("search.placeholder")}
+                onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={filterId}>{t("filter.label")}</Label>
@@ -333,10 +405,28 @@ export default function TimelinePage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1">
+            <Button type="submit">{t("search.apply")}</Button>
+            {activeChips.length === 0 && (
+              <Button type="button" variant="outline" onClick={resetFilters}>
+                {t("search.reset")}
+              </Button>
+            )}
+          </div>
         </div>
-        <details className="border-t pt-3">
-          <summary className="cursor-pointer text-sm font-medium">
-            {t("search.more")}
+        <details className="group border-t pt-3">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium sm:min-h-9 [&::-webkit-details-marker]:hidden">
+            <span className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontalIcon
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+              {t("search.more")}
+            </span>
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
+            />
           </summary>
           <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -392,38 +482,28 @@ export default function TimelinePage() {
               </div>
             )}
           </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t("search.timezone")}
+          </p>
         </details>
-        <p className="text-sm text-muted-foreground">{t("search.timezone")}</p>
         {filterError && (
           <p role="alert" className="text-sm text-destructive">
             {t("search.dateOrder")}
           </p>
         )}
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit">{t("search.apply")}</Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              const empty = { q: "", fromDate: "", toDate: "", providerId: "" };
-              paginationRequest.current?.abort();
-              setTypeFilter("");
-              setFilters(empty);
-              setApplied(empty);
-              setFilterError(false);
-            }}
-          >
-            {t("search.reset")}
-          </Button>
-        </div>
+        {activeChips.length > 0 && (
+          <AppliedFilters
+            chips={activeChips}
+            onRemove={removeFilter}
+            onReset={resetFilters}
+          />
+        )}
       </form>
 
       {state.status === "loading" && (
         <div className="space-y-3" role="status" aria-live="polite">
           <p className="sr-only">{t("loading")}</p>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          ))}
+          <TimelineSkeleton />
         </div>
       )}
 
@@ -451,23 +531,39 @@ export default function TimelinePage() {
         <EmptyState
           typeFilter={typeFilter}
           narrowed={Object.values(applied).some(Boolean)}
+          onReset={resetFilters}
         />
       )}
 
       {state.status === "ready" && state.items.length > 0 && (
-        <div className="space-y-6">
-          {groupByDate(state.items).map((group) => (
-            <div key={group.dateKey} className="space-y-2">
-              <h2 className="mb-3 text-sm font-semibold tabular-nums text-foreground">
-                {formatDate(group.date)}
-              </h2>
-              <ul className="space-y-2">
-                {group.rows.map((entry) => (
-                  <EntryRow key={entry.id} entry={entry} />
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="space-y-8">
+          <div className="relative space-y-8 pl-6 before:absolute before:top-3 before:bottom-0 before:left-1.5 before:w-px before:bg-border sm:pl-8">
+            {groupByDate(state.items).map((group, index) => (
+              <section
+                key={group.dateKey}
+                aria-labelledby={`${filterId}-day-${index}`}
+                className="relative min-w-0 space-y-4"
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute top-2 -left-6 size-3 rounded-full border-2 border-primary bg-background sm:-left-8"
+                />
+                <h2
+                  id={`${filterId}-day-${index}`}
+                  className="text-base font-semibold tabular-nums text-foreground"
+                >
+                  <time dateTime={group.date.toISOString()}>
+                    {formatDate(group.date)}
+                  </time>
+                </h2>
+                <ul className="space-y-3">
+                  {group.rows.map((entry) => (
+                    <EntryRow key={entry.id} entry={entry} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
 
           {state.loadMoreError && (
             <Alert variant="destructive">
@@ -501,9 +597,11 @@ export default function TimelinePage() {
 function EmptyState({
   typeFilter,
   narrowed,
+  onReset,
 }: {
   typeFilter: EntryType | "";
   narrowed: boolean;
+  onReset: () => void;
 }) {
   const t = useTranslations("timeline");
   const title = narrowed
@@ -525,8 +623,75 @@ function EmptyState({
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{body}</EmptyDescription>
       </EmptyHeader>
-      <EmptyContent />
+      {(narrowed || typeFilter) && (
+        <EmptyContent>
+          <Button variant="outline" onClick={onReset}>
+            {t("search.showAll")}
+          </Button>
+        </EmptyContent>
+      )}
     </Empty>
+  );
+}
+
+function AppliedFilters({
+  chips,
+  onRemove,
+  onReset,
+}: {
+  chips: FilterChip[];
+  onRemove: (key: FilterKey) => void;
+  onReset: () => void;
+}) {
+  const t = useTranslations("timeline");
+  return (
+    <div
+      role="group"
+      aria-label={t("search.active")}
+      className="flex min-w-0 flex-wrap items-center gap-2 border-t pt-4"
+    >
+      {chips.map((chip) => (
+        <Button
+          key={chip.key}
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="h-auto min-h-9 max-w-full gap-2 py-2 text-left whitespace-normal"
+          aria-label={t("search.remove", { filter: chip.label })}
+          onClick={() => onRemove(chip.key)}
+        >
+          <span className="min-w-0 [overflow-wrap:anywhere]">{chip.label}</span>
+          <XIcon className="size-3.5 shrink-0" aria-hidden="true" />
+        </Button>
+      ))}
+      <Button type="button" variant="ghost" size="sm" onClick={onReset}>
+        {t("search.reset")}
+      </Button>
+    </div>
+  );
+}
+
+function TimelineSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative space-y-4 pl-6 before:absolute before:top-3 before:bottom-0 before:left-1.5 before:w-px before:bg-border sm:pl-8"
+    >
+      <Skeleton className="h-6 w-32" />
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="flex gap-4 rounded-xl border bg-card p-4 sm:p-5"
+        >
+          <Skeleton className="size-11 shrink-0 rounded-xl sm:size-12" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <Skeleton className="h-5 w-64 max-w-full" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-40 max-w-full" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -538,37 +703,55 @@ function EntryRow({ entry }: { entry: EntrySummary }) {
     <li>
       <Link
         href={`/timeline/${entry.id}`}
-        className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm shadow-sm outline-none transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="group flex min-h-11 items-start gap-3 rounded-xl border bg-card p-4 shadow-sm outline-none transition-[background-color,border-color,box-shadow] hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none sm:gap-4 sm:p-5"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
-          <Icon className="size-4" />
+        <span
+          aria-hidden="true"
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary sm:size-12"
+        >
+          <Icon className="size-5" strokeWidth={1.75} />
         </span>
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
+        <div className="min-w-0 flex-1 space-y-2">
+          <h3 className="text-base leading-relaxed font-semibold text-foreground [overflow-wrap:anywhere]">
+            {entry.summary ? <ClinicalText>{entry.summary}</ClinicalText> : "—"}
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+            <span className="text-sm font-medium text-muted-foreground">
               {t(`entryTypes.${entry.entryType}`)}
             </span>
             {entry.isCritical && (
               <Badge
                 variant="outline"
-                className="gap-1 border-destructive/40 text-destructive"
+                className="h-auto gap-1 border-critical-border bg-critical-surface py-1 text-critical whitespace-normal"
               >
-                <TriangleAlertIcon className="size-3.5" />
+                <TriangleAlertIcon aria-hidden="true" />
                 {t("critical")}
+              </Badge>
+            )}
+            {entry.supersededById && (
+              <Badge
+                variant="secondary"
+                className="h-auto gap-1 py-1 whitespace-normal"
+              >
+                <HistoryIcon aria-hidden="true" />
+                {t("superseded")}
               </Badge>
             )}
           </div>
           {entry.providerName && (
-            <p className="truncate text-sm text-muted-foreground">
-              {entry.providerName}
+            <p className="flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
+              <Building2Icon
+                className="mt-0.5 size-3.5 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {entry.providerName}
+              </span>
             </p>
           )}
-          <p className="break-words text-sm text-foreground">
-            {entry.summary ? <ClinicalText>{entry.summary}</ClinicalText> : "—"}
-          </p>
         </div>
         <ChevronRightIcon
-          className="size-4 shrink-0 text-muted-foreground"
+          className="mt-1 size-4 shrink-0 text-muted-foreground group-hover:text-primary"
           aria-hidden="true"
         />
       </Link>

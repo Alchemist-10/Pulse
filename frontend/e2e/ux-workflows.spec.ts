@@ -380,3 +380,240 @@ test.describe("consent review west of UTC", () => {
     ).toBeVisible();
   });
 });
+
+const timelineEntry = (summary: string) => ({
+  id: "55555555-5555-5555-5555-555555555555",
+  entryType: "LAB_REPORT",
+  occurredAt: "2025-06-15T10:00:00Z",
+  summary,
+  providerName: "Synthetic Clinic",
+  isCritical: false,
+  supersededById: null,
+});
+
+test("removing applied filters preserves other query values and unfinished drafts", async ({
+  page,
+}) => {
+  await base(page);
+  await page.route("**/entry-providers", (route) =>
+    json(route, [
+      { id: "provider", name: "Synthetic Clinic" },
+      { id: "other-provider", name: "Other Synthetic Clinic" },
+    ]),
+  );
+  const requests: URL[] = [];
+  await page.route("**/entries?*", (route) => {
+    const url = new URL(route.request().url());
+    requests.push(url);
+    return json(route, {
+      items: [
+        {
+          ...timelineEntry("Hemoglobin"),
+          id: url.searchParams.has("cursor")
+            ? "66666666-6666-6666-6666-666666666666"
+            : "55555555-5555-5555-5555-555555555555",
+        },
+      ],
+      nextCursor: url.searchParams.has("cursor") ? null : "next-page",
+    });
+  });
+  await page.goto("/en/timeline");
+  await page.getByRole("combobox", { name: "Filter by type" }).click();
+  await page.getByRole("option", { name: "Lab report", exact: true }).click();
+  await page
+    .getByLabel("Search Medical Entries", { exact: true })
+    .fill("Hemoglobin");
+  await page
+    .getByText("More filters: dates and Provider", { exact: true })
+    .click();
+  await page.getByLabel("From date", { exact: true }).fill("2025-01-01");
+  await page.getByLabel("Through date", { exact: true }).fill("2025-12-31");
+  await page
+    .getByRole("combobox", { name: "Provider", exact: true })
+    .selectOption("provider");
+  await page.getByRole("button", { name: "Search history" }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Remove Provider: Synthetic Clinic",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Search Medical Entries", { exact: true })
+    .fill("Unsubmitted query");
+  await page.getByLabel("From date", { exact: true }).fill("2024-01-01");
+  await page
+    .getByRole("combobox", { name: "Provider", exact: true })
+    .selectOption("other-provider");
+  await page
+    .getByRole("button", {
+      name: "Remove Provider: Synthetic Clinic",
+      exact: true,
+    })
+    .click();
+  await expect
+    .poll(() => requests.at(-1)?.searchParams.has("providerId"))
+    .toBe(false);
+  expect(requests.at(-1)?.searchParams.get("q")).toBe("Hemoglobin");
+  expect(requests.at(-1)?.searchParams.get("fromDate")).toBe("2025-01-01");
+  expect(requests.at(-1)?.searchParams.get("toDate")).toBe("2025-12-31");
+  expect(requests.at(-1)?.searchParams.get("entryType")).toBe("LAB_REPORT");
+  expect(requests.at(-1)?.searchParams.has("cursor")).toBe(false);
+  await expect(
+    page.getByLabel("Search Medical Entries", { exact: true }),
+  ).toHaveValue("Unsubmitted query");
+  await expect(page.getByLabel("From date", { exact: true })).toHaveValue(
+    "2024-01-01",
+  );
+  await expect(
+    page.getByRole("combobox", { name: "Provider", exact: true }),
+  ).toHaveValue("other-provider");
+  await expect(
+    page.getByLabel("Search Medical Entries", { exact: true }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Load more", exact: true }).click();
+  await expect
+    .poll(() => requests.at(-1)?.searchParams.get("cursor"))
+    .toBe("next-page");
+  expect(requests.at(-1)?.searchParams.get("q")).toBe("Hemoglobin");
+  expect(requests.at(-1)?.searchParams.has("providerId")).toBe(false);
+  await page
+    .getByRole("button", {
+      name: "Remove Search Medical Entries: Hemoglobin",
+      exact: true,
+    })
+    .click();
+  await expect.poll(() => requests.at(-1)?.searchParams.has("q")).toBe(false);
+  await expect(
+    page.getByLabel("Search Medical Entries", { exact: true }),
+  ).toHaveValue("Unsubmitted query");
+});
+
+test("removing a filter prevents pending pagination from appending stale entries", async ({
+  page,
+}) => {
+  await base(page);
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started = false;
+  let finished = false;
+  await page.route("**/entries?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.has("cursor")) {
+      started = true;
+      await held;
+      try {
+        await json(route, {
+          items: [{ ...timelineEntry("Stale paginated entry"), id: "stale" }],
+          nextCursor: "stale-cursor",
+        });
+      } catch {
+        /* The pending request is intentionally aborted on filter removal. */
+      } finally {
+        finished = true;
+      }
+      return;
+    }
+    return json(route, {
+      items: [timelineEntry("Current unfiltered entry")],
+      nextCursor: url.searchParams.has("q") ? "next-page" : null,
+    });
+  });
+  await page.goto("/en/timeline");
+  await page.getByLabel("Search Medical Entries", { exact: true }).fill("test");
+  await page.getByRole("button", { name: "Search history" }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Remove Search Medical Entries: test",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Load more", exact: true }).click();
+  await expect.poll(() => started).toBe(true);
+  await page
+    .getByRole("button", {
+      name: "Remove Search Medical Entries: test",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Load more", exact: true }),
+  ).toHaveCount(0);
+  release();
+  await expect.poll(() => finished).toBe(true);
+  await expect(
+    page.getByText("Stale paginated entry", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Current unfiltered entry", { exact: true }),
+  ).toBeVisible();
+});
+
+test("no-results action clears applied filters, drafts and date errors", async ({
+  page,
+}) => {
+  await base(page);
+  const requests: URL[] = [];
+  await page.route("**/entries?*", (route) => {
+    const url = new URL(route.request().url());
+    requests.push(url);
+    const filtered = [...url.searchParams.keys()].some(
+      (key) => key !== "limit",
+    );
+    return json(route, {
+      items: filtered ? [] : [timelineEntry("Unfiltered record")],
+      nextCursor: null,
+    });
+  });
+  await page.goto("/en/timeline");
+  await page
+    .getByLabel("Search Medical Entries", { exact: true })
+    .fill("No match");
+  await page
+    .getByText("More filters: dates and Provider", { exact: true })
+    .click();
+  await page.getByLabel("From date", { exact: true }).fill("2025-01-01");
+  await page.getByLabel("Through date", { exact: true }).fill("2025-12-31");
+  await page
+    .getByRole("combobox", { name: "Provider", exact: true })
+    .selectOption("provider");
+  await page.getByRole("combobox", { name: "Filter by type" }).click();
+  await page.getByRole("option", { name: "Lab report", exact: true }).click();
+  await page.getByRole("button", { name: "Search history" }).click();
+  await expect(
+    page.getByText("No matching Medical Entries", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("From date", { exact: true }).fill("2027-01-01");
+  await page.getByRole("button", { name: "Search history" }).click();
+  await expect(
+    page.getByText("The start date must be on or before the end date."),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Show all entries", exact: true })
+    .click();
+  await expect(
+    page.getByText("Unfiltered record", { exact: true }),
+  ).toBeVisible();
+  expect([...requests.at(-1)!.searchParams.keys()]).toEqual(["limit"]);
+  await expect(
+    page.getByLabel("Search Medical Entries", { exact: true }),
+  ).toHaveValue("");
+  await expect(page.getByLabel("From date", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Through date", { exact: true })).toHaveValue(
+    "",
+  );
+  await expect(
+    page.getByRole("combobox", { name: "Provider", exact: true }),
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("combobox", { name: "Filter by type" }),
+  ).toHaveText("All entry types");
+  await expect(
+    page.getByRole("group", { name: "Applied filters" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("The start date must be on or before the end date."),
+  ).toHaveCount(0);
+});
