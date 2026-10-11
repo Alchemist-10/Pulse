@@ -18,6 +18,8 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(0.977 0.004 85);
+  --canvas-top: oklch(1 0 0);
+  --canvas-bottom: oklch(0.94 0.055 165);
   --foreground: oklch(0.147 0.004 49.25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
@@ -73,6 +75,8 @@
 
 .dark {
   --background: oklch(0.18 0.008 165);
+  --canvas-top: var(--background);
+  --canvas-bottom: oklch(0.235 0.036 165);
   --foreground: oklch(0.985 0.001 106.423);
   --card: oklch(0.225 0.009 165);
   --card-foreground: oklch(0.985 0.001 106.423);
@@ -189,6 +193,12 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-image: linear-gradient(
+      to bottom,
+      var(--canvas-top),
+      var(--canvas-bottom)
+    );
+    background-repeat: no-repeat;
     /* Latin face has tnum; keep interface figures aligned in dense tables. */
     font-feature-settings: "tnum" 1;
     line-height: 1.6;
