@@ -16,7 +16,7 @@ services:
   frontend:
     build: ./frontend
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
