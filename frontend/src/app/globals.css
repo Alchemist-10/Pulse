@@ -19,7 +19,7 @@
   --radius: 0.625rem;
   --background: oklch(0.977 0.004 85);
   --canvas-top: oklch(1 0 0);
-  --canvas-bottom: oklch(0.94 0.055 165);
+  --canvas-bottom: oklch(0.975 0.022 165);
   --foreground: oklch(0.147 0.004 49.25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
