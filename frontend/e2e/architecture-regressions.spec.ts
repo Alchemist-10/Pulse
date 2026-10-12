@@ -62,6 +62,42 @@ test("patient ID copy writes the displayed ID to the clipboard", async ({ page, 
   await qa(page, "profile-mobile");
 });
 
+test("patient ID copy falls back when the Clipboard API is denied", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.route("**/api/v1/patients/me", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({
+    id: PATIENT_ID, fullName: "Synthetic Patient", dateOfBirth: null, phone: null, sex: null,
+    addressLine: null, city: null, state: null, localePreference: "en", claimed: true,
+  }) }));
+  await page.goto("/en/profile");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, "writeText", {
+      configurable: true,
+      value: async () => { throw new DOMException("Blocked", "NotAllowedError"); },
+    });
+  });
+  await page.getByRole("button", { name: "Copy patient ID" }).click();
+  await expect(page.getByText("Patient ID copied", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PATIENT_ID);
+});
+
+test("patient ID remains selected when both clipboard methods fail", async ({ page }) => {
+  await page.route("**/api/v1/patients/me", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({
+    id: PATIENT_ID, fullName: "Synthetic Patient", dateOfBirth: null, phone: null, sex: null,
+    addressLine: null, city: null, state: null, localePreference: "en", claimed: true,
+  }) }));
+  await page.goto("/en/profile");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => { throw new DOMException("Blocked", "NotAllowedError"); } },
+    });
+    document.execCommand = () => false;
+  });
+  await page.getByRole("button", { name: "Copy patient ID" }).click();
+  await expect(page.getByText("Could not copy the ID. Select and copy it manually.")).toBeVisible();
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(PATIENT_ID);
+});
+
 test("notifications render the chosen locale and the digest count", async ({ page }) => {
   await page.route("**/api/v1/notifications?*", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({
     items: [{ id: "notification", type: "DAILY_DIGEST", title: "LEGACY_ENGLISH", body: "LEGACY_ENGLISH", params: { viewCount: 3 }, readAt: null, createdAt: "2026-08-01T10:00:00Z" }], nextCursor: null,

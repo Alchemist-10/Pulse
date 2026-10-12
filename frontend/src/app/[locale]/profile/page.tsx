@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   CalendarDaysIcon,
@@ -32,6 +32,25 @@ import type { PatientProfile } from "@/lib/generated/api";
 import styles from "./profile.module.css";
 
 const EMPTY = "—"; // em dash for a missing identity field
+
+function copySelectedText(element: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection) return false;
+
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  try {
+    const copied = document.execCommand("copy");
+    if (copied) selection.removeAllRanges();
+    return copied;
+  } catch {
+    // Keep the ID selected so the patient can copy it manually.
+    return false;
+  }
+}
 
 type LoadState =
   | { status: "loading" }
@@ -149,6 +168,7 @@ export default function ProfilePage() {
   const tActions = useTranslations("actions");
   const errorMessage = useApiErrorMessage();
   const router = useRouter();
+  const patientIdRef = useRef<HTMLSpanElement>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
@@ -304,17 +324,33 @@ export default function ProfilePage() {
               {t("fields.patientId")}
             </dt>
             <dd className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-3">
-              <span className="min-w-0 break-all text-sm font-medium text-foreground tabular-nums">
+              <span
+                ref={patientIdRef}
+                className="min-w-0 break-all text-sm font-medium text-foreground tabular-nums"
+              >
                 {profile.id}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  let copied = false;
                   try {
-                    await navigator.clipboard.writeText(profile.id);
-                    toast.success(t("copiedId"));
+                    if (navigator.clipboard?.writeText) {
+                      await navigator.clipboard.writeText(profile.id);
+                      copied = true;
+                    }
                   } catch {
+                    // Some embedded browsers deny the async Clipboard API.
+                  }
+
+                  if (!copied && patientIdRef.current) {
+                    copied = copySelectedText(patientIdRef.current);
+                  }
+
+                  if (copied) {
+                    toast.success(t("copiedId"));
+                  } else {
                     toast.error(t("copyFailed"));
                   }
                 }}
