@@ -43,7 +43,7 @@ function Shell({ children }: { children: ReactNode }) {
         >
           {children}
         </main>
-        <footer className="border-t bg-card">
+        <footer className="border-t border-border/60 bg-card/70 backdrop-blur-sm">
           <div className="max-sm:pb-24 mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 sm:px-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <p>
               {t("name")} — {t("tagline")}

@@ -94,7 +94,7 @@ function NotificationRow({
   }
 
   return (
-    <li className="flex gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
+    <li className="material-raised flex gap-3 rounded-xl border px-4 py-3">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <BellIcon className="size-4" />
       </div>
@@ -150,7 +150,7 @@ function NotificationListSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <li
           key={i}
-          className="flex gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm"
+          className="material-raised flex gap-3 rounded-xl border px-4 py-3"
         >
           <Skeleton className="size-9 shrink-0 rounded-md" />
           <div className="flex-1 space-y-2">

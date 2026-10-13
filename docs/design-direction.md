@@ -1,4 +1,6 @@
-# Design Direction — Options
+# Design Direction — Options (historical)
+
+> These early options predate the current [burgundy material UI system](../DESIGN.md). The current document governs new frontend work.
 
 Typography and colour, researched and narrowed but **not chosen**. Choosing is the first task of the frontend slice, because screens are cheaper to judge than to describe.
 

@@ -66,7 +66,7 @@ export function DocumentViewer({ doc }: { doc: RecordDocument }) {
   }
 
   return (
-    <li className="space-y-2 rounded-xl border bg-card px-4 py-3 text-sm shadow-sm">
+    <li className="material-raised space-y-2 rounded-xl border px-4 py-3 text-sm">
       <div className="flex items-center justify-between gap-2">
         <ClinicalText>{doc.filename}</ClinicalText>
         {viewable && state.status !== "ready" && (

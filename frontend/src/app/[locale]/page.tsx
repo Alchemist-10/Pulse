@@ -19,7 +19,7 @@ export default function HomePage() {
 
   return (
     <div className="animate-in fade-in-0 slide-in-from-bottom-1 space-y-12 duration-300 motion-reduce:animate-none">
-      <section className="mx-auto max-w-2xl space-y-5 pt-6 text-center sm:pt-12">
+      <section className="material-glass mx-auto max-w-3xl space-y-5 rounded-3xl px-6 py-10 text-center sm:px-12 sm:py-16">
         <Badge variant="outline" className="gap-1.5 text-primary">
           <ActivityIcon className="size-3.5" />
           {t("badge")}
@@ -44,7 +44,7 @@ export default function HomePage() {
         {features.map(({ icon: Icon, title, body }) => (
           <Card key={title}>
             <CardHeader>
-              <span className="mb-2 flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <span className="material-clay mb-2 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                 <Icon className="size-4" />
               </span>
               <CardTitle className="text-base">{title}</CardTitle>

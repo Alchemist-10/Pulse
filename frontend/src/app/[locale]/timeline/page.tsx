@@ -681,7 +681,7 @@ function TimelineSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}
-          className="flex gap-4 rounded-xl border bg-card p-4 sm:p-5"
+          className="material-raised flex gap-4 rounded-xl border p-4 sm:p-5"
         >
           <Skeleton className="size-11 shrink-0 rounded-xl sm:size-12" />
           <div className="min-w-0 flex-1 space-y-3">
@@ -703,7 +703,7 @@ function EntryRow({ entry }: { entry: EntrySummary }) {
     <li>
       <Link
         href={`/timeline/${entry.id}`}
-        className="group flex min-h-11 items-start gap-3 rounded-xl border bg-card p-4 shadow-sm outline-none transition-[background-color,border-color,box-shadow] hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none sm:gap-4 sm:p-5"
+        className="material-raised group flex min-h-11 items-start gap-3 rounded-xl border p-4 outline-none transition-[background-color,border-color,box-shadow] hover:border-primary/30 hover:bg-muted/30 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none sm:gap-4 sm:p-5"
       >
         <span
           aria-hidden="true"

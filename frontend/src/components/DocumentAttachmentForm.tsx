@@ -46,7 +46,7 @@ export function DocumentAttachmentForm({
     <form
       onSubmit={attach}
       data-unsaved-changes={!!file}
-      className="space-y-3 rounded-xl border bg-card p-4"
+      className="material-raised space-y-3 rounded-xl border p-4"
     >
       <DocumentDropzone
         label={t("new.fields.file")}

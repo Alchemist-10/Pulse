@@ -242,7 +242,7 @@ function EntryDetailView({ entry }: { entry: EntryDetail }) {
 
       <EntryStatus entry={entry} hrefPrefix={"/timeline"} />
 
-      <dl className="divide-y rounded-xl border bg-card shadow-sm">
+      <dl className="material-raised divide-y rounded-xl border">
         {rows.map(([label, value]) => (
           <Field key={label} label={label}>
             {value}

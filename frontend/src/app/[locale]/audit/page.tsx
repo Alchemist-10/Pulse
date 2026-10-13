@@ -421,7 +421,7 @@ export default function AuditEventsPage() {
           {/* Table on desktop; rows stack as cards on mobile (max-sm:) — one
               DOM per event so e2e text assertions never hit a strict-mode
               duplicate. */}
-          <div className="overflow-x-auto rounded-xl border bg-card shadow-sm max-sm:border-none max-sm:shadow-none">
+          <div className="material-raised overflow-x-auto rounded-xl border max-sm:border-none max-sm:shadow-none">
             <Table className="max-sm:block">
               <TableHeader className="max-sm:hidden">
                 <TableRow>
@@ -439,7 +439,7 @@ export default function AuditEventsPage() {
                     <TableRow
                       key={event.id}
                       className={
-                        "max-sm:block max-sm:space-y-2 max-sm:rounded-xl max-sm:border max-sm:bg-card max-sm:px-4 max-sm:py-3 max-sm:shadow-sm " +
+                        "max-sm:block max-sm:space-y-2 max-sm:rounded-xl max-sm:border max-sm:bg-card max-sm:px-4 max-sm:py-3 max-sm:shadow-[var(--shadow-card)] " +
                         (isBreakGlass ? "bg-break-glass-surface" : "")
                       }
                     >

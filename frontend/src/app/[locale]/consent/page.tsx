@@ -157,7 +157,7 @@ function RevokeControl({
   }
 
   return (
-    <div className="w-full space-y-2 rounded-xl border bg-muted p-4 shadow-sm sm:w-72">
+    <div className="material-raised w-full space-y-2 rounded-xl border p-4 sm:w-72">
       <p className="text-sm font-medium text-foreground">
         {t("list.revoke.confirmTitle")}
       </p>
@@ -219,7 +219,7 @@ function ConsentRow({
   const { types, window } = scopeSummary(consent, t, tTimeline);
 
   return (
-    <li className="space-y-4 rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted/50">
+    <li className="material-raised space-y-4 rounded-xl border p-5 transition-colors hover:bg-muted/50">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <ConsentRowLeadIcon status={consent.status} />

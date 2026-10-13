@@ -16,7 +16,7 @@ export function SelectFilter({
       <Label htmlFor={id}>{label}</Label>
       <select
         id={id}
-        className="h-11 min-w-0 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:h-10 sm:text-sm"
+        className="material-inset h-11 min-w-0 w-full rounded-xl border border-input px-3 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:h-10 sm:text-sm"
         {...props}
       >
         {children}
