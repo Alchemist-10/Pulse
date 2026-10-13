@@ -96,7 +96,7 @@ export default function LoginPage() {
 
   return (
     <section className="animate-in fade-in-0 slide-in-from-bottom-1 mx-auto grid max-w-sm gap-6 place-items-center py-6 duration-300 motion-reduce:animate-none sm:py-12">
-      <Card className="w-full">
+      <Card className="material-card w-full">
         <CardHeader className="text-center">
           {/* CardTitle renders a <div>; the accessible-heading role here matters
               (e2e selects by role), so this is a plain <h1> with matching type

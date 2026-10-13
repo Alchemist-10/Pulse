@@ -257,10 +257,9 @@
   }
   .workspace-toolbar {
     @apply rounded-2xl border p-4 sm:p-5;
-    background: var(--glass-fill);
-    border-color: var(--glass-border);
+    background: var(--card);
+    border-color: var(--border);
     box-shadow: var(--shadow-raised);
-    backdrop-filter: blur(16px);
   }
   .material-glass {
     background: var(--glass-fill);
@@ -268,16 +267,16 @@
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(18px) saturate(1.12);
   }
+  .material-raised {
+    background: var(--card);
+    border-color: var(--border);
+    box-shadow: var(--shadow-card);
+  }
   .material-card {
     background: var(--glass-fill);
     border-color: var(--glass-border);
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(14px);
-  }
-  .material-raised {
-    background: var(--card);
-    border-color: var(--border);
-    box-shadow: var(--shadow-card);
   }
   .material-inset {
     background: var(--muted);
@@ -309,9 +308,15 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .material-glass, .material-card, .workspace-toolbar {
+  .material-glass, .material-card {
     background: var(--card);
     backdrop-filter: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .material-glass, .material-card {
+    background: var(--card);
   }
 }
 

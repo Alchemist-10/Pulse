@@ -42,7 +42,7 @@ export default function HomePage() {
 
       <section aria-label={t("features.label")} className="grid gap-4 sm:grid-cols-3">
         {features.map(({ icon: Icon, title, body }) => (
-          <Card key={title}>
+          <Card key={title} className="material-card">
             <CardHeader>
               <span className="material-clay mb-2 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                 <Icon className="size-4" />

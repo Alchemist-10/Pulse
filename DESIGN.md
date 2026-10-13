@@ -45,7 +45,8 @@ The page moves from near-white at the top to a very pale burgundy tint below. Th
 | Primary button | Burgundy clay surface, rounded corners | Hover gains depth; pressed state becomes inset; disabled remains clearly labeled |
 | Secondary/outline button | Porcelain raised surface | Hover changes fill; focus ring is independent of shadow |
 | Input, textarea, select | Muted recessed well | Focus adds a three-pixel ring; invalid state retains its own semantic color |
-| Card and overview panel | Subtle translucent surface, soft shadow, clear border | No strong hover movement on data-heavy panels |
+| Default card | Opaque raised porcelain surface | Dense clinical and administrative content stays sharp |
+| Overview card | Opt-in `material-card` glass surface | Use only for a few high-level or personal panels |
 | Clinical list item / audit table | Opaque raised surface | Legibility and scan order take priority over blur |
 | Popover, menu, sheet | Glass with solid-enough fill | Content remains readable over any page background |
 | Empty state | Spacious glass card with one clay icon | One obvious next action, if available |
