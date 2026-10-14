@@ -50,7 +50,11 @@ from app.modules.users import service as users_service
 # Never subject to a preference check; never listed as a preference the
 # Patient can toggle (absent, not shown locked — issue #43).
 MANDATORY_TYPES: frozenset[NotificationType] = frozenset(
-    {NotificationType.BREAK_GLASS_ACCESS, NotificationType.CONSENT_REVOKED}
+    {
+        NotificationType.BREAK_GLASS_ACCESS,
+        NotificationType.CONSENT_REVOKED,
+        NotificationType.EMERGENCY_CARD_VIEWED,
+    }
 )
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -61,6 +65,7 @@ _TITLES: dict[NotificationType, str] = {
     NotificationType.RECORD_UPLOADED: "New record uploaded",
     NotificationType.BREAK_GLASS_ACCESS: "Emergency access to your records",
     NotificationType.DAILY_DIGEST: "Your records were viewed",
+    NotificationType.EMERGENCY_CARD_VIEWED: "Your emergency card was viewed",
 }
 
 
@@ -183,6 +188,12 @@ async def mark_read(session: AsyncSession, actor: Actor, notification_id: UUID) 
     if existing is None:
         raise _not_found()
     return _to_wire(existing)
+
+
+async def mark_all_read(session: AsyncSession, actor: Actor) -> int:
+    count = await repository.mark_all_read(session, actor.user_id, datetime.now(UTC))
+    await session.commit()
+    return count
 
 
 async def list_preferences(session: AsyncSession, actor: Actor) -> list[NotificationPreference]:

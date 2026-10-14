@@ -496,3 +496,35 @@ async def patient_map(session: AsyncSession, patient_ids: list[UUID]) -> dict[UU
 
 async def user_email_map(session: AsyncSession, user_ids: list[UUID]) -> dict[UUID, str]:
     return await repository.user_email_map(session, user_ids)
+
+
+async def admin_patient_page(
+    session: AsyncSession, actor: Actor, *, q: str | None, cursor: str | None, limit: int
+) -> tuple[list[Patient], str | None]:
+    _require_administrator(actor)
+    return await repository.admin_patient_page(session, q=q, cursor=cursor, limit=limit)
+
+
+async def admin_user_page(
+    session: AsyncSession,
+    actor: Actor,
+    *,
+    q: str | None,
+    role: Role | None,
+    cursor: str | None,
+    limit: int,
+) -> tuple[list[User], str | None]:
+    _require_administrator(actor)
+    return await repository.admin_user_page(session, q=q, role=role, cursor=cursor, limit=limit)
+
+
+async def admin_summary(session: AsyncSession, actor: Actor) -> dict[str, int]:
+    _require_administrator(actor)
+    return await repository.admin_summary(session)
+
+
+async def admin_patient_detail(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> Patient | None:
+    _require_administrator(actor)
+    return (await repository.patient_map(session, [patient_id])).get(patient_id)

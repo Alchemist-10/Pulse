@@ -44,7 +44,7 @@ class Consent(Base):
     to_date: Mapped[date | None] = mapped_column(Date, default=None)
     purpose: Mapped[ConsentPurpose] = mapped_column(SAEnum(ConsentPurpose, name="consent_purpose"))
     purpose_text: Mapped[str | None] = mapped_column(String(500), default=None)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     revocation_reason: Mapped[str | None] = mapped_column(String(500), default=None)
@@ -74,7 +74,7 @@ class AccessPermission(Base):
     entry_types: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=None)
     from_date: Mapped[date | None] = mapped_column(Date, default=None)
     to_date: Mapped[date | None] = mapped_column(Date, default=None)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -26,6 +26,7 @@ from app.modules.audit.routes import router as audit_router
 from app.modules.auth.dependencies import public
 from app.modules.auth.routes import router as auth_router
 from app.modules.consent.routes import router as consent_router
+from app.modules.emergency.routes import router as emergency_router
 from app.modules.notifications.routes import router as notifications_router
 from app.modules.patients.routes import router as patients_router
 from app.modules.providers.routes import router as providers_router
@@ -60,6 +61,7 @@ app.include_router(patients_router)
 app.include_router(records_router)
 app.include_router(providers_router)
 app.include_router(consent_router)
+app.include_router(emergency_router)
 app.include_router(audit_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)

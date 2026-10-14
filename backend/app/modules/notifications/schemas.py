@@ -28,6 +28,8 @@ class NotificationType(StrEnum):
     # "A clinician viewed your records" — read-computed digest, never a
     # per-view notification (domain-model.md, "Notifications").
     DAILY_DIGEST = "DAILY_DIGEST"
+    # Someone opened the Patient's emergency card. Mandatory (ADR-0017).
+    EMERGENCY_CARD_VIEWED = "EMERGENCY_CARD_VIEWED"
 
 
 class NotificationChannel(StrEnum):

@@ -322,3 +322,101 @@ async def patient_map(session: AsyncSession, patient_ids: list[UUID]) -> dict[UU
 async def user_email_map(session: AsyncSession, user_ids: list[UUID]) -> dict[UUID, str]:
     rows = (await session.execute(select(User.id, User.email).where(User.id.in_(user_ids)))).all()
     return {row.id: row.email for row in rows}
+
+
+def _page_cursor(created_at: datetime, row_id: UUID) -> str:
+    from app.core.pagination import encode_cursor
+
+    return encode_cursor(f"{created_at.isoformat()}|{row_id}")
+
+
+async def admin_patient_page(
+    session: AsyncSession, *, q: str | None, cursor: str | None, limit: int
+) -> tuple[list[Patient], str | None]:
+    """Identity rows for the admin table, newest first. `q` is a trigram
+    name match (index-backed) or a phone prefix; merged-away tombstones are
+    excluded."""
+    from app.core.pagination import unpack_cursor
+
+    limit = max(1, min(limit, 100))
+    stmt = select(Patient).where(Patient.merged_into_id.is_(None))
+    if q:
+        term = q.strip()
+        stmt = stmt.where(
+            or_(
+                Patient.full_name.op("%")(term),
+                Patient.full_name.ilike(f"%{term}%"),
+                Patient.phone.ilike(f"{term}%"),
+            )
+        )
+    if cursor:
+        c_at, c_id = unpack_cursor(cursor)
+        stmt = stmt.where(
+            or_(Patient.created_at < c_at, (Patient.created_at == c_at) & (Patient.id < c_id))
+        )
+    rows = list(
+        (
+            await session.scalars(
+                stmt.order_by(Patient.created_at.desc(), Patient.id.desc()).limit(limit + 1)
+            )
+        ).all()
+    )
+    next_cursor: str | None = None
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_cursor = _page_cursor(rows[-1].created_at, rows[-1].id)
+    return rows, next_cursor
+
+
+async def admin_user_page(
+    session: AsyncSession, *, q: str | None, role: Role | None, cursor: str | None, limit: int
+) -> tuple[list[User], str | None]:
+    from app.core.pagination import unpack_cursor
+
+    limit = max(1, min(limit, 100))
+    stmt = select(User)
+    if q:
+        stmt = stmt.where(User.email.ilike(f"%{q.strip()}%"))
+    if role is not None:
+        stmt = stmt.where(User.role == role)
+    if cursor:
+        c_at, c_id = unpack_cursor(cursor)
+        stmt = stmt.where(or_(User.created_at < c_at, (User.created_at == c_at) & (User.id < c_id)))
+    rows = list(
+        (
+            await session.scalars(
+                stmt.order_by(User.created_at.desc(), User.id.desc()).limit(limit + 1)
+            )
+        ).all()
+    )
+    next_cursor: str | None = None
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_cursor = _page_cursor(rows[-1].created_at, rows[-1].id)
+    return rows, next_cursor
+
+
+async def admin_summary(session: AsyncSession) -> dict[str, int]:
+    patients = await session.scalar(
+        select(func.count(Patient.id)).where(Patient.merged_into_id.is_(None))
+    )
+    claimed = await session.scalar(
+        select(func.count(Patient.id)).where(
+            Patient.merged_into_id.is_(None), Patient.user_id.is_not(None)
+        )
+    )
+    pending = await session.scalar(
+        select(func.count(DuplicateReviewItem.id)).where(
+            DuplicateReviewItem.status == ReviewStatus.PENDING
+        )
+    )
+    out = {
+        "patients": int(patients or 0),
+        "claimed_patients": int(claimed or 0),
+        "pending_duplicates": int(pending or 0),
+    }
+    for role, count in (
+        await session.execute(select(User.role, func.count(User.id)).group_by(User.role))
+    ).all():
+        out[f"users_{role.value.lower()}"] = int(count)
+    return out

@@ -15,11 +15,15 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.authz import Permission
+from app.core.authz import Permission, Role
 from app.core.pagination import Page
 from app.db.session import get_session
 from app.modules.admin import service
 from app.modules.admin.schemas import (
+    AdminPatientDetail,
+    AdminPatientRow,
+    AdminSummary,
+    AdminUserRow,
     DuplicateReviewCandidate,
     MergeRecord,
     MergeRequest,
@@ -84,3 +88,38 @@ async def list_reversible_merges(
 )
 async def reverse_merge(merge_id: UUID, ctx: CurrentUser, session: SessionDep) -> MergeResult:
     return await service.reverse(session, ctx.actor, merge_id)
+
+
+@router.get("/summary", dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)])
+async def admin_summary(ctx: CurrentUser, session: SessionDep) -> AdminSummary:
+    return await service.summary(session, ctx.actor)
+
+
+@router.get("/patients", dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)])
+async def admin_patients(
+    ctx: CurrentUser,
+    session: SessionDep,
+    q: str | None = None,
+    cursor: str | None = None,
+    limit: int = 25,
+) -> Page[AdminPatientRow]:
+    return await service.patient_table(session, ctx.actor, q=q, cursor=cursor, limit=limit)
+
+
+@router.get("/patients/{patient_id}", dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)])
+async def admin_patient_detail(
+    patient_id: UUID, ctx: CurrentUser, session: SessionDep
+) -> AdminPatientDetail:
+    return await service.patient_detail(session, ctx.actor, patient_id)
+
+
+@router.get("/users", dependencies=[requires(Permission.ADMIN_DUPLICATE_REVIEW)])
+async def admin_users(
+    ctx: CurrentUser,
+    session: SessionDep,
+    q: str | None = None,
+    role: Role | None = None,
+    cursor: str | None = None,
+    limit: int = 25,
+) -> Page[AdminUserRow]:
+    return await service.user_table(session, ctx.actor, q=q, role=role, cursor=cursor, limit=limit)

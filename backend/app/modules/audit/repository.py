@@ -164,3 +164,10 @@ async def list_for_patient(
         tail = rows[-1]
         next_cursor = _pack_cursor(tail.occurred_at, tail.id)
     return rows, next_cursor
+
+
+async def count_events_for_patient(session: AsyncSession, patient_id: UUID) -> int:
+    """Number of audit events naming the patient. A count only (admin
+    drilldown) — never the events themselves."""
+    stmt = select(func.count()).select_from(AuditEvent).where(AuditEvent.patient_id == patient_id)
+    return int((await session.execute(stmt)).scalar_one())

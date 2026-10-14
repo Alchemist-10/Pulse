@@ -162,3 +162,9 @@ async def list_for_patient(
         for row in rows
     ]
     return Page[AuditEventProjection](items=projections, next_cursor=next_cursor)
+
+
+async def count_events_for_patient(session: AsyncSession, actor: Actor, patient_id: UUID) -> int:
+    if actor.role is not Role.ADMINISTRATOR:
+        raise PulseError(ErrorCode.FORBIDDEN, "Administrator access required.", http_status=403)
+    return await repository.count_events_for_patient(session, patient_id)

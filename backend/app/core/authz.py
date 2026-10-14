@@ -61,6 +61,10 @@ class Permission(StrEnum):
     # Administrator only (ADR-0007, ADR-0011) — identity fields and entry
     # counts, never clinical content.
     ADMIN_DUPLICATE_REVIEW = "ADMIN_DUPLICATE_REVIEW"
+    # A Patient editing their own emergency card and QR (ADR-0017).
+    EMERGENCY_CARD_MANAGE_SELF = "EMERGENCY_CARD_MANAGE_SELF"
+    # Viewing a card via QR token or break-glass. Never Administrator.
+    EMERGENCY_CARD_VIEW = "EMERGENCY_CARD_VIEW"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
@@ -78,6 +82,8 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.NOTIFICATION_MANAGE_SELF,
             Permission.PROVIDER_READ,
             Permission.ANALYTICS_DATA_QUALITY_READ,
+            Permission.EMERGENCY_CARD_MANAGE_SELF,
+            Permission.EMERGENCY_CARD_VIEW,
         }
     ),
     Role.CLINICIAN: frozenset(
@@ -87,6 +93,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.PROVIDER_READ,
             Permission.BREAK_GLASS_REQUEST,
             Permission.CONSENT_READ_GRANTED,
+            Permission.EMERGENCY_CARD_VIEW,
         }
     ),
     Role.PROVIDER_STAFF: frozenset(
@@ -95,6 +102,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.RECORDS_READ,
             Permission.RECORDS_WRITE,
             Permission.PROVIDER_READ,
+            Permission.EMERGENCY_CARD_VIEW,
         }
     ),
     Role.ADMINISTRATOR: frozenset(

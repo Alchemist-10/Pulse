@@ -146,3 +146,9 @@ Context: the first design pass (Paper/Harbor/Bloom in `Pulse_design.md`) and the
 Options: `Pulse_design.md` (Paper/Harbor/Bloom); the `docs/design-direction.md` colour directions; a new burgundy material system.
 Chosen: burgundy material UI, specified in `DESIGN.md` (canonical).
 Rejected: `Pulse_design.md` and the `docs/design-direction.md` colour options, both superseded and kept as history.
+
+## [2026-10-15] Emergency card replaces break-glass record access
+Context: break-glass opened the whole record for 60 minutes; Patients wanted a smaller, self-controlled emergency view with a scannable QR.
+Options: keep unscoped break-glass; two tiers; card-only break-glass.
+Chosen: card-only break-glass plus Patient-controlled QR (ADR-0017). Consent expiry made optional.
+Rejected: unscoped record access without consent; public no-login QR.

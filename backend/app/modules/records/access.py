@@ -17,14 +17,12 @@ below that sets one for that role. That absence is what makes both this
 function and `accessible_entries` deny an Administrator "naturally"
 (ADR-0007): nothing here or in the repository special-cases the role.
 
-Rules 3–4 (Clinician consent, break-glass — #41, P3.5) resolve here too:
-the LIVE `access_permission` rows a Clinician holds for the patient
+Rule 3 (Clinician consent — #41, P3.5) resolves here too: the LIVE
+`access_permission` rows a Clinician holds for the patient
 (`repository.live_permissions_for`), matched against a specific Entry's
-type/date only inside `accessible_entries`'s SQL, not here; and whether
-an active break-glass grant exists (`repository.active_break_glass_for`),
-unscoped — break-glass is emergency access without Consent
-(domain-model.md), so it carries no entry-type or date material to
-resolve.
+type/date only inside `accessible_entries`'s SQL, not here. Break-glass
+no longer resolves here: it reveals the emergency card only, never
+Medical Entries (ADR-0017).
 """
 
 from __future__ import annotations
@@ -51,15 +49,11 @@ class PatientAccess:
         rows for this patient. Matching these against a specific Entry's
         type/date happens only in `repository.accessible_entries`'s SQL,
         not here.
-    `break_glass_active` — rule 4: whether `actor` (a Clinician) holds an
-        unexpired break-glass grant for this patient. Unscoped — see
-        module docstring.
     """
 
     owns_own_history: bool
     provider_id: UUID | None
     permissions: tuple[repository.LivePermission, ...]
-    break_glass_active: bool
 
     @property
     def has_any_access(self) -> bool:
@@ -68,12 +62,7 @@ class PatientAccess:
         uses to decide 404 vs proceed. Never true for an Administrator:
         no branch in `resolve_patient_access` ever sets a field for that
         role (ADR-0007)."""
-        return (
-            self.owns_own_history
-            or self.provider_id is not None
-            or bool(self.permissions)
-            or self.break_glass_active
-        )
+        return self.owns_own_history or self.provider_id is not None or bool(self.permissions)
 
 
 async def resolve_patient_access(
@@ -92,15 +81,11 @@ async def resolve_patient_access(
         provider_id = None
 
     permissions: tuple[repository.LivePermission, ...] = ()
-    break_glass_active = False
     if actor.role is Role.CLINICIAN:
         permissions = tuple(
             await repository.live_permissions_for(
                 session, patient_id=patient_id, grantee_user_id=actor.user_id
             )
-        )
-        break_glass_active = await repository.active_break_glass_for(
-            session, patient_id=patient_id, clinician_user_id=actor.user_id
         )
 
     # Role.ADMINISTRATOR: no branch. ADR-0007 — never any clinical access;
@@ -110,5 +95,4 @@ async def resolve_patient_access(
         owns_own_history=owns_own_history,
         provider_id=provider_id,
         permissions=permissions,
-        break_glass_active=break_glass_active,
     )

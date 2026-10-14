@@ -22,13 +22,22 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.actor import Actor
+from app.core.authz import Role
+from app.core.errors import ErrorCode
+from app.core.exceptions import PulseError
 from app.core.pagination import Page
 from app.modules.admin.schemas import (
+    AdminPatientDetail,
     AdminPatientIdentity,
+    AdminPatientRow,
+    AdminSummary,
+    AdminUserRow,
     DuplicateReviewCandidate,
     MergeRecord,
     MergeResult,
 )
+from app.modules.audit import service as audit_service
+from app.modules.consent import service as consent_service
 from app.modules.records import service as records_service
 from app.modules.users import service as users_service
 
@@ -147,3 +156,97 @@ async def reversible_merges(
 async def reverse(session: AsyncSession, actor: Actor, merge_id: UUID) -> MergeResult:
     result = await users_service.reverse_merge(session, actor, merge_id)
     return _to_merge_result(result)
+
+
+class _PatientFull(_Patient, Protocol):
+    @property
+    def sex(self) -> object | None: ...
+
+    city: str | None
+    state: str | None
+    address_line: str | None
+    locale_preference: str
+    created_at: datetime
+
+
+def _sex(patient: _PatientFull) -> str | None:
+    return str(getattr(patient.sex, "value", patient.sex)) if patient.sex is not None else None
+
+
+async def patient_table(
+    session: AsyncSession,
+    actor: Actor,
+    *,
+    q: str | None,
+    cursor: str | None,
+    limit: int,
+) -> Page[AdminPatientRow]:
+    rows, next_cursor = await users_service.admin_patient_page(
+        session, actor, q=q, cursor=cursor, limit=limit
+    )
+    counts = await records_service.entry_counts_for_patients(
+        session, actor, [row.id for row in rows]
+    )
+    items = [
+        AdminPatientRow(
+            **_identity(row, counts.get(row.id, 0)).model_dump(by_alias=False),
+            sex=_sex(row),
+            city=row.city,
+            state=row.state,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+    return Page[AdminPatientRow](items=items, next_cursor=next_cursor)
+
+
+async def patient_detail(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> AdminPatientDetail:
+    patient = await users_service.admin_patient_detail(session, actor, patient_id)
+    if patient is None:
+        raise PulseError(ErrorCode.NOT_FOUND, "No such patient.", http_status=404)
+    counts = await records_service.entry_counts_for_patients(session, actor, [patient.id])
+    active, total = await consent_service.consent_counts_for_patient(session, actor, patient.id)
+    events = await audit_service.count_events_for_patient(session, actor, patient.id)
+    return AdminPatientDetail(
+        **_identity(patient, counts.get(patient.id, 0)).model_dump(by_alias=False),
+        sex=_sex(patient),
+        city=patient.city,
+        state=patient.state,
+        created_at=patient.created_at,
+        address_line=patient.address_line,
+        locale_preference=patient.locale_preference,
+        active_consent_count=active,
+        total_consent_count=total,
+        audit_event_count=events,
+    )
+
+
+async def user_table(
+    session: AsyncSession,
+    actor: Actor,
+    *,
+    q: str | None,
+    role: Role | None,
+    cursor: str | None,
+    limit: int,
+) -> Page[AdminUserRow]:
+    rows, next_cursor = await users_service.admin_user_page(
+        session, actor, q=q, role=role, cursor=cursor, limit=limit
+    )
+    items = [
+        AdminUserRow(
+            id=row.id,
+            email=row.email,
+            role=row.role.value,
+            email_verified=row.email_verified_at is not None,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+    return Page[AdminUserRow](items=items, next_cursor=next_cursor)
+
+
+async def summary(session: AsyncSession, actor: Actor) -> AdminSummary:
+    return AdminSummary(**await users_service.admin_summary(session, actor))

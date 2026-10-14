@@ -116,7 +116,7 @@ async def test_valid_break_glass_grants_exactly_sixty_minutes(
     assert before + timedelta(minutes=60) <= expires_at <= after + timedelta(minutes=60)
 
 
-async def test_valid_break_glass_grants_read_access_to_the_timeline(
+async def test_valid_break_glass_does_not_open_the_timeline_but_opens_the_card(
     client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
 ) -> None:
     pid, _ = await _patient_and_clinician(
@@ -139,9 +139,11 @@ async def test_valid_break_glass_grants_read_access_to_the_timeline(
     )
     assert grant.status_code == 201
 
-    granted = await client.get(f"/api/v1/patients/{pid}/entries")
-    assert granted.status_code == 200
-    assert len(granted.json()["items"]) == 1
+    still_denied = await client.get(f"/api/v1/patients/{pid}/entries")
+    assert still_denied.status_code == 404
+
+    card = await client.get(f"/api/v1/patients/{pid}/emergency-card")
+    assert card.status_code == 200
 
     await rh.wipe_records(app_database_url)
 
