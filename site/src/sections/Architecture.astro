@@ -1,0 +1,218 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { stats, tree } from "../data/facts";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const route = sourceExcerpt("backend/app/modules/records/routes.py", 25, 47);
+const query = sourceExcerpt("backend/app/modules/records/repository.py", 106, 134);
+const caddy = sourceExcerpt("Caddyfile", 1, 10);
+
+const trace = [
+  {
+    id: "request",
+    label: "The request",
+    code: "GET /api/v1/patients/{id}/entries",
+    body: "The browser sends the localized page's API request with its HttpOnly session cookie. Caddy keeps the app and API on one origin.",
+  },
+  {
+    id: "route",
+    label: "The route",
+    code: "requires(Permission.RECORDS_READ)",
+    body: "FastAPI authenticates the session and checks whether this role may use the records endpoint. That check is necessary, but it does not give a Clinician access to any Patient.",
+  },
+  {
+    id: "service",
+    label: "The service",
+    code: "list_timeline(session, actor, patient_id, …)",
+    body: "The records service resolves the Patient relationship, validates the request window, delegates the read and emits one access event for the request.",
+  },
+  {
+    id: "repository",
+    label: "The repository",
+    code: "accessible_entries(session, actor, patient_id)",
+    body: "The query builder composes the actor's applicable row filter. For a Clinician, the live Consent predicate checks expiry, entry kinds and clinical date range inside SQL.",
+  },
+  {
+    id: "result",
+    label: "The result",
+    code: "filtered rows + request audit",
+    body: "Only the selected rows are serialized. Missing and inaccessible records share a 404 response, while the Patient-facing audit view contains access metadata, not clinical content.",
+  },
+] as const;
+---
+
+<Chapter
+  id="architecture"
+  n={12}
+  title="One application, with boundaries that matter"
+  lede="Pulse is a domain-organized modular monolith: one FastAPI process, one PostgreSQL database, and explicit service seams between ten business modules. The structure keeps the access rules close to every clinical read without adding a network hop for each boundary."
+  wide
+>
+  <div class="arch">
+    <div class="arch__shape">
+      <div class="arch__intro">
+        <p>
+          A microservice split would add deployment and coordination costs before Pulse has a scaling need. Modules
+          therefore share a deployable unit, but reach other domains through service interfaces rather than directly
+          querying their tables. The rule is enforced with a cross-module import lint.
+        </p>
+        <p>
+          In the data layer, <code>Patient</code> is the aggregate root: medical entries, Consent and audit scope all
+          attach to a Patient identity. The clinical entry is a shared base row joined to one of five typed detail
+          tables.
+        </p>
+        <p><a href={`${base}/guide/architecture`}>Architecture notes</a>. <a href={tree("backend/app/modules")}>Module source</a></p>
+      </div>
+
+      <div class="domain-map" role="img" aria-label="Ten Pulse domain modules arranged around identity, clinical records, trust, and operations">
+        <div class="domain-map__core"><span>Pulse API</span><strong>{stats.modules} domain modules</strong></div>
+        <div class="domain-map__group domain-map__group--identity"><b>Identity</b><span>auth, users, patients</span></div>
+        <div class="domain-map__group domain-map__group--clinical"><b>Clinical record</b><span>providers, records</span></div>
+        <div class="domain-map__group domain-map__group--trust"><b>Trust</b><span>consent, audit, notifications</span></div>
+        <div class="domain-map__group domain-map__group--ops"><b>Operations</b><span>analytics, admin</span></div>
+        <span class="domain-map__note">Typed service seams, one database</span>
+      </div>
+    </div>
+
+    <div class="arch__edge">
+      <div class="edge-copy">
+        <h3>One origin routes two kinds of traffic</h3>
+        <p>Caddy forwards <code>/api/*</code> to FastAPI and the rest to Next.js. Locale middleware skips API paths. The browser uses a same-origin HttpOnly cookie session.</p>
+      </div>
+      <CodeBlock code={caddy} lang="ini" file="Caddyfile" lines="1-10" />
+    </div>
+  </div>
+
+  <div class="trace" data-draw-root>
+    <div class="trace__head">
+      <div>
+        <h3>Consent travels into the query</h3>
+        <p>Move through the request path. Every stage below remains readable without JavaScript.</p>
+      </div>
+      <p class="trace__request"><span>Example endpoint</span><code>GET /api/v1/patients/7f3c…/entries</code></p>
+    </div>
+
+    <div class="trace__layout" data-steps>
+      <div class="trace__steps">
+        {trace.map((step, index) => (
+          <article class="trace__step" data-step data-trace-step={index}>
+            <h4><span>{String(index + 1).padStart(2, "0")}</span>{step.label}</h4>
+            <code>{step.code}</code>
+            <p>{step.body}</p>
+          </article>
+        ))}
+      </div>
+      <aside class="trace__visual" aria-label="Current request layer">
+        <p class="trace__visual-label">Request focus</p>
+        <div class="trace__rail" aria-hidden="true">
+          {trace.map((_, index) => <span data-rail={index}>{String(index + 1).padStart(2, "0")}</span>)}
+        </div>
+        <p class="trace__focus" aria-live="polite" data-focus>Request enters at the API edge</p>
+        <p class="trace__rule">Role access is checked at the route. Patient access is filtered in the repository.</p>
+      </aside>
+    </div>
+  </div>
+
+  <div class="arch__proof">
+    <div>
+      <h3>The enforcement point is visible in code</h3>
+      <p>The route declares role authorization; the repository returns a composable SQL filter with Consent conditions. The two checks answer different questions.</p>
+      <p><a href={`${base}/guide/adr/0004-default-deny-route-authorization`}>ADR-0004: default-deny routes</a>. <a href={`${base}/guide/adr/0006-consent-enforced-by-one-query-builder`}>ADR-0006: one clinical query builder</a></p>
+    </div>
+    <div class="arch__snippets">
+      <CodeBlock code={route} lang="python" file="backend/app/modules/records/routes.py" lines="25-47" />
+      <CodeBlock code={query} lang="python" file="backend/app/modules/records/repository.py" lines="106-134" />
+    </div>
+  </div>
+</Chapter>
+
+<script>
+  const root = document.querySelector("#architecture");
+  if (root) {
+    const steps = [...root.querySelectorAll<HTMLElement>("[data-trace-step]")];
+    const focus = root.querySelector<HTMLElement>("[data-focus]");
+    const names = ["Request enters at the API edge", "Role access is checked at the route", "The service resolves, reads and audits", "Consent limits rows in the repository", "Only filtered results return to the browser"];
+    const update = () => {
+      const index = steps.reduce((best, step, i) => {
+        const distance = Math.abs(step.getBoundingClientRect().top + step.offsetHeight / 2 - innerHeight / 2);
+        const bestDistance = Math.abs(steps[best].getBoundingClientRect().top + steps[best].offsetHeight / 2 - innerHeight / 2);
+        return distance < bestDistance ? i : best;
+      }, 0);
+      root.setAttribute("data-trace-active", String(index));
+      if (focus) focus.textContent = names[index];
+    };
+    const observer = new IntersectionObserver(update, { rootMargin: "-28% 0px -28% 0px", threshold: 0 });
+    steps.forEach((step) => observer.observe(step));
+    update();
+  }
+</script>
+
+<style>
+  .arch { display: grid; gap: clamp(3rem, 7vw, 6rem); }
+  .arch__shape { display: grid; gap: 2rem; align-items: center; }
+  .arch__intro { display: grid; gap: 1rem; max-width: 64ch; }
+  .arch__intro p:last-child { font-size: var(--step--1); }
+  .domain-map {
+    position: relative; min-height: 330px; padding: 1rem; display: grid; place-items: center;
+    border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.3);
+    background: var(--card); box-shadow: var(--shadow-card); overflow: hidden;
+  }
+  .domain-map::before, .domain-map::after { content: ""; position: absolute; border: 1px solid var(--border); border-radius: 50%; width: 70%; aspect-ratio: 1; }
+  .domain-map::after { width: 48%; }
+  .domain-map__core, .domain-map__group, .domain-map__note { position: absolute; z-index: 1; }
+  .domain-map__core { display: grid; gap: 0.15rem; text-align: center; padding: 1rem; border-radius: 50%; width: 126px; aspect-ratio: 1; align-content: center; background: var(--primary); color: var(--primary-foreground); font-size: var(--step--1); }
+  .domain-map__core strong { font-family: var(--font-mono); font-size: 0.75rem; }
+  .domain-map__group { display: grid; gap: 0.15rem; max-width: 45%; padding: 0.65rem 0.8rem; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-card); font-size: var(--step--1); }
+  .domain-map__group span { color: var(--muted-foreground); font-size: 0.78rem; }
+  .domain-map__group--identity { top: 8%; left: 4%; }
+  .domain-map__group--clinical { top: 8%; right: 4%; }
+  .domain-map__group--trust { bottom: 16%; left: 3%; }
+  .domain-map__group--ops { bottom: 16%; right: 4%; }
+  .domain-map__note { bottom: 0.45rem; color: var(--muted-foreground); font-size: 0.76rem; }
+  .arch__edge { display: grid; gap: 1.5rem; padding-top: 2rem; border-top: 1px solid var(--border); align-items: start; }
+  .edge-copy h3, .trace__head h3, .arch__proof h3 { font-size: var(--step-2); margin-bottom: 0.75rem; }
+  .edge-copy p:last-child { color: var(--muted-foreground); }
+  .trace { margin-top: clamp(4rem, 9vw, 7rem); padding-top: 2rem; border-top: 1px solid var(--border); }
+  .trace__head { display: grid; gap: 1.5rem; align-items: end; margin-bottom: 2rem; }
+  .trace__head > div > p { color: var(--muted-foreground); }
+  .trace__request { display: grid; gap: 0.25rem; padding: 0.9rem 1rem; background: var(--primary-soft); border-radius: var(--radius); overflow-wrap: anywhere; }
+  .trace__request span { font-size: var(--step--1); color: var(--muted-foreground); }
+  .trace__layout { display: grid; gap: 2rem; align-items: start; }
+  .trace__steps { display: grid; gap: 0; }
+  .trace__step { padding: 1.5rem 0; border-top: 1px solid var(--border); scroll-margin-top: 35vh; }
+  .trace__step h4 { display: flex; align-items: baseline; gap: 0.75rem; font-size: var(--step-1); }
+  .trace__step h4 span { color: var(--primary); font: 0.8rem var(--font-mono); }
+  .trace__step > code { display: inline-block; margin: 0.6rem 0; overflow-wrap: anywhere; }
+  .trace__step p { color: var(--muted-foreground); max-width: 62ch; }
+  .trace__visual { position: sticky; top: 6rem; padding: 1.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-card); }
+  .trace__visual-label { font-size: var(--step--1); color: var(--muted-foreground); }
+  .trace__rail { display: flex; justify-content: space-between; position: relative; margin: 1.5rem 0; }
+  .trace__rail::before { content: ""; position: absolute; left: 0; right: 0; height: 1px; top: 50%; background: var(--border); }
+  .trace__rail span { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 50%; background: var(--background); color: var(--muted-foreground); font: 0.68rem var(--font-mono); transition: background-color 180ms, color 180ms; }
+  #architecture[data-trace-active="0"] [data-rail="0"], #architecture[data-trace-active="1"] [data-rail="1"], #architecture[data-trace-active="2"] [data-rail="2"], #architecture[data-trace-active="3"] [data-rail="3"], #architecture[data-trace-active="4"] [data-rail="4"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .trace__focus { min-height: 3rem; font-weight: 700; }
+  .trace__rule { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: var(--step--1); }
+  .arch__proof { display: grid; gap: 2rem; margin-top: clamp(4rem, 8vw, 6rem); padding-top: 2rem; border-top: 1px solid var(--border); }
+  .arch__proof > div:first-child p { color: var(--muted-foreground); margin: 0.7rem 0; max-width: 62ch; }
+  .arch__snippets { display: grid; gap: 1.5rem; min-width: 0; }
+  @media (min-width: 900px) {
+    .arch__shape { grid-template-columns: minmax(0, 0.8fr) minmax(380px, 1.2fr); }
+    .domain-map { min-height: 390px; }
+    .arch__edge { grid-template-columns: 0.7fr 1.3fr; }
+    .trace__head { grid-template-columns: minmax(0, 1fr) minmax(290px, 0.72fr); }
+    .trace__layout { grid-template-columns: minmax(0, 1fr) minmax(300px, 0.65fr); }
+    .arch__proof { grid-template-columns: minmax(230px, 0.65fr) minmax(0, 1.35fr); }
+  }
+  @media (max-width: 480px) {
+    .domain-map { min-height: 340px; }
+    .domain-map__group { max-width: 46%; padding: 0.55rem; font-size: 0.78rem; }
+    .domain-map__group span { font-size: 0.68rem; }
+    .domain-map__group--identity { left: 2%; }
+    .domain-map__group--clinical { right: 2%; }
+    .domain-map__group--trust { left: 1%; }
+    .domain-map__group--ops { right: 2%; }
+    .trace__visual { position: static; }
+  }
+</style>

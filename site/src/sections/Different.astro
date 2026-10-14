@@ -1,0 +1,165 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { blob, dedup, seed } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const g = (slug: string) => `${base}/guide/${slug}`;
+
+const auditMeta = `
+@dataclass(frozen=True)
+class AuditMetadata:
+    """The only fields \`emit()\` can carry into \`audit_event.metadata\`.
+    Identifiers, counts, entry types — never a clinical value
+    (clinical-safety.md, \`audit/models.py\`). Add a field here only for
+    something that is provably non-clinical; do not widen this into a
+    free-form dict."""
+
+    entry_type: str | None = None
+    provider_name: str | None = None
+    count: int | None = None
+    justification: str | None = None
+`;
+
+const items = [
+  {
+    claim: "Consent is a clause in the query, built in one place.",
+    body: "accessible_entries(actor, patient_id) returns a filter that ORs together the owner, the authoring provider and the consent predicate, and falls back to false() when none applies. A lint fails the build on select(MedicalEntry) anywhere else. The lint is a textual pattern, so this is a strong convention and not a formal guarantee, which ADR-0006 says outright.",
+    links: [
+      { t: "ADR-0006", h: g("adr/0006-consent-enforced-by-one-query-builder") },
+      { t: "records/repository.py", h: blob("backend/app/modules/records/repository.py") },
+    ],
+  },
+  {
+    claim: "A denied read looks like a patient who does not exist.",
+    body: "A Clinician with no consent gets 404 on the timeline and on entry detail, not 403, because a 403 would confirm the person is a patient at all. An adversarial test asserts it for both routes.",
+    links: [{ t: "test_phase3_adversarial_suite.py", h: blob("backend/tests/test_phase3_adversarial_suite.py") }],
+  },
+  {
+    claim: "Revoking consent deletes a row. Nothing is cached to expire.",
+    body: "Revocation stamps the consent and deletes its derived permission row in the same transaction, so the next query that starts after the commit is denied. Pulse caches no permission decision. A statement already executing when the revoke commits is not interrupted, and data already returned cannot be taken back.",
+    links: [
+      { t: "ADR-0016", h: g("adr/0016-transactional-audit-and-safe-identity-merges") },
+      { t: "consent/service.py", h: blob("backend/app/modules/consent/service.py") },
+    ],
+  },
+  {
+    claim: "The Administrator role holds no clinical permission.",
+    body: "It lacks RECORDS_READ, so the timeline, entry detail and audit endpoints return 403 for it. The duplicate-review screen shows identity fields and an entry count. That count is the one deliberate bypass of the query builder, gated to Administrators in the service and recorded in the learnings as a narrow exception. An administrator audit viewer is not implemented.",
+    links: [
+      { t: "ADR-0007", h: g("adr/0007-administrators-cannot-read-clinical-data") },
+      { t: "learnings", h: g("learnings") },
+    ],
+  },
+  {
+    claim: "The application cannot edit its own audit log.",
+    body: "The application's database role holds INSERT and SELECT on audit_event and nothing more, and migrations run as a separate owner role. Tests run UPDATE and DELETE as the application role and expect \"permission denied\". A wrong event is fixed by writing another.",
+    links: [
+      { t: "ADR-0008", h: g("adr/0008-audit-log-is-append-only-by-grant") },
+      { t: "migration 0005", h: blob("backend/app/db/migrations/versions/0005_consent_audit_notifications.py") },
+    ],
+  },
+  {
+    claim: "Audit and notification payloads have a deliberately closed shape.",
+    body: "emit() accepts an AuditMetadata with four declared fields rather than an arbitrary dictionary. Notification params reject extra fields and allow only a count and typed identifiers. Clinical contents must never be copied into either payload. The audit justification is free text, so this rule still depends on what callers and users put there.",
+    links: [
+      { t: "audit/service.py", h: blob("backend/app/modules/audit/service.py") },
+      { t: "notifications/schemas.py", h: blob("backend/app/modules/notifications/schemas.py") },
+    ],
+    code: true,
+  },
+  {
+    claim: "A Provider can file for a person who has never registered.",
+    body: `patient.user_id is nullable on purpose. The seed holds ${seed.unclaimed} of its ${seed.patients} Patients with no account, and Provider Staff file entries for them by Patient ID. What is not built: creating a new unclaimed Patient from the UI, and the flow by which that person later claims the record.`,
+    links: [
+      { t: "ADR-0002", h: g("adr/0002-patient-is-the-aggregate-root") },
+      { t: "verification and operations", h: g("verification-and-operations") },
+    ],
+  },
+  {
+    claim: "Duplicate detection accounts for name order, and its precision is tested.",
+    body: `Candidates are blocked first by a trigram hit on the name, the same birth year or the same phone. Scoring then sorts each name's tokens before comparing trigrams and weights name ${dedup.weights.name}, birth date ${dedup.weights.dob} and phone ${dedup.weights.phone}, with a threshold of ${dedup.threshold}. The seed plants ${seed.plantedDuplicates} true duplicates and ${seed.plantedNearMisses} look-alike pairs that are different people, and the tests expect the first flagged and the second not. Nothing merges without an Administrator.`,
+    links: [
+      { t: "ADR-0011", h: g("adr/0011-merges-are-human-only-and-reversible") },
+      { t: "ADR-0015", h: g("adr/0015-synthea-plus-indian-overlay-seed-data") },
+    ],
+  },
+  {
+    claim: "Four locales, with clinical text left exactly as recorded.",
+    body: "The API returns codes and the frontend renders text from them. A CI check requires the same keys and interpolations in all four catalogs. A diagnosis reads the same in every language, because translating it would invent a medical claim. The Hindi, Tamil and Malayalam catalogs have not been reviewed by a native speaker.",
+    links: [
+      { t: "ADR-0013", h: g("adr/0013-error-codes-not-messages") },
+      { t: "locale review", h: g("locale-review") },
+    ],
+  },
+];
+---
+
+<Chapter
+  id="different"
+  n={18}
+  title="What is different here, and what is not"
+  lede="None of these ideas is new on its own. What we would point a reader to is that each one is enforced by a query, a test or a database grant, so it holds when nobody is paying attention."
+  wide
+>
+  <div class="df">
+    <aside class="df__aside">
+      <h3>What is not new</h3>
+      <p>
+        Row-level filtering, default-deny routes, append-only logs and code-first OpenAPI are established practice. The
+        contract step is a check too: CI runs <code>generate_api.py --check</code> so the generated TypeScript types cannot
+        drift from the schemas.
+      </p>
+      <p>
+        We have not compared Pulse against other systems, so we make no claim to be better than them. The claims on this
+        page are narrower: each is about this code, and each links to where you can check it.
+      </p>
+    </aside>
+
+    <ol class="df__list" role="list">
+      {items.map((it) => (
+        <li class="df__item">
+          <h3>{it.claim}</h3>
+          <div class="df__body">
+            <p>{it.body}</p>
+            {it.code && (
+              <div class="df__code">
+                <CodeBlock code={auditMeta} lang="python" file="backend/app/modules/audit/service.py" lines="56-67" />
+              </div>
+            )}
+            <p class="df__links">
+              {it.links.map((l, i) => (
+                <>
+                  {i > 0 && " and "}
+                  <a href={l.h}>{l.t}</a>
+                </>
+              ))}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</Chapter>
+
+<style>
+  .df { display: grid; gap: 2.5rem; }
+  @media (min-width: 1000px) {
+    .df { grid-template-columns: minmax(0, 0.55fr) minmax(0, 1.45fr); gap: 3.5rem; align-items: start; }
+    .df__aside { position: sticky; top: 96px; }
+  }
+  .df__aside h3 { font-size: var(--step-1); margin-bottom: 0.7rem; }
+  .df__aside p { color: var(--muted-foreground); font-size: 0.97rem; }
+  .df__aside p + p { margin-top: 0.9em; }
+
+  .df__list { list-style: none; margin: 0; padding: 0; min-width: 0; }
+  .df__item { padding: 1.5rem 0; border-top: 1px solid var(--border); display: grid; gap: 0.7rem; }
+  .df__item:last-child { border-bottom: 1px solid var(--border); }
+  @media (min-width: 700px) {
+    .df__item { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 2rem; }
+  }
+  .df__item h3 { font-size: var(--step-1); line-height: 1.2; }
+  .df__body { min-width: 0; display: grid; gap: 0.8rem; align-content: start; }
+  .df__body p { color: var(--muted-foreground); }
+  .df__code { min-width: 0; }
+  .df__links { font-size: 0.92rem; }
+</style>

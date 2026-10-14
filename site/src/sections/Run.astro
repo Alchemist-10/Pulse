@@ -1,0 +1,207 @@
+---
+import Chapter from "../components/Chapter.astro";
+import { REPO, demoLogins, stats, stack } from "../data/facts";
+import { runCommands } from "../data/story-e";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const g = (slug: string) => `${base}/guide/${slug}`;
+
+const steps = [
+  {
+    title: "Get the code and start the stack",
+    text: `You need Docker with Compose, and ports 80 and 8025 free. Always pass --build: without it Compose can reuse a stale frontend image. The first boot runs the ${stats.migrations} migrations and loads the seed data by itself, and a second run changes nothing.`,
+    cmds: [runCommands.clone, runCommands.up],
+    label: ["Clone", "Start"],
+  },
+  {
+    title: "Open it",
+    text: `The app is at http://localhost, served by Caddy. Verification emails land in Mailpit at http://localhost:8025, a local inbox, so nothing leaves the machine. ${stats.composeServices} services start: Caddy, frontend, backend, PostgreSQL ${stack.infra[0].version}, Redis ${stack.infra[1].version} and Mailpit.`,
+    cmds: [],
+    label: [],
+  },
+  {
+    title: "Log in as someone",
+    text: "The login page has a quick-login button for each of these accounts. They share one password, which is in RUNNING.md along with the exact walkthrough of every screen.",
+    cmds: [],
+    label: [],
+  },
+  {
+    title: "Run the real spine yourself",
+    text: "With the stack up, this drives a browser through file, grant with step-up, clinician read, audit, revoke and lockout against the live services, with nothing mocked. It needs Node 24.",
+    cmds: [runCommands.live],
+    label: ["Live end-to-end"],
+  },
+  {
+    title: "Tear it down",
+    text: "Plain docker compose down keeps the volumes. Adding -v wipes the database and uploads, and the next start reseeds from scratch.",
+    cmds: [runCommands.down],
+    label: ["Stop and wipe"],
+  },
+];
+---
+
+<Chapter
+  id="run"
+  n={21}
+  title="Run it on your own machine"
+  lede="Everything in this story is in the repository. A clone and one Compose command bring up the same stack the tests run against."
+  wide
+>
+  <ol class="run">
+    {steps.map((s, i) => (
+      <li class="run__step">
+        <span class="run__n" aria-hidden="true">{i + 1}</span>
+        <div class="run__main">
+          <h3>{s.title}</h3>
+          <p>{s.text}</p>
+          {s.cmds.map((c, j) => (
+            <div class="cmd">
+              <pre tabindex="0"><code>{c}</code></pre>
+              <button class="cmd__copy" type="button" data-copy aria-label={`Copy command: ${s.label[j]}`}>Copy</button>
+            </div>
+          ))}
+          {i === 2 && (
+            <div class="logins" role="region" aria-label="Demo logins" tabindex="0">
+              <table>
+                <thead>
+                  <tr><th scope="col">Role</th><th scope="col">Email</th></tr>
+                </thead>
+                <tbody>
+                  {demoLogins.map((d) => (
+                    <tr>
+                      <th scope="row">{d.role}</th>
+                      <td><code>{d.email}</code></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p class="logins__pw">
+                Password: see <a href={g("running")}>RUNNING.md</a>. All data is synthetic.
+              </p>
+            </div>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  <div class="end">
+    <h3>That is the whole story</h3>
+    <p>
+      The guide renders the repository's own documents: the decisions, the domain model, the workflows audited against the
+      code, and the seed pipeline. The source is public.
+    </p>
+    <div class="end__actions">
+      <a class="btn btn-primary" href={`${base}/guide/`}>Open the guide</a>
+      <a class="btn" href={g("architecture")}>Read the architecture</a>
+      <a class="btn" href={REPO} rel="noopener">View the source on GitHub</a>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  .run { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; max-width: 860px; }
+  .run__step { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem 1.25rem; }
+  .run__n {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .run__main { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }
+  .run__main h3 { font-size: var(--step-1); line-height: 1.25; padding-top: 0.1rem; }
+  .run__main > p { color: var(--muted-foreground); }
+
+  .cmd { position: relative; }
+  .cmd pre {
+    margin: 0;
+    padding: 0.9rem 5.5rem 0.9rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .cmd code { background: none; border: 0; padding: 0; font-size: inherit; overflow-wrap: normal; }
+  .cmd__copy {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .cmd__copy:hover { border-color: var(--primary); color: var(--primary); }
+  :global(html:not(.js)) .cmd__copy { display: none; }
+  .cmd__copy[data-done] { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+
+  .logins { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+  .logins table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  .logins th, .logins td { text-align: left; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); }
+  .logins thead th { font-size: 0.85rem; color: var(--muted-foreground); }
+  .logins tbody th { font-weight: 500; white-space: nowrap; }
+  .logins td code { white-space: nowrap; }
+  .logins__pw { padding: 0.7rem 1rem; font-size: 0.92rem; color: var(--muted-foreground); }
+
+  .end { margin-top: clamp(4rem, 8vw, 6rem); padding-top: 2rem; border-top: 1px solid var(--border); max-width: 860px; }
+  .end h3 { font-size: var(--step-3); }
+  .end p { margin-top: 0.9rem; color: var(--muted-foreground); max-width: 60ch; }
+  .end__actions { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = btn.closest(".cmd")?.querySelector("code")?.textContent ?? "";
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      } catch {
+        // Fallback for insecure contexts or denied permission.
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          ok = (document as unknown as { execCommand(c: string): boolean }).execCommand("copy");
+        } catch {
+          ok = false;
+        }
+        ta.remove();
+      }
+      if (!ok) {
+        const code = btn.closest(".cmd")?.querySelector("code");
+        const selection = window.getSelection();
+        if (code && selection) {
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+      btn.textContent = ok ? "Copied" : "Copy selected text";
+      btn.toggleAttribute("data-done", ok);
+      setTimeout(() => {
+        btn.textContent = "Copy";
+        btn.removeAttribute("data-done");
+      }, 1800);
+    });
+  });
+</script>

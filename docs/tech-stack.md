@@ -1,6 +1,6 @@
 # Tech Stack and Pinned Versions
 
-What Phase 0 installs, and the version traps that would otherwise cost a day each. Verified 2026-08-22; re-verify before the scaffold lands if that is more than a few weeks later.
+What the project installs, and the version traps that would otherwise cost a day each. Pins last cross-checked against lockfiles 2026-10-14.
 
 The stack itself was locked during planning — see [`architecture.md`](./architecture.md). This document only decides *which versions*.
 
@@ -8,7 +8,7 @@ The stack itself was locked during planning — see [`architecture.md`](./archit
 
 | Component | Pin | Notes |
 |---|---|---|
-| Python | 3.13.x | Floor is 3.10 across the dependency set. 3.14 works; 3.13 is the safer default for a team installing secondary tooling. |
+| Python | 3.13.x | The project pins `>=3.13,<3.14`; 3.14 is not supported. |
 | FastAPI | 0.141.1 | |
 | SQLAlchemy | 2.0.52 | **Not 2.1** — still beta. |
 | Alembic | 1.19.1 | |
@@ -97,4 +97,4 @@ Ships in contrib but still needs `CREATE EXTENSION pg_trgm;` per database — it
 
 ## What was not verified
 
-One item from the version research remains an honest gap: the `pg_trgm` bundling in `postgres:18-alpine` specifically (not the tag this project uses — `postgres:18.6`, the Debian variant, which Phase 0 integration confirmed live). The testcontainers Postgres module is confirmed through docs and package metadata but not yet exercised against a real test run (no test suite exists yet). Both cheap to settle when either becomes load-bearing.
+One item from the version research remains an honest gap: the `pg_trgm` bundling in `postgres:18-alpine` specifically (not the tag this project uses — `postgres:18.6`, the Debian variant, which Phase 0 integration confirmed live). The testcontainers Postgres module is exercised by the backend and seed tests. The Alpine `pg_trgm` question is cheap to settle if it ever becomes load-bearing.

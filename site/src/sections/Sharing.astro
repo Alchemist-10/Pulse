@@ -1,0 +1,90 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import { consent, blob } from "../data/facts";
+import { stages } from "../data/story-b";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const labels = ["Patient chooses scope", "Clinician requests entries", "Patient revokes"];
+---
+
+<Chapter id="sharing" n={5} title="Consent names a person and a limit" lede="A Clinician role alone reveals no Patient record. A Patient grants an individual Clinician access to selected entry types and a date window, for a set time." wide>
+  <div class="share">
+    <div class="share__visual">
+      <Screenshot name="consent-new-desktop" alt="Patient consent form selecting a Clinician, scope, purpose and expiry" url="/en/consent/new" />
+      <div class="share__mini"><Screenshot name="clinician-denied-desktop" alt="Clinician record view after access has been revoked, showing not-found state" url="/en/patients/…/records" /></div>
+      <div class="share__grant-shots"><Screenshot name="consent-list-phone" alt="Patient's list of existing consent grants" frame="phone" url="/en/consent" /><Screenshot name="consent-stepup-desktop" alt="Patient reviews the consent grant and confirms with password" url="/en/consent/new" /></div>
+    </div>
+    <div class="share__explain">
+      <p>Consent is the Patient's agreement. Permission is the live system state derived from it. The distinction lets Pulse preserve the agreement while withdrawing access immediately.</p>
+      <p>Granting asks the Patient to confirm their password. Revoking does not add that friction. Expiry is required and must be between {consent.minDays} and {consent.maxDays} days out.</p>
+      <p>Try the sequence. It is a model of the backend state changes, not a request to the running application.</p>
+      <a href={`${base}/guide/workflows#4-patient-shares-a-record-with-a-clinician`}>Read the sharing workflow</a>
+    </div>
+  </div>
+  <div class="share__demo" data-share-demo>
+    <div class="share__steps" role="group" aria-label="Consent lifecycle steps">
+      {stages.map((_, index) => <button type="button" data-share-step={index} aria-pressed={index === 0} class:list={{ "is-active": index === 0 }}>{labels[index]}</button>)}
+    </div>
+    <div class="share__state" data-share-state aria-live="polite">
+      <p class="share__status">{stages[0].state}</p><h3>{stages[0].permission}</h3><p>{stages[0].note}</p>
+      <div class="share__scope" aria-label="Example clinical entry types"><span>Diagnosis</span><span>Lab Report</span><span>Prescription</span><span class="out">Clinical Note / outside scope</span></div>
+    </div>
+    <p class="share__caption">The Patient can scope consent by entry type, not by ticking individual entries.</p>
+  </div>
+  <div class="share__emergency">
+    <div><h3>Emergency access is a separate route</h3>
+      <p>If an authorized Clinician reaches a not-found patient-record page, they can request break-glass access with a written reason. This path is unscoped and expires after {consent.breakGlassMinutes} minutes. It is audited as <code>BREAK_GLASS_ACCESS</code>.</p>
+      <p>For a registered Patient, the system sends an immediate notification and shows a banner for {consent.breakGlassBannerHours} hours. The grant cannot be revoked early; it expires at its stated time.</p>
+      <a href={`${base}/guide/workflows#5-patient-revokes-access-or-responds-to-an-emergency`}>See revocation and emergency access</a>
+    </div>
+    <div class="share__emergency-shots"><Screenshot name="clinician-home-desktop" alt="Clinician portal showing the list of currently consented Patients" url="/en/clinician" /><Screenshot name="clinician-records-desktop" alt="Clinician viewing entries inside an active consent scope" url="/en/patients/…/records" /><Screenshot name="breakglass-banner-phone" alt="Patient timeline with a banner announcing emergency access" frame="phone" url="/en/timeline" /></div>
+  </div>
+  <div class="share__notify">
+    <div><h3>Notifications follow the access event</h3><p>Revocation notifies the Clinician by email and writes an in-app row, although Clinicians have no notifications screen. Break-glass notifies a registered Patient by email and in-app. Those security notifications are mandatory.</p><p>Patients can set preferences for optional in-app events. The daily “records viewed” digest is computed when read. Granting consent sends no notification; its preference toggle currently has no effect.</p><p>Only the in-app channel is configurable in Patient preferences.</p></div>
+    <Screenshot name="notifications-phone" alt="Patient notifications list with security and record activity notices" frame="phone" url="/en/notifications" />
+  </div>
+  <p class="share__source">The persisted Consent and derived AccessPermission are separate records. <a href={blob("backend/app/modules/consent/models.py")}>Model definitions</a> / <a href={`${base}/guide/adr/0010-consent-is-granted-to-individuals`}>ADR-0010</a></p>
+</Chapter>
+
+<style>
+  .share{display:grid;gap:2rem;align-items:start}.share__visual{display:grid;gap:1rem}.share__mini{max-width:720px}.share__grant-shots{display:grid;gap:1rem;align-items:start}
+  @media(min-width:760px){.share__grant-shots{grid-template-columns:minmax(120px,.5fr) minmax(0,1.3fr)}}
+  @media(min-width:940px){.share{grid-template-columns:minmax(0,1.25fr) minmax(230px,.75fr)}.share__explain{position:sticky;top:6rem}.share__visual{grid-template-columns:minmax(0,1fr)}.share__mini{width:78%;justify-self:end}}
+  .share__explain p+p{margin-top:1em}.share__explain a,.share__source a{color:var(--primary)}
+  .share__demo{margin-top:clamp(3rem,7vw,5rem);display:grid;grid-template-columns:minmax(0,1fr);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  @media(min-width:780px){.share__demo{grid-template-columns:minmax(190px,.65fr) minmax(0,1.35fr)}}
+  .share__steps{display:grid;align-content:start;border-bottom:1px solid var(--border)}
+  @media(min-width:780px){.share__steps{border-bottom:0;border-right:1px solid var(--border)}}
+  .share__steps button{min-height:52px;text-align:left;padding:.75rem 1rem;background:transparent;border:0;border-bottom:1px solid var(--border);color:var(--foreground);cursor:pointer;font:inherit}
+  .share__steps button[aria-pressed="true"]{background:var(--card);box-shadow:inset 3px 0 var(--primary);font-weight:600}
+  .share__steps button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
+  .share__state{padding:clamp(1.25rem,4vw,2rem);min-height:250px}.share__status{font-family:var(--font-mono);font-size:var(--step--1);color:var(--primary)}
+  .share__state h3{font-size:var(--step-2);margin:.4rem 0}.share__state>p:last-of-type{max-width:65ch;color:var(--muted-foreground)}
+  .share__scope{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem}.share__scope span{padding:.35rem .65rem;border:1px solid var(--border);border-radius:999px;font-size:var(--step--1);background:var(--card)}.share__scope .out{opacity:.65;text-decoration:line-through}
+  .share__state[data-revoked="true"] .share__scope span{opacity:.45;text-decoration:line-through}
+  .share__caption,.share__source{color:var(--muted-foreground);font-size:var(--step--1);margin-top:1rem}
+  .share__emergency,.share__notify{display:grid;gap:1.5rem;align-items:start;margin-top:clamp(2.5rem,6vw,4rem)}@media(min-width:900px){.share__emergency{grid-template-columns:minmax(230px,.65fr) minmax(0,1.35fr)}.share__notify{grid-template-columns:minmax(0,1fr) minmax(170px,.45fr)}}
+  .share__emergency h3,.share__notify h3{font-size:var(--step-2);margin-bottom:.55rem}.share__emergency p,.share__notify p{color:var(--muted-foreground);margin-top:.65rem}.share__emergency a{color:var(--primary)}
+  .share__emergency-shots{display:grid;gap:1rem;align-items:start}@media(min-width:760px){.share__emergency-shots{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.share__emergency-shots :last-child{grid-column:1/-1;width:min(60%,260px);justify-self:end}}
+</style>
+
+<script>
+  import { stages } from "../data/story-b";
+  const demo = document.querySelector<HTMLElement>("[data-share-demo]");
+  if (demo) {
+    const buttons = [...demo.querySelectorAll<HTMLButtonElement>("[data-share-step]")];
+    const state = demo.querySelector<HTMLElement>("[data-share-state]")!;
+    buttons.forEach((button) => button.addEventListener("click", () => {
+      const index = Number(button.dataset.shareStep);
+      const step = stages[index];
+      buttons.forEach((item, i) => {
+        item.setAttribute("aria-pressed", String(i === index));
+        item.classList.toggle("is-active", i === index);
+      });
+      state.querySelector(".share__status")!.textContent = step.state;
+      state.querySelector("h3")!.textContent = step.permission;
+      state.querySelector("p:last-of-type")!.textContent = step.note;
+      state.dataset.revoked = String(index === 2);
+    }));
+  }
+</script>

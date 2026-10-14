@@ -100,7 +100,7 @@ Appended as patterns land. Not written at the end.
 
 ## `@stub` endpoints and the CI stub inventory
 
-**What:** An endpoint decorated `@stub` returns fixture data shaped like its real response schema, sets `X-Pulse-Stub: true`, and registers itself. CI prints the inventory of remaining stubs on every run. See ADR-0014.
+**What:** An endpoint decorated `@stub` returns fixture data shaped like its real response schema, sets `X-Pulse-Stub: true`, and registers itself. CI prints the inventory of remaining stubs on every run. See ADR-0014. As of the final backend no route is stubbed (the inventory prints 0); the pattern served the frontend/backend handoff during the build.
 
 **Why here:** Backend and frontend are owned by different people, and the scheduling failure that actually happens on this team is the frontend blocked waiting on a backend handler. Once a module's schemas merge, the frontend can build against the real shape immediately — the stub, not the finished implementation, is the handoff point.
 
@@ -132,9 +132,9 @@ Appended as patterns land. Not written at the end.
 
 ## Enforcement tests as lints
 
-**What:** Three CI checks: route permission coverage (every route declares a permission or an explicit public marker), a lint against raw `select(MedicalEntry)` anywhere outside `accessible_entries`, and a cross-module import lint (no domain reaching into another's tables).
+**What:** Four lints plus a route-coverage test: route permission coverage (every route declares a permission or an explicit public marker), a lint against raw `select(MedicalEntry)` anywhere outside `accessible_entries`, a cross-module import lint (no domain reaching into another's tables), a module SQL lint, and an actor-first lint.
 
-**Why here:** All three catch an absence — a missing permission check, a query that bypassed the consent filter, a shortcut join across a module boundary — and human review is unreliable at noticing something that isn't there. A red build is not.
+**Why here:** All of them catch an absence — a missing permission check, a query that bypassed the consent filter, a shortcut join across a module boundary — and human review is unreliable at noticing something that isn't there. A red build is not.
 
 **Worth knowing:** These were introduced against three endpoints, not sixty. Writing the lint against the whole codebase at once produces a wall of failures and an irresistible urge to mark everything exempt, which defeats the point before it starts.
 
@@ -246,7 +246,7 @@ Appended as patterns land. Not written at the end.
 
 ## Frontend rebuilt on shadcn/ui components (P4.4, PR #59)
 
-**What:** The hand-rolled primitives in `src/components/ui/` (`Button`, `Card`, `Callout`, `FormField`, `NavLink`, ...) and `src/styles/tokens.css` were replaced with shadcn/ui components generated into the same directory, themed from `src/app/globals.css`. Dark mode is class-based via `next-themes` (`defaultTheme="light"`, header toggle), not a media query. Project-specific tokens (`--critical`, `--critical-surface`, `--critical-border`) sit alongside shadcn's own.
+**What:** The hand-rolled primitives in `src/components/ui/` (`Button`, `Card`, `Callout`, `FormField`, `NavLink`, ...) and `src/styles/tokens.css` were replaced with shadcn/ui components generated into the same directory, themed from `src/app/globals.css` (`globals.css` has since been re-themed to burgundy material; see [`DESIGN.md`](../DESIGN.md)). Dark mode is class-based via `next-themes` (`defaultTheme="light"`, header toggle), not a media query. Project-specific tokens (`--critical`, `--critical-surface`, `--critical-border`) sit alongside shadcn's own.
 
 **Why here:** Phase 4 added data-dense screens (analytics, admin, duplicate review) that needed tables, charts, sheets and form fields the original kit did not have. shadcn components are copied into the repo, not imported from a package, so they are still "wrapped once, in the shared directory" (`frontend.md`) and can be edited.
 

@@ -1,0 +1,70 @@
+---
+import Base from "../layouts/Base.astro";
+import Spine from "../components/Spine.astro";
+import Contents from "../components/Contents.astro";
+import Hero from "../sections/Hero.astro";
+import Problem from "../sections/Problem.astro";
+import Promise from "../sections/Promise.astro";
+import People from "../sections/People.astro";
+import RecordLife from "../sections/RecordLife.astro";
+import Sharing from "../sections/Sharing.astro";
+import ConsentEngine from "../sections/ConsentEngine.astro";
+import Audit from "../sections/Audit.astro";
+import DataModel from "../sections/DataModel.astro";
+import Analytics from "../sections/Analytics.astro";
+import Duplicates from "../sections/Duplicates.astro";
+import Seed from "../sections/Seed.astro";
+import Architecture from "../sections/Architecture.astro";
+import Patterns from "../sections/Patterns.astro";
+import Stack from "../sections/Stack.astro";
+import Locales from "../sections/Locales.astro";
+import Decisions from "../sections/Decisions.astro";
+import Proof from "../sections/Proof.astro";
+import Different from "../sections/Different.astro";
+import Built from "../sections/Built.astro";
+import Faq from "../sections/Faq.astro";
+import Run from "../sections/Run.astro";
+---
+
+<Base
+  title="Pulse, a patient-owned health record"
+  description="Pulse is a lifelong electronic health record where patients own their history, clinicians read it only with consent, and every access is recorded. The story of how it is built."
+>
+  <Hero />
+  <Contents />
+  <div class="story" id="story">
+    <Spine />
+    <Problem />
+    <Promise />
+    <People />
+    <RecordLife />
+    <Sharing />
+    <ConsentEngine />
+    <Audit />
+    <DataModel />
+    <Analytics />
+    <Duplicates />
+    <Seed />
+    <Architecture />
+    <Patterns />
+    <Stack />
+    <Locales />
+    <Decisions />
+    <Proof />
+    <Different />
+    <Built />
+    <Faq />
+    <Run />
+  </div>
+</Base>
+
+<style>
+  .story { position: relative; padding-bottom: 4rem; }
+</style>
+
+<script>
+  import { initReveals, initSteps, initCounts } from "../scripts/motion";
+  initReveals();
+  initSteps();
+  initCounts();
+</script>

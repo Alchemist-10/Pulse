@@ -1,0 +1,122 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { stats } from "../data/facts";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const imports = sourceExcerpt("backend/scripts/lint_cross_module_imports.py", 20, 47);
+const model = sourceExcerpt("backend/app/modules/records/models.py", 30, 58);
+---
+
+<Chapter
+  id="patterns"
+  n={13}
+  title="Patterns keep the boundaries useful"
+  lede="The code uses a small set of patterns for clear jobs. Each one carries a cost, and the enforcement tools make its boundary visible."
+  wide
+>
+  <div class="patterns">
+    <div class="patterns__lead">
+      <div>
+        <h3>Modular monolith</h3>
+        <p>Business domains share one deployable FastAPI application, while their service interfaces hide table ownership. The result is a practical local deployment with boundaries that can be checked in code.</p>
+      </div>
+      <div class="patterns__boundary">
+        <p><strong>Allowed seam</strong><code>app.modules.consent.service</code></p>
+        <p><strong>Rejected shortcut</strong><code>app.modules.consent.repository</code></p>
+        <p><a href={`${base}/guide/adr/0014-code-first-api-with-stub-endpoints`}>Contracts merge before implementations</a></p>
+      </div>
+    </div>
+
+    <div class="patterns__lint">
+      <div class="patterns__lint-copy">
+        <h3>The import lint checks the rule</h3>
+        <p>A module may import another module's service, schemas or dependency seam. It may not reach into that module's models or repository. A second lint rejects raw SQL from module code, where SQL would bypass ownership again.</p>
+        <p><a href="https://github.com/moneytosms/Pulse/blob/main/backend/scripts/lint_cross_module_imports.py">Read the cross-module import lint</a></p>
+      </div>
+      <CodeBlock code={imports} lang="python" file="backend/scripts/lint_cross_module_imports.py" lines="20-47" />
+    </div>
+
+    <div class="pattern-table-wrap" tabindex="0" aria-label="Pattern and its use in Pulse; scroll horizontally on narrow screens">
+      <table class="pattern-table">
+        <caption>Pattern, concrete use, and the trade-off it brings</caption>
+        <thead><tr><th scope="col">Pattern</th><th scope="col">Where it appears</th><th scope="col">Why it fits here</th><th scope="col">Cost to keep visible</th></tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row">Layered services</th>
+            <td><code>routes.py</code> parses and delegates; <code>service.py</code> applies domain rules; <code>repository.py</code> owns SQL.</td>
+            <td>Consent checks and correction rules can be exercised without putting business decisions in HTTP handlers.</td>
+            <td>More files and explicit interfaces. Lints keep SQL and cross-domain table access from slipping into the wrong layer.</td>
+          </tr>
+          <tr>
+            <th scope="row">Repository query object</th>
+            <td><code>accessible_entries(actor, patient_id)</code> returns a composable SQLAlchemy filter.</td>
+            <td>Timeline, details, documents and analytics can reuse one clinical access predicate.</td>
+            <td>Every clinical read must start with the builder; CI's entry-query lint checks that convention.</td>
+          </tr>
+          <tr>
+            <th scope="row">Ports and adapters</th>
+            <td><code>StorageProvider</code>, <code>NotificationProvider</code> and <code>IdentityProvider</code> separate service code from local file and SMTP implementations.</td>
+            <td>Tests can supply fakes; the local demo uses a mounted filesystem and Mailpit.</td>
+            <td>Interfaces add indirection. S3, SMS and ABHA remain possible substitutions, not shipped integrations.</td>
+          </tr>
+          <tr>
+            <th scope="row">Joined-table inheritance</th>
+            <td>One <code>medical_entry</code> row joins one subtype table for Diagnosis, Prescription, Lab Report, Procedure or Clinical Note.</td>
+            <td>Shared patient, provenance and correction fields stay uniform while each kind has typed fields.</td>
+            <td>Mixed timelines need polymorphic loading. SQLAlchemy's <code>selectin_polymorphic</code> loads subtype details without one lazy query per row.</td>
+          </tr>
+          <tr>
+            <th scope="row">Append-only audit</th>
+            <td>Services emit explicit events; a database grant denies UPDATE and DELETE to the application role.</td>
+            <td>Reads create no ORM write to hook, so the service records them at the access point.</td>
+            <td>Every read path must emit deliberately and transactionally; coverage is tested and reviewed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="patterns__schema">
+      <div>
+        <h3>One shared trunk, five clinical shapes</h3>
+        <p>The base row carries identity, Patient, type and clinical timestamps. A subtype table carries the fields that make sense for that kind. A correction inserts a replacement and marks its predecessor superseded.</p>
+        <p><a href={`${base}/guide/adr/0001-medical-entry-joined-table-inheritance`}>ADR-0001</a> explains the alternatives and the polymorphic loading trade-off.</p>
+      </div>
+      <CodeBlock code={model} lang="python" file="backend/app/modules/records/models.py" lines="30-58" />
+    </div>
+
+    <p class="patterns__foot">These are implementation boundaries, not claims of formal verification. The codebase contains {stats.modules} modules; the architecture guide describes which seams the lints can and cannot enforce.</p>
+  </div>
+</Chapter>
+
+<style>
+  .patterns { display: grid; gap: clamp(3rem, 7vw, 6rem); }
+  .patterns__lead { display: grid; gap: 1rem; align-items: start; }
+  .patterns h3 { font-size: var(--step-2); margin-bottom: 0.7rem; }
+  .patterns__lead > div:nth-child(2) p, .patterns__lint-copy p, .patterns__schema p { color: var(--muted-foreground); }
+  .patterns__boundary { border-left: 1px solid var(--primary); padding-left: 1rem; display: grid; gap: 0.65rem; }
+  .patterns__boundary p { display: grid; gap: 0.2rem; }
+  .patterns__boundary strong { font-size: var(--step--1); }
+  .patterns__boundary a { margin-top: 0.35rem; }
+  .patterns__lint { display: grid; gap: 1.5rem; padding: 2rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .patterns__lint-copy { max-width: 44ch; }
+  .patterns__lint-copy a { display: inline-block; margin-top: 0.8rem; }
+  .pattern-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+  .pattern-table { border-collapse: collapse; min-width: 850px; width: 100%; text-align: left; font-size: 0.9rem; }
+  .pattern-table caption { padding: 1rem; text-align: left; font-weight: 700; border-bottom: 1px solid var(--border); }
+  .pattern-table th, .pattern-table td { vertical-align: top; padding: 1rem; border-bottom: 1px solid var(--border); }
+  .pattern-table thead th { color: var(--muted-foreground); font-size: var(--step--1); }
+  .pattern-table tbody th { min-width: 130px; color: var(--primary); font-weight: 700; }
+  .pattern-table td { min-width: 200px; }
+  .pattern-table tr:last-child > * { border-bottom: 0; }
+  .pattern-table-wrap:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  .patterns__schema { display: grid; gap: 1.5rem; align-items: start; }
+  .patterns__schema p + p { margin-top: 0.8rem; }
+  .patterns__foot { border-top: 1px solid var(--border); padding-top: 1.25rem; color: var(--muted-foreground); font-size: var(--step--1); }
+  @media (min-width: 850px) {
+    .patterns__lead { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 2rem; }
+    .patterns__lint { grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr); align-items: start; }
+    .patterns__schema { grid-template-columns: 0.7fr 1.3fr; }
+  }
+</style>

@@ -1,0 +1,190 @@
+---
+import Chapter from "../components/Chapter.astro";
+import { REPO, team, course } from "../data/facts";
+import { phases, learned } from "../data/story-e";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const g = (slug: string) => `${base}/guide/${slug}`;
+const issue = (n: number) => `${REPO}/issues/${n}`;
+
+const gates = [
+  {
+    id: "G1",
+    name: "Contract",
+    text: "Pydantic schemas merge, plus repository signatures whose bodies raise NotImplementedError. The shape is fixed.",
+  },
+  {
+    id: "G2",
+    name: "Stub",
+    text: "A @stub endpoint returns fixture data matching the schema, so the frontend builds against a real HTTP response.",
+  },
+  {
+    id: "G3",
+    name: "Implementation",
+    text: "Service and repository are filled in and the integration tests are green. This is what the demo runs.",
+  },
+];
+---
+
+<Chapter
+  id="built"
+  n={19}
+  title="Contracts merged first, so four people could build in parallel"
+  lede="The team split the work by layer, which means no feature was finished by one person. That made the agreements between layers the most important thing to write down early."
+  wide
+>
+  <div class="bt">
+    <section class="bt__phases" aria-labelledby="bt-phases">
+      <h3 id="bt-phases">Phase by phase, from skeleton to packaging</h3>
+      <ol class="tl">
+        {phases.map((p) => (
+          <li class="tl__item">
+            <span class="tl__dot" aria-hidden="true"></span>
+            <div class="tl__head">
+              <h4>{p.name}</h4>
+              <p class="tl__issue">
+                {"issues" in p ? (
+                  <>
+                    Closed by{" "}
+                    {p.issues.map((n, i) => (
+                      <>
+                        {i > 0 && ", "}
+                        <a href={issue(n)}>#{n}</a>
+                      </>
+                    ))}
+                  </>
+                ) : p.issue ? (
+                  <>
+                    Closed by <a href={issue(p.issue)}>#{p.issue}</a>
+                  </>
+                ) : (
+                  <>No closing issue recorded</>
+                )}
+              </p>
+            </div>
+            <p class="tl__landed">{p.landed}</p>
+            <p class="tl__exit"><strong>Exit:</strong> {p.exit}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="bt__note">
+        From <a href={g("delivery-plan")}>the delivery plan</a>. Phase 1 was in fact built solo against its ticket, in one
+        contract commit and four parallel lanes, and the plan records that some solo-driven work landed as direct commits
+        to main rather than through pull requests.
+      </p>
+    </section>
+
+    <section class="bt__gates" aria-labelledby="bt-gates">
+      <h3 id="bt-gates">Every module passes three gates, in order</h3>
+      <p>
+        Each gate is merged code, not a conversation, and each unblocks someone. The frontend waits on schemas, never on
+        implementations. If a screen is blocked on a finished backend, the stub was skipped and that is the bug.
+      </p>
+      <ol class="gates" data-stagger="0.12">
+        {gates.map((x) => (
+          <li>
+            <span class="gates__id">{x.id}</span>
+            <h4>{x.name}</h4>
+            <p>{x.text}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="bt__note">
+        The stub inventory prints on every CI run and now reports zero remaining stubs.{" "}
+        <a href={g("adr/0014-code-first-api-with-stub-endpoints")}>ADR-0014</a> has the reasoning.
+      </p>
+    </section>
+
+    <section class="bt__learned" aria-labelledby="bt-learned">
+      <h3 id="bt-learned">What we learned</h3>
+      <dl class="learned">
+        {learned.map((l) => (
+          <div>
+            <dt>{l.rule}</dt>
+            <dd>
+              {l.why} <a href={g(l.link)} aria-label={`Read the reasoning: ${l.rule}`}>Read the reasoning</a>.
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="bt__team" aria-labelledby="bt-team">
+      <h3 id="bt-team">The team</h3>
+      <p>
+        Four people, one slice each, tracked on <a href={issue(17)}>the build plan</a>.
+        Names and course credits below await the team's confirmation.
+      </p>
+      <!-- Placeholders. Replace the values in src/data/facts.ts (team, course); nothing here hard-codes a name. -->
+      <ul class="team">
+        {team.map((m) => (
+          <li>
+            <span class="team__name">{m.name}</span>
+            <span class="team__slice">{m.slice}, ticket <a href={issue(m.issue)}>#{m.issue}</a></span>
+          </li>
+        ))}
+      </ul>
+      <dl class="course">
+        <div><dt>Course</dt><dd>{course.name}</dd></div>
+        <div><dt>Institute</dt><dd>{course.institute}</dd></div>
+        <div><dt>Guide</dt><dd>{course.guide}</dd></div>
+      </dl>
+    </section>
+  </div>
+</Chapter>
+
+<style>
+  .bt { display: grid; gap: clamp(3.5rem, 7vw, 5.5rem); }
+  .bt h3 { font-size: var(--step-2); margin-bottom: 1.1rem; }
+  .bt__note { margin-top: 1.25rem; color: var(--muted-foreground); font-size: 0.93rem; max-width: 70ch; }
+
+  /* Phase timeline: a rail with a dot per phase. */
+  .tl { list-style: none; margin: 0; padding: 0 0 0 1.75rem; position: relative; display: grid; gap: 2rem; max-width: 860px; }
+  .tl::before { content: ""; position: absolute; left: 5px; top: 0.5rem; bottom: 0.5rem; width: 2px; background: var(--border); }
+  .tl__item { position: relative; display: grid; gap: 0.4rem; }
+  .tl__dot {
+    position: absolute;
+    left: calc(-1.75rem + 1px);
+    top: 0.45rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 0 4px var(--background);
+  }
+  .tl__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; }
+  .tl__head h4 { font-size: var(--step-1); line-height: 1.2; }
+  .tl__issue { font-size: 0.88rem; color: var(--muted-foreground); }
+  .tl__exit { font-size: 0.95rem; color: var(--muted-foreground); }
+  .tl__exit strong { color: var(--foreground); font-weight: 700; }
+
+  .bt__gates > p:first-of-type { max-width: 70ch; }
+  .gates { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 1.25rem; }
+  @media (min-width: 800px) {
+    .gates { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+    .gates li { padding: 0 1.5rem; border-left: 2px solid var(--border); }
+    .gates li:first-child { padding-left: 1.25rem; }
+  }
+  @media (max-width: 799px) { .gates li { padding-left: 1rem; border-left: 2px solid var(--border); } }
+  .gates li { display: grid; gap: 0.35rem; align-content: start; }
+  .gates__id { font-family: var(--font-mono); font-size: 0.85rem; color: var(--primary); }
+  .gates h4 { font-size: var(--step-1); }
+  .gates p { color: var(--muted-foreground); font-size: 0.97rem; }
+
+  .learned { margin: 0; display: grid; gap: 0; max-width: 860px; }
+  .learned > div { padding: 1rem 0; border-top: 1px solid var(--border); display: grid; gap: 0.3rem; }
+  .learned > div:last-child { border-bottom: 1px solid var(--border); }
+  @media (min-width: 800px) { .learned > div { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 2rem; } }
+  .learned dt { font-weight: 700; line-height: 1.35; }
+  .learned dd { margin: 0; color: var(--muted-foreground); font-size: 0.97rem; }
+
+  .bt__team > p { max-width: 70ch; }
+  .team { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0; max-width: 560px; }
+  .team li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; padding: 0.7rem 0; border-top: 1px solid var(--border); }
+  .team li:last-child { border-bottom: 1px solid var(--border); }
+  .team__name { font-weight: 500; }
+  .team__slice { color: var(--muted-foreground); }
+  .course { margin: 1.5rem 0 0; display: grid; gap: 0.35rem; max-width: 560px; }
+  .course > div { display: flex; gap: 1rem; }
+  .course dt { min-width: 6.5rem; color: var(--muted-foreground); }
+  .course dd { margin: 0; font-weight: 500; }
+</style>

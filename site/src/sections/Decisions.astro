@@ -1,0 +1,102 @@
+---
+import Chapter from "../components/Chapter.astro";
+import { adrGroups } from "../data/adrs";
+import { stats, tree } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Chapter
+  id="decisions"
+  n={16}
+  title="Sixteen decisions, written down with their trade-offs"
+  lede="Each architecture decision record says what was chosen, what it was chosen over, and what it now costs. Open one to read the short version; the guide has the full text."
+  wide
+>
+  <div class="dec">
+    {adrGroups.map((g, gi) => (
+      <section class="dec__group" aria-labelledby={`dec-${g.id}`}>
+        <div class="dec__intro">
+          <h3 id={`dec-${g.id}`}>{g.title}</h3>
+          <p>{g.blurb}</p>
+        </div>
+        <ul class="dec__list">
+          {g.adrs.map((a, ai) => (
+            <li>
+              <details open={gi === 0 && ai === 2}>
+                <summary>
+                  <span class="dec__n">{a.n}</span>
+                  <span class="dec__claim">{a.claim}</span>
+                  <svg class="dec__chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                    <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </summary>
+                <dl class="dec__body">
+                  <div>
+                    <dt>{a.overLabel ?? "Chosen over"}</dt>
+                    <dd>{a.over}</dd>
+                  </div>
+                  <div>
+                    <dt>What it costs</dt>
+                    <dd>{a.consequence}</dd>
+                  </div>
+                </dl>
+                <p class="dec__read">
+                  <a href={`${base}/guide/${a.slug}`}>Read ADR-{a.n} in the guide</a>
+                </p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+
+  <p class="dec__foot">
+    {stats.adrs} records in <a href={tree("docs/adr")}>docs/adr</a>. Some exist only to stop an old argument from restarting:{" "}
+    <a href={`${base}/guide/adr/0002-patient-is-the-aggregate-root`}>0002</a> and{" "}
+    <a href={`${base}/guide/adr/0003-opaque-redis-sessions-not-jwt`}>0003</a> both say they are recorded because someone
+    will propose the other option again.
+  </p>
+</Chapter>
+
+<style>
+  .dec { display: grid; gap: clamp(2.5rem, 5vw, 4rem); }
+  .dec__group { display: grid; gap: 1.25rem; padding-top: 1.75rem; border-top: 1px solid var(--border); }
+  @media (min-width: 900px) {
+    .dec__group { grid-template-columns: minmax(0, 0.55fr) minmax(0, 1.45fr); gap: 3rem; align-items: start; }
+    .dec__intro { position: sticky; top: 96px; }
+  }
+  .dec__intro h3 { font-size: var(--step-2); }
+  .dec__intro p { margin-top: 0.6rem; color: var(--muted-foreground); max-width: 34ch; }
+
+  .dec__list { list-style: none; margin: 0; padding: 0; display: grid; }
+  .dec__list li { border-bottom: 1px solid var(--border); }
+  .dec__list li:first-child { border-top: 1px solid var(--border); }
+
+  summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.9rem;
+    align-items: start;
+    min-height: 44px;
+    padding: 1rem 0.25rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover .dec__claim { color: var(--primary); }
+  .dec__n { font-family: var(--font-mono); font-size: 0.85rem; color: var(--primary); padding-top: 0.2rem; }
+  .dec__claim { font-weight: 500; line-height: 1.4; transition: color 160ms; }
+  .dec__chev { margin-top: 0.3rem; color: var(--muted-foreground); transition: transform 200ms var(--ease-out); }
+  details[open] .dec__chev { transform: rotate(180deg); }
+
+  .dec__body { margin: 0; padding: 0 0.25rem 0.5rem 0; display: grid; gap: 1rem; }
+  @media (min-width: 640px) { .dec__body { padding-left: calc(0.9rem + 3ch); } }
+  .dec__body div { display: grid; gap: 0.2rem; }
+  dt { font-weight: 700; font-size: 0.92rem; }
+  dd { margin: 0; color: var(--muted-foreground); font-size: 0.97rem; }
+  .dec__read { padding: 0 0.25rem 1.1rem 0; font-size: 0.92rem; }
+  @media (min-width: 640px) { .dec__read { padding-left: calc(0.9rem + 3ch); } }
+
+  .dec__foot { margin-top: 3rem; color: var(--muted-foreground); font-size: 0.95rem; max-width: var(--measure); }
+</style>

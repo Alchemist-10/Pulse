@@ -53,8 +53,9 @@ seed/
 
 ## Demo credentials
 
-Seeded, public, dev-only. Two Patients have a known password and a stamped
-`email_verified_at` so the Phase 1 demo journey (sign in → view profile →
+Seeded, public, dev-only. Five demo logins (two patients, one staff, one
+clinician, one admin) have a known password and a stamped
+`email_verified_at` so the demo journey (sign in → view profile →
 switch to Hindi) works against real rows:
 
 | email | password | role | locale |

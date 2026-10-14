@@ -1,0 +1,119 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { blob } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const excerpt = sourceExcerpt("backend/app/modules/records/service.py", 269, 315);
+---
+
+<Chapter id="record-life" n={4} title="A correction keeps the original" lede="A clinical entry has two times: when the event happened and when Pulse recorded it. If Provider Staff corrects it, Pulse links a replacement instead of rewriting history." wide>
+  <div class="life__journey">
+    <div class="life__journey-head">
+      <h3>A Patient starts with an account</h3>
+      <p>Self-registration creates a Patient account. Pulse sends a verification email with a link that expires after 24 hours; after verification, the Patient signs in. Provider, staff and Administrator onboarding is not public signup.</p>
+      <div class="life__auth-shots">
+        <Screenshot name="register-phone" alt="Patient registration form on a phone" frame="phone" url="/en/register" />
+        <Screenshot name="verify-pending-phone" alt="Verification email sent confirmation on a phone" frame="phone" url="/en/verify-pending" />
+        <Screenshot name="login-desktop" alt="Sign-in page with synthetic demo account buttons" url="/en/login" />
+        <Screenshot name="profile-phone" alt="Patient profile displaying a Patient ID that can be copied" frame="phone" url="/en/profile" />
+      </div>
+      <p>After sign-in, the Patient profile shows a Patient ID. Provider Staff opens an existing Patient by that exact ID; general patient search is not available. An unclaimed Patient flow is not exposed in the UI.</p>
+    </div>
+    <div class="life__filing">
+      <div><h3>Provider Staff files the event</h3><p>Staff chooses a Medical Entry kind, adds its typed clinical fields and clinical date, and can attach a PDF, PNG or JPEG Medical Document. The system keeps the file bytes outside the database and stores metadata with the entry.</p></div>
+      <Screenshot name="staff-new-entry-desktop" alt="Provider Staff form for filing a typed clinical entry with a document option" url="/en/timeline/new" />
+    </div>
+    <div class="life__timeline">
+      <h3>The Patient reviews a chronological timeline</h3>
+      <p>The Patient can narrow the timeline by entry type, text, date range or Provider, open an entry detail, and preview a supported attached document. The detail distinguishes event time from recorded time. Clinical content stays as recorded across the four interface locales. A whole-history export is not implemented.</p>
+      <div class="life__timeline-shots">
+        <Screenshot name="timeline-phone" alt="Patient timeline on a phone with synthetic entries" frame="phone" url="/en/timeline" />
+        <Screenshot name="timeline-filters-desktop" alt="Timeline with a type filter and other search controls applied" url="/en/timeline" />
+        <Screenshot name="entry-detail-phone" alt="Patient Medical Entry detail with result and reference range" frame="phone" url="/en/timeline/entry" />
+      </div>
+      <div class="life__locale">
+        <p>Navigation changes language; clinical text does not.</p>
+        <div class="life__locale-shots"><Screenshot name="timeline-hi-phone" alt="Patient timeline interface in Hindi with clinical content retained as recorded" frame="phone" url="/hi/timeline" /><Screenshot name="timeline-ta-phone" alt="Patient timeline interface in Tamil with clinical content retained as recorded" frame="phone" url="/ta/timeline" /><Screenshot name="timeline-ml-phone" alt="Patient timeline interface in Malayalam with clinical content retained as recorded" frame="phone" url="/ml/timeline" /></div>
+      </div>
+      <div class="life__dark-shot"><Screenshot name="timeline-desktop-dark" alt="Patient timeline in the dark theme with synthetic entries" url="/en/timeline" /></div>
+    </div>
+  </div>
+  <div class="life">
+    <div class="life__story">
+      <p>The Patient timeline sorts by clinical time. The record also retains its recorded time, so a report added later can still appear where the event belongs.</p>
+      <p>Correction is a Provider Staff action. The replacement is a new Medical Entry; the original receives a <code>superseded_by_id</code> link and remains in the correction chain. The current timeline omits superseded entries.</p>
+      <p>The distinction matters when a value was entered incorrectly: a visible correction can explain the change without making the first version disappear.</p>
+      <a class="life__guide" href={`${base}/guide/domain-model`}>How entries and correction links are stored</a>
+    </div>
+    <div class="life__screens">
+      <Screenshot name="staff-entry-correction-desktop" alt="Provider Staff entry detail with the correction action available" url="/en/timeline/entry" />
+      <Screenshot name="superseded-entry-phone" alt="Patient view showing that an entry has been superseded" frame="phone" />
+    </div>
+  </div>
+  <div class="life__mechanism">
+    <div class="life__sequence" data-life>
+      <div class="life__rail" aria-hidden="true"><span></span></div>
+      <article data-life-version="original" aria-current="step">
+        <p class="life__label">Original / retained</p><h3>Initial lab result</h3>
+        <p>Recorded on the timeline with its clinical date and source Provider.</p>
+      </article>
+      <article data-life-version="replacement">
+        <p class="life__label">Replacement / current</p><h3>Corrected lab result</h3>
+        <p>A second entry points back to the original. Only this version appears in the current timeline.</p>
+      </article>
+      <button type="button" class="life__toggle" data-life-toggle aria-pressed="false">Show the correction link</button>
+      <p class="life__state" data-life-state aria-live="polite">One current entry is shown. The correction chain is available from its detail.</p>
+    </div>
+    <div class="life__code"><CodeBlock code={excerpt} lang="python" file="backend/app/modules/records/service.py" lines="269-315" /></div>
+  </div>
+  <p class="life__note">A Medical Document may be attached to an entry. Pulse stores and serves the file; it does not interpret it. <a href={blob("backend/app/modules/records/service.py")}>See the records service</a>.</p>
+</Chapter>
+
+<style>
+  .life__journey{display:grid;gap:clamp(2.5rem,6vw,4rem);margin-bottom:clamp(3rem,7vw,5rem)}
+  .life__journey h3{font-size:var(--step-2);margin-bottom:.55rem}.life__journey p{max-width:72ch;color:var(--muted-foreground)}.life__journey-head>p+p{margin-top:1rem}
+  .life__auth-shots,.life__timeline-shots{display:grid;gap:1rem;align-items:start;margin-top:1.25rem}
+  @media(min-width:850px){.life__auth-shots{grid-template-columns:minmax(110px,.45fr) minmax(110px,.45fr) minmax(0,1.1fr) minmax(110px,.45fr)}.life__timeline-shots{grid-template-columns:minmax(140px,.55fr) minmax(0,1.25fr) minmax(140px,.55fr)}}
+  .life__filing{display:grid;gap:1.5rem;align-items:start}.life__filing>div p{color:var(--muted-foreground);max-width:60ch}@media(min-width:950px){.life__filing{grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr)}}
+  .life__locale{margin-top:1.5rem}.life__locale>p{color:var(--muted-foreground);font-size:var(--step--1)}.life__locale-shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin-top:.8rem}.life__locale-shots :global(.shot--phone){max-width:230px;border-width:5px;border-radius:24px;justify-self:center}
+  .life__dark-shot{margin-top:1.5rem;max-width:850px}
+  .life { display:grid; gap:2rem; align-items:start; }
+  @media(min-width:1000px){.life{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}.life__story{position:sticky;top:6rem}}
+  .life__story p+p{margin-top:1em}.life__guide,.life__note{display:inline-block;margin-top:1rem;color:var(--primary)}
+  .life__screens{display:grid;gap:1rem;grid-template-columns:minmax(0,1fr)}
+  @media(min-width:740px){.life__screens{grid-template-columns:minmax(0,1fr) minmax(150px,.55fr);align-items:start}}
+  .life__mechanism{margin-top:clamp(3rem,7vw,5rem);display:grid;gap:2rem;align-items:start}
+  @media(min-width:900px){.life__mechanism{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)}}
+  .life__sequence{position:relative;padding-left:1.6rem;display:grid;gap:1.5rem}
+  .life__rail{position:absolute;left:.3rem;top:.5rem;bottom:3.5rem;width:2px;background:var(--border)}
+  .life__rail span{display:block;width:100%;height:100%;background:var(--primary);transform:scaleY(.48);transform-origin:top;transition:transform .3s ease}
+  .life__sequence[data-corrected="true"] .life__rail span{transform:scaleY(1)}
+  .life__sequence article{position:relative;padding:0 0 .5rem 1rem;border-bottom:1px solid var(--border)}
+  .life__sequence article::before{content:"";position:absolute;left:-1.65rem;top:.35rem;width:.65rem;height:.65rem;border-radius:50%;background:var(--background);border:2px solid var(--primary)}
+  .life__sequence[data-corrected="true"] [data-life-version="original"] .life__label{color:var(--superseded)}
+  .life__label{font-family:var(--font-mono);font-size:var(--step--1);color:var(--primary);margin-bottom:.3rem}
+  .life__sequence h3{font-size:var(--step-1)}.life__sequence article p:last-child{color:var(--muted-foreground);font-size:var(--step--1);margin-top:.35rem}
+  .life__toggle{min-height:44px;justify-self:start;padding:.55rem .9rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--foreground);cursor:pointer}
+  .life__toggle:focus-visible{outline:2px solid var(--primary);outline-offset:3px}.life__state{font-size:var(--step--1);color:var(--muted-foreground)}
+  .life__code{min-width:0}.life__note{color:var(--muted-foreground);font-size:var(--step--1)}
+  @media(prefers-reduced-motion:reduce){.life__rail span{transition:none}}
+</style>
+
+<script>
+  const life = document.querySelector<HTMLElement>("[data-life]");
+  if (life) {
+    const toggle = life.querySelector<HTMLButtonElement>("[data-life-toggle]")!;
+    const state = life.querySelector<HTMLElement>("[data-life-state]")!;
+    toggle.addEventListener("click", () => {
+      const corrected = life.dataset.corrected !== "true";
+      life.dataset.corrected = String(corrected);
+      toggle.setAttribute("aria-pressed", String(corrected));
+      toggle.textContent = corrected ? "Hide the correction link" : "Show the correction link";
+      state.textContent = corrected
+        ? "Correction shown: the replacement supersedes the retained original."
+        : "One current entry is shown. The correction chain is available from its detail.";
+    });
+  }
+</script>

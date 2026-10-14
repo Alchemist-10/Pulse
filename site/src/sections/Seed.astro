@@ -1,0 +1,60 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { seed, blob } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const excerpt = sourceExcerpt("backend/app/db/seed_loader.py", 433, 461);
+const clinicalFiles = [
+  { label: "Conditions", count: seed.rawRows.conditions },
+  { label: "Encounters", count: seed.rawRows.encounters },
+  { label: "Medications", count: seed.rawRows.medications },
+  { label: "Observations", count: seed.rawRows.observations },
+  { label: "Procedures", count: seed.rawRows.procedures },
+];
+---
+
+<Chapter id="seed" n={11} title="The demo data is synthetic and reproducible" lede="Pulse's committed seed combines Synthea clinical content with a deterministic Indian identity overlay, then adds known duplicate and near-miss pairs for review." wide>
+  <div class="seed">
+    <div class="seed__lead">
+      <p>No real Patient data enters this application. The seed makes the demo useful without presenting invented records as real history: clinical rows keep their Synthea vocabulary codes, while identity fields are overlaid for the project's Indian demographic.</p>
+      <p>Generation is pinned to Synthea {seed.synthea}, a patient seed of <code>{seed.patientSeed}</code>, an overlay seed of <code>{seed.overlaySeed}</code> and a source population of {seed.population}. The transformed CSV files are committed, so the app does not need Java at startup.</p>
+      <p>The phone prefix <code>{seed.phonePrefix.trim()}</code> is a Pulse convention for synthetic data. The repository does not claim that a regulator has reserved it.</p>
+      <a href={`${base}/guide/seed-data`}>How the seed is built and regenerated</a>
+    </div>
+    <div class="seed__screens">
+      <Screenshot name="timeline-desktop" alt="Patient timeline populated with synthetic seeded medical entries" url="/en/timeline" />
+      <Screenshot name="admin-duplicates-desktop" alt="Synthetic planted candidates in the duplicate review queue" url="/en/admin/duplicates" />
+    </div>
+    <div class="seed__pipeline" aria-label="Synthetic data pipeline">
+      <ol>
+        <li><span>Generate</span><strong>Synthea</strong><small>coded clinical rows</small></li>
+        <li><span>Overlay</span><strong>Indian identity</strong><small>same fixed seed</small></li>
+        <li><span>Plant</span><strong>Known pairs</strong><small>duplicates and near-misses</small></li>
+        <li><span>Commit</span><strong>CSV dataset</strong><small>reproducible input</small></li>
+        <li><span>Load</span><strong>First boot</strong><small>identity + capped entries</small></li>
+      </ol>
+      <p>The first-boot loader selects a capped set of entries per Patient and records a seed marker so another run is a no-op.</p>
+    </div>
+    <div class="seed__inventory">
+      <div class="seed__inventory-head"><div><h3>Committed clinical source rows</h3><p>These counts describe CSV rows in the repository. The loader selects a capped set for first boot.</p></div><p class="seed__people">{seed.patients} Patient identities, including {seed.unclaimed} Unclaimed Patients</p></div>
+      <ul>{clinicalFiles.map((item) => <li><span>{item.label}</span><strong>{item.count.toLocaleString("en-IN")}</strong><meter min="0" max={seed.rawRows.observations} value={item.count} aria-label={`${item.label}: ${item.count.toLocaleString("en-IN")} committed source rows`}></meter></li>)}</ul>
+      <p>{seed.plantedDuplicates} known duplicate pairs and {seed.plantedNearMisses} deliberate near-miss pairs are planted in identity data. The near-misses make false positives visible during review.</p>
+    </div>
+    <div class="seed__code"><CodeBlock code={excerpt} lang="python" file="backend/app/db/seed_loader.py" lines="433-461" /><p><a href={blob("seed/data/MANIFEST.json")}>Dataset manifest</a> / <a href={blob("seed/scripts/build.py")}>Deterministic overlay and pair planting</a> / <a href={`${base}/guide/adr/0015-synthea-plus-indian-overlay-seed-data`}>ADR-0015</a></p></div>
+  </div>
+</Chapter>
+
+<style>
+  .seed{display:grid;gap:clamp(3rem,7vw,5rem)}.seed__lead{max-width:74ch}.seed__lead p+p{margin-top:1em}.seed__lead a,.seed__code a{color:var(--primary)}
+  .seed__screens{display:grid;gap:1rem;align-items:start}@media(min-width:900px){.seed__screens{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);align-items:start}}
+  .seed__pipeline{padding:clamp(1rem,3vw,2rem);background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}.seed__pipeline ol{list-style:none;margin:0;padding:0;display:grid;gap:1.25rem}
+  @media(min-width:850px){.seed__pipeline ol{grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem}}
+  .seed__pipeline li{display:grid;gap:.25rem;border-top:2px solid var(--primary);padding:.65rem 0}.seed__pipeline li span{font:var(--step--1) var(--font-mono);color:var(--primary)}.seed__pipeline strong{font-size:var(--step-0)}.seed__pipeline small{color:var(--muted-foreground)}.seed__pipeline>p{margin-top:1.25rem;color:var(--muted-foreground);font-size:var(--step--1)}
+  .seed__inventory{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1.25rem 0}.seed__inventory-head{display:grid;gap:1rem;align-items:end;margin-bottom:1rem}@media(min-width:800px){.seed__inventory-head{grid-template-columns:1fr auto}}
+  .seed__inventory h3{font-size:var(--step-2)}.seed__inventory-head p,.seed__inventory>p{color:var(--muted-foreground);font-size:var(--step--1)}.seed__people{margin:0}
+  .seed__inventory ul{list-style:none;margin:0;padding:0;display:grid;gap:.45rem}.seed__inventory li{display:grid;grid-template-columns:minmax(100px,.5fr) minmax(76px,.35fr) minmax(60px,1fr);gap:.75rem;align-items:center;padding:.45rem 0;border-top:1px solid var(--border)}.seed__inventory li strong{text-align:right;font:500 var(--step--1) var(--font-mono)}
+  meter{width:100%;height:.6rem;accent-color:var(--primary)}meter::-webkit-meter-bar{background:var(--card);border:0;border-radius:999px}meter::-webkit-meter-optimum-value{background:var(--primary);border-radius:999px}
+  .seed__inventory>p{margin-top:1rem}.seed__code{display:grid;gap:1rem;align-items:start}@media(min-width:900px){.seed__code{grid-template-columns:minmax(0,1.1fr) minmax(220px,.9fr)}}.seed__code p{color:var(--muted-foreground)}
+</style>

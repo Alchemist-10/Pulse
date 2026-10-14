@@ -1,0 +1,204 @@
+---
+import Chapter from "../components/Chapter.astro";
+import { consent, seed, stats } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const guide = (slug: string) => `${base}/guide/${slug}`;
+
+const clauses = [
+  { lead: "Patients", rest: "own their history." },
+  { lead: "Providers", rest: "contribute to it." },
+  { lead: "Clinicians", rest: "read it only with the patient's consent." },
+  { lead: "Every access", rest: "is recorded." },
+];
+---
+
+<Chapter
+  id="promise"
+  n={2}
+  title="Four rules, each enforced by something that cannot be skipped"
+  lede="Pulse is one sentence in four clauses. None of them is a policy document. Each is held in place by a table shape, a query, a test or a database grant."
+  wide
+>
+  <div class="prm" data-steps>
+    <div class="prm__inv">
+      <ol class="inv" aria-label="The invariant, built one clause at a time">
+        {clauses.map((c) => (
+          <li><strong>{c.lead}</strong> {c.rest}</li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="prm__steps">
+      <article class="step" data-step>
+        <h3>Patients own their history</h3>
+        <p>
+          The Patient row is the root of everything clinical. Medical Entries, consents and audit events all
+          point at <code>patient.id</code>. There is no separate "patient record" entity that could drift from
+          the person.
+        </p>
+        <p>
+          <code>patient.user_id</code> is nullable on purpose. A Patient can exist before the person has an account, so a
+          Provider can file for someone who has never registered. The demo data has {seed.unclaimed} of its
+          {`${seed.patients} patients`} in that state. The screen that creates an unclaimed Patient, and the step where the person later claims
+          it, are not built; filing for an existing Patient ID is.
+        </p>
+        <p class="how">
+          <a href={guide("adr/0002-patient-is-the-aggregate-root")}>ADR-0002</a>
+          <a href={guide("domain-model")}>Domain model</a>
+        </p>
+      </article>
+
+      <article class="step" data-step>
+        <h3>Providers contribute to it</h3>
+        <p>
+          Provider Staff are the only role that holds <code>RECORDS_WRITE</code>. They file any of the {stats.entryKinds} kinds
+          of Medical Entry and attach documents. Nobody edits or deletes an entry afterwards: a correction inserts a
+          new one and stamps the original as superseded, so the history shows what was believed and when.
+        </p>
+        <p>
+          Contributing is not reading. Staff list back only the entries their own provider authored, and the Patient can
+          read all of them.
+        </p>
+        <p class="how">
+          <a href="#people">Who holds which permission</a>
+          <a href={guide("adr/0001-medical-entry-joined-table-inheritance")}>ADR-0001</a>
+        </p>
+      </article>
+
+      <article class="step" data-step>
+        <h3>Clinicians read it only with the patient's consent</h3>
+        <p>
+          A role alone opens nothing. A Clinician reads a Patient's entries through a consent that names that Clinician,
+          limits the entry types and an optional date window, and expires within {consent.minDays} to {consent.maxDays} days. Consent goes to a person, never to a hospital, so agreeing to it can mean something.
+        </p>
+        <p>
+          The check is part of the SQL, in one query builder every read goes through. A refused read returns 404, so a
+          refusal does not reveal that the person is a patient at all.
+        </p>
+        <p>
+          There is one deliberate exception. A Clinician can request {consent.breakGlassMinutes}-minute emergency access
+          with a written reason, and the Patient is shown a banner on their timeline.
+        </p>
+        <p class="how">
+          <a href="#consent-engine">The consent engine, try it</a>
+          <a href={guide("adr/0006-consent-enforced-by-one-query-builder")}>ADR-0006</a>
+          <a href={guide("adr/0010-consent-is-granted-to-individuals")}>ADR-0010</a>
+        </p>
+      </article>
+
+      <article class="step" data-step>
+        <h3>Every access is recorded</h3>
+        <p>
+          The service layer writes an Audit Event explicitly, once per access: a 50-entry timeline is one <code>ENTRY_VIEWED</code>, and a refused read writes <code>ACCESS_DENIED</code>. No clinical value ever goes
+          into an event, so the log cannot become a second copy of the record.
+        </p>
+        <p>
+          The application's database role holds only <code>INSERT</code> and <code>SELECT</code> on <code>audit_event</code>. The database refuses <code>UPDATE</code> and <code>DELETE</code>, even from our own
+          code. The Patient reads their own log. An administrator audit viewer is not built.
+        </p>
+        <p class="how">
+          <a href={guide("adr/0008-audit-log-is-append-only-by-grant")}>ADR-0008</a>
+          <a href={guide("architecture")}>Architecture</a>
+        </p>
+      </article>
+    </div>
+  </div>
+
+  <div class="refuse">
+    <h3 class="refuse__title">What Pulse refuses to do</h3>
+    <dl>
+      <div>
+        <dt>No administrator reads clinical data</dt>
+        <dd>
+          The Administrator role holds no <code>RECORDS_READ</code>, and there is no override. Merging duplicate patients
+          is decided from name, birth date, phone, address and entry counts, never from the entries.
+          <a href={guide("adr/0007-administrators-cannot-read-clinical-data")}>ADR-0007</a>
+        </dd>
+      </div>
+      <div>
+        <dt>No consent to an organisation</dt>
+        <dd>
+          Consent is granted to one named Clinician. Agreeing that a hospital may read a history means agreeing to an
+          unbounded, changing set of people. A Clinician who changes jobs keeps their consents.
+          <a href={guide("adr/0010-consent-is-granted-to-individuals")}>ADR-0010</a>
+        </dd>
+      </div>
+      <div>
+        <dt>No real patient data, ever</dt>
+        <dd>
+          Every record is synthetic: Synthea {seed.synthea} output plus an Indian identity overlay, with generated names
+          and phone numbers in a sentinel range. This is an academic project and never touches a real person.
+          <a href={guide("adr/0015-synthea-plus-indian-overlay-seed-data")}>ADR-0015</a>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</Chapter>
+
+<style>
+  .prm { display: grid; gap: 1.5rem; }
+  .prm__inv { align-self: start; }
+  .inv { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .inv li {
+    padding-left: 0.9rem;
+    border-left: 3px solid transparent;
+    font-size: 1.12rem;
+    line-height: 1.3;
+    font-weight: 500;
+    transition: opacity 400ms var(--ease-out), border-color 400ms var(--ease-out);
+  }
+  .inv strong { font-weight: 700; color: var(--primary); }
+
+  /* The sentence builds clause by clause; the clause being explained carries a bar. */
+  [data-active="0"] .inv li:nth-child(n + 2),
+  [data-active="1"] .inv li:nth-child(n + 3),
+  [data-active="2"] .inv li:nth-child(n + 4) { opacity: 0.2; }
+  [data-active="0"] .inv li:nth-child(1),
+  [data-active="1"] .inv li:nth-child(2),
+  [data-active="2"] .inv li:nth-child(3),
+  [data-active="3"] .inv li:nth-child(4) { border-left-color: var(--primary); }
+
+  /* Narrow: the building sentence stays pinned under the header while the steps scroll. */
+  .prm__inv {
+    position: sticky;
+    top: 63px;
+    z-index: 5;
+    margin-inline: calc(var(--content-start) * -1) calc(var(--gutter) * -1);
+    padding: 0.75rem var(--gutter) 0.75rem var(--content-start);
+    background: var(--glass-fill);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .step { padding: 1.5rem 0 2rem; max-width: 56ch; }
+  .step h3 { font-size: var(--step-2); margin-bottom: 0.9rem; }
+  .step p + p { margin-top: 0.9em; }
+  .step p { color: var(--muted-foreground); }
+  .how { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.95rem; }
+
+  @media (min-width: 900px) {
+    .prm { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr); gap: 4rem; }
+    .prm__inv {
+      top: 120px;
+      margin: 0;
+      padding: 0;
+      background: none;
+      backdrop-filter: none;
+      border: 0;
+    }
+    .inv { gap: 1.1rem; }
+    .inv li { font-size: var(--step-2); line-height: 1.15; padding-left: 1.25rem; letter-spacing: -0.015em; }
+    .step { min-height: 62vh; padding: 3rem 0; }
+  }
+
+  .refuse { margin-top: clamp(4rem, 8vw, 7rem); padding-top: 2.5rem; border-top: 1px solid var(--border); max-width: 880px; }
+  .refuse__title { font-size: var(--step-2); }
+  .refuse dl { margin: 2rem 0 0; }
+  .refuse dl > div { display: grid; gap: 0.4rem; padding: 1.25rem 0; border-top: 1px solid var(--border); }
+  .refuse dl > div:last-child { border-bottom: 1px solid var(--border); }
+  .refuse dt { font-weight: 700; font-size: var(--step-1); line-height: 1.2; }
+  .refuse dd { margin: 0; color: var(--muted-foreground); }
+  .refuse dd a { white-space: nowrap; margin-left: 0.25rem; }
+  @media (min-width: 800px) {
+    .refuse dl > div { grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; }
+  }
+</style>

@@ -28,6 +28,8 @@ class PulseSchema(BaseModel):
         alias_generator=to_camel,
         validate_by_name=True,
         validate_by_alias=True,
+        serialize_by_alias=True,
+        json_schema_serialization_defaults_required=True,
     )
 ```
 
@@ -40,10 +42,10 @@ Every non-2xx response has this body:
 ```json
 {
   "error": {
-    "code": "CONSENT_ALREADY_REVOKED",
-    "message": "This consent has already been revoked.",
-    "details": [{ "field": "entryTypes", "code": "INVALID_ENTRY_TYPE" }],
-    "requestId": "01J…"
+    "code": "CONFLICT",
+    "message": "Consent was already revoked.",
+    "details": [{ "field": "body.entryTypes", "code": "enum" }],
+    "requestId": "3f2b8c1e-9a47-4d6e-b0c5-7e1d2a9f4c68"
   }
 }
 ```
@@ -51,7 +53,7 @@ Every non-2xx response has this body:
 - **`code`** is the contract. `SCREAMING_SNAKE_CASE`, stable forever, never reworded.
 - **`message`** is an English default for developers and logs. **The frontend never renders it** — it renders from `code`. That is what makes four locales possible.
 - **`details`** carries field-level validation failures so forms can highlight inputs.
-- **`requestId`** is generated per request, returned in the body and in `X-Request-Id`, logged, and recorded on audit events.
+- **`requestId`** is a UUID generated per request (a client-supplied `X-Request-Id` matching `[A-Za-z0-9._:-]{1,64}` is accepted instead), returned in the body and in `X-Request-Id`, logged, and recorded on audit events.
 
 FastAPI's default `{"detail": ...}` is replaced by a global exception handler — including for `RequestValidationError`, or validation responses become the one endpoint shape that differs.
 
@@ -61,19 +63,23 @@ Codes live in a single Python enum, exported through OpenAPI and generated into 
 
 | Code | Meaning |
 |---|---|
+| 400 | malformed request |
 | 401 | not authenticated |
-| 403 | authenticated, role forbids it — reveals no resource existence |
+| 403 | authenticated, role forbids it — reveals no resource existence. Also covers `STEP_UP_REQUIRED`, `EMAIL_NOT_VERIFIED` and cross-origin writes |
 | **404** | role allows it, but no consent covers this record |
 | 409 | conflict — re-revoking a consent, duplicate resolution race |
+| 405 | method not allowed (`VALIDATION_ERROR`) |
 | 413 | upload too large |
 | 422 | validation failed |
 | 429 | rate limited |
+| 500 | unexpected server error |
+| 503 | not ready (`/ready`) |
 
 **404, not 403, for consent denials.** A 403 on a specific patient's record confirms the record exists, which reveals that the person is a patient. In a health system, that is the disclosure that matters.
 
 ## Pagination
 
-Cursor-based, on every collection.
+Keyset cursors on persisted collections, default `limit` 50, maximum 100. The UI uses "load more".
 
 ```
 GET /api/v1/patients/{id}/entries?cursor=…&limit=50
@@ -82,13 +88,11 @@ GET /api/v1/patients/{id}/entries?cursor=…&limit=50
 
 Offset pagination is more familiar and is wrong here: the patient timeline and the audit log are both append-heavy, and offset paging silently skips or duplicates rows when new data lands mid-scroll. It corrupts precisely the two views that must be trustworthy, and it does so invisibly.
 
-The cost is no page numbers. Admin tables get previous/next.
+The cost is no page numbers. Computed chart endpoints are the exception: they return arrays bounded by `fromDate` / `toDate` and a 5,000-row ceiling (`ANALYTICS_WINDOW_TOO_LARGE`).
 
 ## Filtering and sorting
 
-`?sort=-occurredAt` — leading `-` for descending. Filters are explicit named parameters, never a generic query DSL.
-
-Sortable and filterable fields are declared per endpoint and validated. An unlisted field returns 422, rather than a 500 or an accidental sequential scan.
+Order is fixed (`occurredAt` descending). Filters are explicit named parameters, never a generic query DSL. The filters that exist are `entryType`, `fromDate`, `toDate`, `providerId`, `q` (max 100 characters), `view`, `action`, `since`, `until` and `actorRole`.
 
 ## Uploads
 
@@ -96,7 +100,7 @@ Sortable and filterable fields are declared per endpoint and validated. An unlis
 
 - Size cap enforced, MIME **allowlist** never a blocklist
 - Content sniffed server-side — the declared `Content-Type` and the file extension are both attacker-controlled
-- SHA-256 computed on receipt and stored, so later corruption is detectable
+- SHA-256 computed on receipt and stored, and re-verified on download, so corruption is detectable
 
 Routes never touch the filesystem. They hand bytes to `StorageProvider` and store the returned path.
 
@@ -104,4 +108,6 @@ Routes never touch the filesystem. They hand bytes to `StorageProvider` and stor
 
 Stubs exist so frontend work never blocks on backend work, which means they will be forgotten.
 
-A stub is decorated `@stub`: it returns fixture data, sets `X-Pulse-Stub: true`, and registers itself. CI prints the stub inventory on every run, so the count is visible in every PR instead of discovered the week of submission.
+A stub is decorated `@stub`: it returns fixture data, sets `X-Pulse-Stub: true`, and registers itself. CI prints the stub inventory on every run, so the count is visible in every PR instead of discovered the week of submission. No stubs remain; the inventory prints zero.
+
+The full endpoint inventory is in the generated OpenAPI (`/api/v1/docs` at runtime; `frontend/src/lib/generated/api.ts`).

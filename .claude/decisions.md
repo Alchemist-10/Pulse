@@ -11,7 +11,7 @@ Chosen: <what was picked>
 Rejected: <what was dropped and why>
 ```
 
-This log is the index. The long-form argument for anything hard to reverse lives in `docs/adr/`; this file exists so the shape of a decision is findable without reading eleven documents.
+This log is the index. The long-form argument for anything hard to reverse lives in `docs/adr/`; this file exists so the shape of a decision is findable without reading sixteen ADRs.
 
 ---
 
@@ -140,3 +140,9 @@ Context: #56's acceptance criteria require the full demo spine green in CI, but 
 Options: convert the mocked specs to hit the real backend (needs the whole stack in every e2e run); add one live spec plus its own CI job against the real Compose stack; rely on manual rehearsal.
 Chosen: `frontend/e2e-live/demo-spine.live.spec.ts` via `playwright.live.config.ts` (`npm run test:e2e:live`), and an `e2e-live` CI job that runs `docker compose up --build -d --wait` and dumps compose logs on failure. The spec covers staff filing, grant with step-up, clinician discovery through the plan-004 consented-patients list, audit view, revoke, and immediate lockout, and is rerun-safe (unique display names, `.first()` discovery, revoke loop over all active grants to the target clinician).
 Rejected: converting the mocked suite — the mocks are the fast feedback loop and stay self-contained. Manual rehearsal only — it is how the step-up bug got through. The plans/README 2026-09-28 audit named this plan the first net to build, for that reason.
+
+## [2026-10-13] Burgundy material UI
+Context: the first design pass (Paper/Harbor/Bloom in `Pulse_design.md`) and the colour options in `docs/design-direction.md` were both proposals, and the shipped frontend needed one canonical visual spec.
+Options: `Pulse_design.md` (Paper/Harbor/Bloom); the `docs/design-direction.md` colour directions; a new burgundy material system.
+Chosen: burgundy material UI, specified in `DESIGN.md` (canonical).
+Rejected: `Pulse_design.md` and the `docs/design-direction.md` colour options, both superseded and kept as history.

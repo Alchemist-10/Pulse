@@ -90,6 +90,8 @@ Delivered against the [#23](https://github.com/moneytosms/Pulse/issues/23) spec,
 
 ## Phase 2 — records spine
 
+> **Status: complete** ([#24](https://github.com/moneytosms/Pulse/issues/24) closed).
+
 *Demoable: Provider Staff uploads a lab report against a Patient; the Patient sees it on their timeline, in the order they lived it.*
 
 **Shivansh** — `medical_entry` trunk plus five subtype tables, joined-table inheritance mapped with `polymorphic_on` / `polymorphic_identity`; the five indexes; `selectin_polymorphic` on timeline reads; `medical_document` metadata; cursor-paginated timeline query filtering `superseded_by_id IS NULL`; seed loads entries with real SNOMED/LOINC/RxNorm codes.
@@ -105,6 +107,8 @@ Delivered against the [#23](https://github.com/moneytosms/Pulse/issues/23) spec,
 ---
 
 ## Phase 3 — consent, audit, notifications
+
+> **Status: complete** ([#47](https://github.com/moneytosms/Pulse/issues/47) closed).
 
 *The graded half. It sits in the middle of the schedule deliberately: this is the part that must not be what gets cut.*
 
@@ -132,13 +136,21 @@ A positive test passes just as happily when the filter was never applied. These 
 
 ## Phase 4 — analytics, admin, deduplication, locales, polish
 
+> **Status: complete** (issues #52–#55 closed).
+
 **Shivansh** — `pg_trgm` GIN indexes; candidate blocking before scoring; trigram similarity on token-sorted names with the DOB and phone components; merge with tombstone and reversal; a precision/recall number against the planted duplicates *and* the planted near-misses; the analytics queries, every one of them composed from `accessible_entries`.
 
 **Akshay** — analytics computed on read, abnormality flagged against each row's own `reference_low` / `reference_high`; admin module that touches no clinical data; duplicate review service; human-only reversible merge; data-quality flags.
 
-**Bharadwaj** — analytics charts, admin dashboard, duplicate review UI showing identity fields and entry counts but never clinical contents, Hindi/Tamil/Malayalam catalogs filled, accessibility and contrast pass, Playwright over the demo journey.
+**Bharadwaj** — analytics charts, admin dashboard, duplicate review UI showing identity fields and entry counts but never clinical contents, Hindi/Tamil/Malayalam catalogs filled (delivered as recorded-unverified; see [`locale-review.md`](./locale-review.md)), accessibility and contrast pass, Playwright over the demo journey.
 
-**Srimoney** — locale review, one native speaker per language against a written checklist; Playwright in CI; docs consolidation; the demo script and two rehearsals; submission packaging; and the deployment call — laptop Compose is the assumed answer, and an always-on instance only happens if integration proves it earns its keep.
+**Srimoney** — locale review, one native speaker per language against a written checklist; Playwright in CI; docs consolidation; the demo script and rehearsals (done 2026-10-14); submission packaging; and the deployment call — laptop Compose is the assumed answer, and an always-on instance only happens if integration proves it earns its keep.
+
+---
+
+## Phase 4.5 — packaging
+
+> **Status: complete** ([#56](https://github.com/moneytosms/Pulse/issues/56) closed 2026-10-14).
 
 ---
 
@@ -197,6 +209,6 @@ Three pieces of work do not belong cleanly to one layer. Leaving that implicit i
 
 ## Conventions
 
-Branches `feat/…` `fix/…` `chore/…` `docs/…`. Conventional commits, imperative, 72 characters. One ticket per PR. `main` protected: no direct pushes, CI green required, one approving review. No pre-commit hooks — they get bypassed and CI cannot be argued with.
+Branches `feat/…` `fix/…` `chore/…` `docs/…`. Conventional commits, imperative, 72 characters. One ticket per PR. Intended: PR-only with CI green and one review. In practice some solo-driven work landed as direct commits to `main`. No pre-commit hooks — they get bypassed and CI cannot be argued with.
 
 Every non-obvious pattern gets an entry in [`learnings.md`](./learnings.md) as it lands, not at the end. The point of that file is that any of the four can explain any part of the codebase, including the parts they did not type.

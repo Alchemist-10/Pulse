@@ -1,0 +1,211 @@
+---
+import Chapter from "../components/Chapter.astro";
+
+// One synthetic patient's history, as it sits today: eight pieces in five places.
+// Each piece has a scattered start (x, y, tilt) and a final row on the timeline.
+const ROW_X = 200;
+const rowY = (i: number) => 20 + i * 54;
+const pieces = [
+  { kind: "Diagnosis", from: "Hospital", sx: 20, sy: 260, rot: -7 },
+  { kind: "Prescription", from: "Paper file", sx: 0, sy: 30, rot: 5, dashed: true },
+  { kind: "Lab report", from: "Lab", sx: 30, sy: 380, rot: 4 },
+  { kind: "Clinical note", from: "Clinic", sx: 8, sy: 150, rot: -5 },
+  { kind: "Lab report", from: "Phone photo", sx: 26, sy: 90, rot: 8, dashed: true },
+  { kind: "Procedure", from: "Hospital", sx: 2, sy: 320, rot: -4 },
+  { kind: "Prescription", from: "Clinic", sx: 22, sy: 200, rot: 6 },
+  { kind: "Lab report", from: "Lab", sx: 12, sy: 420, rot: -6 },
+].map((p, i) => ({ ...p, y: rowY(i), dx: p.sx - ROW_X, dy: p.sy - rowY(i) }));
+---
+
+<Chapter
+  id="problem"
+  n={1}
+  title="Your history lives in pieces, and nobody can see them all"
+  lede="A person's medical history is not in one place. Every place that treated them kept its own part, and the person is the only thing connecting the parts."
+  wide
+>
+  <div class="prob" data-stage>
+    <div class="prob__text">
+      <div class="prob__beat">
+        <h3>Each place keeps a piece</h3>
+        <p>
+          A hospital holds the admission and the surgery. A clinic holds three years of follow-up notes. A lab holds its
+          own reports, readable in its own portal. A paper file sits in a drawer at home. A photograph of a prescription
+          sits somewhere in a phone's gallery.
+        </p>
+        <p>None of these talk to each other. Each is complete for the people who made it and blind to the rest.</p>
+      </div>
+      <div class="prob__beat">
+        <h3>The patient is the integration layer</h3>
+        <p>
+          When someone new needs the history, the patient reassembles it from memory and from whatever they remembered to
+          bring. Whatever gets forgotten or repeated is the cost of that, and the patient is the one who pays it.
+        </p>
+      </div>
+      <div class="prob__beat">
+        <h3>And they cannot see who looked</h3>
+        <p>
+          Anyone able to open a fragment can read it. Nothing is built to tell the patient that it happened. A person can
+          be unable to find their own report and still have no way to know who else has read it.
+        </p>
+      </div>
+    </div>
+
+    <figure class="prob__fig" data-converge aria-labelledby="prob-cap">
+      <svg viewBox="0 0 360 470" role="img" aria-labelledby="prob-svg-title prob-svg-desc">
+        <title id="prob-svg-title">One synthetic patient's history, scattered then joined</title>
+        <desc id="prob-svg-desc">
+          Eight cards, each marked with where it is kept: hospital, clinic, lab, a paper file and a phone photo. Scattered
+          on the left at first, they slide to the right and line up on a single vertical timeline.
+        </desc>
+        <path class="axis" data-axis d={`M188 12 V${rowY(7) + 40}`} />
+        {pieces.map((p) => (
+          <g transform={`translate(${ROW_X} ${p.y})`}>
+            <circle class="dot" data-dot cx="-12" cy="20" r="4.5" />
+            <g data-frag data-dx={p.dx} data-dy={p.dy} data-rot={p.rot}>
+              <rect class:list={["card", { "card--dashed": p.dashed }]} width="150" height="40" rx="9" />
+              <text class="card__kind" x="12" y="17">{p.kind}</text>
+              <text class="card__from" x="12" y="32">{p.from}</text>
+            </g>
+          </g>
+        ))}
+      </svg>
+      <figcaption id="prob-cap" aria-live="polite">
+        <span class="cap cap--apart">Today: eight pieces, five places. Illustration of one synthetic patient.</span>
+        <span class="cap cap--together">With Pulse: the same eight pieces on one timeline the patient owns.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="tension">
+    <p class="tension__claim">Share it for care. Keep it private by default.</p>
+    <div class="tension__cols">
+      <div>
+        <h3>Care needs the history to travel</h3>
+        <p>
+          A clinician deciding on a prescription needs the diagnoses, the other medicines and the last lab result in front
+          of them, now, not after a phone call and a courier.
+        </p>
+      </div>
+      <div>
+        <h3>Privacy needs it to stay put</h3>
+        <p>
+          A medical history says things a person may tell nobody else. If it is open to anyone who can log in, the patient
+          has no way to hold it back and no way to know who read it.
+        </p>
+      </div>
+    </div>
+    <p class="tension__resolve">
+      Pulse does not pick a side. It moves the decision to the patient: sharing is something the patient grants to a
+      named person, for a stated scope and time, and every use of it leaves a record they can read. The next chapter
+      states that as four rules. <a href="#promise">Read the promise</a>.
+    </p>
+  </div>
+</Chapter>
+
+<style>
+  .prob { display: grid; gap: 2rem; }
+  @media (min-width: 1000px) {
+    .prob { grid-template-columns: minmax(0, 1fr) 420px; gap: 4rem; align-items: start; }
+    .prob__fig { position: sticky; top: 84px; order: 2; }
+    .prob__text { order: 1; }
+  }
+  .prob__fig { margin: 0; max-width: 420px; width: 100%; justify-self: center; }
+  .prob__fig svg { width: 100%; height: auto; overflow: visible; }
+  @media (max-width: 999px) { .prob__fig { order: -1; } }
+
+  .prob__beat { max-width: 52ch; }
+  .prob__beat + .prob__beat { margin-top: clamp(3rem, 14vh, 7rem); }
+  .prob__beat h3 { font-size: var(--step-2); margin-bottom: 0.9rem; }
+  .prob__beat p { color: var(--muted-foreground); }
+  .prob__beat p + p { margin-top: 0.9em; }
+  @media (min-width: 1000px) { .prob__beat:first-child { padding-top: 6rem; } .prob__beat:last-child { padding-bottom: 8rem; } }
+
+  .axis { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linecap: round; }
+  .dot { fill: var(--background); stroke: var(--primary); stroke-width: 2; }
+  .card { fill: var(--card); stroke: var(--border); stroke-width: 1.25; }
+  .card--dashed { stroke-dasharray: 4 3; stroke: var(--muted-foreground); }
+  .card__kind { font-family: inherit; font-size: 12.5px; font-weight: 600; fill: var(--primary); }
+  .card__from { font-family: inherit; font-size: 11px; fill: var(--muted-foreground); }
+
+  .prob__fig figcaption { margin-top: 0.9rem; font-size: 0.9rem; color: var(--muted-foreground); min-height: 3em; }
+  .cap--apart { display: none; }
+  [data-phase="apart"] .cap--apart { display: block; }
+  [data-phase="apart"] .cap--together { display: none; }
+
+  .tension {
+    margin-top: clamp(4rem, 8vw, 7rem);
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+    max-width: 880px;
+  }
+  .tension__claim {
+    font-size: var(--step-3);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .tension__cols { display: grid; gap: 2rem; margin-top: 2.5rem; }
+  @media (min-width: 760px) {
+    .tension__cols { grid-template-columns: 1fr 1fr; gap: 0; }
+    .tension__cols > div { padding-right: 2.5rem; }
+    .tension__cols > div + div { padding: 0 0 0 2.5rem; border-left: 1px solid var(--border); }
+  }
+  .tension__cols h3 { font-size: var(--step-1); margin-bottom: 0.6rem; }
+  .tension__cols p { color: var(--muted-foreground); }
+  .tension__resolve { margin-top: 2.5rem; max-width: 62ch; }
+</style>
+
+<script>
+  import { gsap, reducedMotion } from "../scripts/motion";
+
+  // The eight pieces slide from where they are kept onto one timeline as the
+  // reader scrolls. Scrubbed, so the reader controls the pace and can go back.
+  // Without JS or with reduced motion the static SVG already shows the joined state.
+  const fig = document.querySelector<HTMLElement>("[data-converge]");
+  if (fig && !reducedMotion()) {
+    const frags = [...fig.querySelectorAll<SVGGElement>("[data-frag]")];
+    const dots = fig.querySelectorAll("[data-dot]");
+    const axis = fig.querySelector<SVGPathElement>("[data-axis]")!;
+    const stage = fig.closest<HTMLElement>("[data-stage]")!;
+    const len = axis.getTotalLength();
+
+    const build = (trigger: Element, start: string, end: string) => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger,
+          start,
+          end,
+          scrub: 0.6,
+          onUpdate: (self) => { fig.dataset.phase = self.progress > 0.62 ? "together" : "apart"; },
+        },
+      });
+      tl.fromTo(
+        frags,
+        {
+          x: (_i: number, el: Element) => Number((el as SVGElement).dataset.dx),
+          y: (_i: number, el: Element) => Number((el as SVGElement).dataset.dy),
+          rotation: (_i: number, el: Element) => Number((el as SVGElement).dataset.rot),
+          transformOrigin: "50% 50%",
+        },
+        { x: 0, y: 0, rotation: 0, ease: "power2.inOut", duration: 1, stagger: 0.07 },
+        0,
+      )
+        .fromTo(axis, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 1, ease: "none" }, 0.35)
+        .fromTo(dots, { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.25, stagger: 0.08 }, 0.9);
+    };
+
+    // Prepare the SVG transforms as the reader approaches the figure.
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      if (reducedMotion()) return;
+      fig.dataset.phase = "apart";
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 1000px)", () => build(stage, "top 55%", "bottom 85%"));
+      mm.add("(max-width: 999px)", () => build(fig, "top 80%", "bottom 35%"));
+    }, { rootMargin: "200px 0px" });
+    observer.observe(fig);
+  }
+</script>

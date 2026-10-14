@@ -11,13 +11,9 @@ say while doing it.
 
 ## Status: read before rehearsing
 
-- **Fixed 2026-09-28:** the consent grant form now asks for the password
-  and calls `/auth/step-up` first, and only Provider Staff see "File new
-  entry" (patients can't file; the button used to return 403). Both
-  checked against the live stack. The e2e suite mocks the API, so a live
-  run is still the only proof that the real backend agrees.
-- **Rehearsed 2026-10-14:** fresh `git clone` into a scratch directory
-  (`/home/sms/pulse-rehearsal/Pulse`, separate from the working copy),
+- **Verified:** the consent grant form asks for the password and calls
+  `/auth/step-up` first, and only Provider Staff see "File new entry".
+- **Rehearsed 2026-10-14:** a fresh clone in a scratch directory,
   `docker compose up --build -d --wait` — all six containers healthy,
   landing page (`/en/login`, `/hi/login`) returns 200, Mailpit reachable.
   `npm run test:e2e:live` (the live spine spec, real browser against the
@@ -61,10 +57,20 @@ messages on SMTP port 1025 and displays them at `http://localhost:8025`; it
 does not deliver to real inboxes. This keeps a fresh clone runnable without
 credentials.
 
-**To send through the configured personal Gmail account**, copy `.env.example`
-to `.env` and replace `SMTP_PASSWORD` with a Google App Password. Keep
-`SMTP_HOST=smtp.gmail.com`,
-`SMTP_PORT=587`, and `SMTP_STARTTLS=true`. The App Password is used instead of
+**To send through the configured personal Gmail account**, create a `.env`
+(gitignored) at the repo root with these variables, where `SMTP_PASSWORD` is
+a Google App Password:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_STARTTLS=true
+SMTP_USERNAME=<Gmail address>
+SMTP_PASSWORD=<App Password>
+MAIL_FROM=<sender address>
+```
+
+The App Password is used instead of
 the normal Google password; Google requires 2-Step Verification for App
 Passwords. Keep `.env` out of Git. The same variables can be set as deployment
 secrets for a hosted app.
@@ -146,8 +152,9 @@ Keep the Patient ID above ready to paste. There is no patient search.
    seeded patient.
 
 3. **File an entry (as Provider Staff).** Only Provider Staff can file.
-   In the Clinician window, click **Provider staff**. Under **Patients**,
-   paste the Patient ID, click "Open record", then **File new entry**.
+   In the Clinician window, click **Provider staff**. On
+   `/en/clinician`, paste the Patient ID into the Patient ID box to open
+   the record, then **File new entry**.
    The Patient ID is already filled in. Choose "Diagnosis" and set
    "Occurred at". Enter code system `ICD-10`, code `E11` and display name
    `Type 2 diabetes mellitus`. Attach a PDF and point out the upload
@@ -197,8 +204,10 @@ Keep the Patient ID above ready to paste. There is no patient search.
    person is a patient. Revocation applied mid-session because
    permissions are never cached.
 
-10. **Break-glass.** On the same screen, use **Emergency access**. Enter a
-    written justification. The record opens for 60 minutes. In the
+10. **Break-glass.** The entry point is a Clinician opening
+    `/patients/{id}/records` without consent: the "not found" state shows
+    the emergency access form. Enter a written justification. The grant is
+    60 minutes and unscoped. In the
     Patient window, reload: an "Emergency access to your record" banner
     appears, and the access is in `/en/audit`.
     *Say:* emergencies aren't blocked, but they are loud: a CRITICAL
@@ -237,7 +246,7 @@ Keep the Patient ID above ready to paste. There is no patient search.
     *Say:* the interface is translated, but clinical content such as
     "Type 2 diabetes mellitus" stays exactly as recorded, because
     translating it would invent a medical claim. Dates and numbers come
-    from `Intl` with lakh grouping. Mention that Tamil and Malayalam
+    from `Intl` with lakh grouping. Mention that Hindi, Tamil and Malayalam
     are machine-translated and unreviewed.
 
 ## Fallbacks

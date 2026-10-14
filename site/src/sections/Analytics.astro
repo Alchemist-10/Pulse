@@ -1,0 +1,58 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { blob } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const excerpt = sourceExcerpt("backend/app/modules/records/repository.py", 448, 466);
+const series = [
+  { title: "Lab and vital trends", source: "coded Lab Report rows", output: "values ordered by occurred_at" },
+  { title: "Visits by month", source: "accessible Medical Entries", output: "monthly visit counts" },
+  { title: "Active medications", source: "accessible prescriptions", output: "medication summary over a date window" },
+  { title: "Provider contributions", source: "accessible Medical Entries", output: "entry counts by source Provider" },
+];
+---
+
+<Chapter id="analytics" n={9} title="An insight is computed for the reader" lede="Pulse does not store a second, precomputed version of a Patient's history. Analytics are derived when requested through the same access filter as clinical entries." wide>
+  <div class="analytics">
+    <div class="analytics__opening">
+      <div>
+        <p>A Clinician with consent for lab reports must not receive a trend built from entries outside that scope. Computing each response for its reader keeps consent enforcement attached to the underlying rows.</p>
+        <p>The Patient dashboard presents lab trends, visits, medications, Provider contributions and informational data-quality flags. The flags identify missing or implausible identity data, long-unclaimed Patients and future-dated entries. They do not block an action. These summaries are not a source of clinical truth.</p>
+        <p>For a numeric lab result, an abnormal flag compares that value with the reference bounds on that result's own row. A text result or missing bounds cannot be compared numerically.</p>
+        <a href={`${base}/guide/adr/0009-analytics-computed-on-read`}>Why there is no Summary Insight table</a>
+      </div>
+      <Screenshot name="analytics-desktop" alt="Patient analytics page with a lab trend chart, summary measures and data-quality flags" url="/en/analytics" />
+    </div>
+    <div class="analytics__flow" aria-label="Analytics request mechanism">
+      <div class="analytics__flow-head"><span>One authorized request</span><span>One derived response</span></div>
+      <ol>
+        <li><span>01</span><strong>Check Patient access</strong><code>authorize_patient_access</code></li>
+        <li><span>02</span><strong>Audit the query</strong><code>ANALYTICS_VIEWED</code></li>
+        <li><span>03</span><strong>Filter source rows</strong><code>accessible_entries(actor, patient_id)</code></li>
+        <li><span>04</span><strong>Compute the series</strong><code>no summary_insight table</code></li>
+      </ol>
+    </div>
+    <div class="analytics__measures">
+      <h3>What the backend can derive</h3>
+      <dl>{series.map((item) => <div><dt>{item.title}</dt><dd><span>{item.source}</span><span>{item.output}</span></dd></div>)}</dl>
+    </div>
+    <div class="analytics__code"><CodeBlock code={excerpt} lang="python" file="backend/app/modules/records/repository.py" lines="448-466" /><p>Every series reads from the permission-filtered entry query. <a href={blob("backend/app/modules/analytics/service.py")}>Analytics service</a> / <a href={`${base}/guide/domain-model#analytics`}>Data model notes</a></p></div>
+  </div>
+</Chapter>
+
+<style>
+  .analytics{display:grid;gap:clamp(3rem,7vw,5rem)}.analytics__opening{display:grid;gap:2rem;align-items:start}
+  @media(min-width:950px){.analytics__opening{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)}.analytics__opening>div{position:sticky;top:6rem}}
+  .analytics__opening p+p{margin-top:1em}.analytics__opening a,.analytics__code a{color:var(--primary)}
+  .analytics__flow{padding:clamp(1rem,3vw,2rem);background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+  .analytics__flow-head{display:flex;justify-content:space-between;gap:1rem;color:var(--muted-foreground);font-size:var(--step--1);margin-bottom:1.1rem}
+  .analytics__flow ol{display:grid;gap:.5rem;list-style:none;margin:0;padding:0;counter-reset:step}
+  @media(min-width:800px){.analytics__flow ol{grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}}
+  .analytics__flow li{display:grid;gap:.35rem;padding:1rem 0;border-top:2px solid var(--primary)}.analytics__flow li>span{font:var(--step--1) var(--font-mono);color:var(--primary)}.analytics__flow strong{font-size:var(--step-0)}
+  .analytics__flow code{font-size:var(--step--1);overflow-wrap:anywhere;background:none;border:0;padding:0;color:var(--muted-foreground)}
+  .analytics__measures h3{font-size:var(--step-2);margin-bottom:1rem}.analytics__measures dl{margin:0;border-top:1px solid var(--border)}
+  .analytics__measures dl>div{display:grid;gap:.3rem;padding:.85rem 0;border-bottom:1px solid var(--border)}@media(min-width:780px){.analytics__measures dl>div{grid-template-columns:minmax(190px,.7fr) minmax(0,1.3fr);align-items:baseline;gap:1rem}}
+  .analytics__measures dt{font-weight:600}.analytics__measures dd{display:flex;flex-wrap:wrap;gap:.35rem 1rem;margin:0;color:var(--muted-foreground);font-size:var(--step--1)}.analytics__code{display:grid;gap:1rem;align-items:start}@media(min-width:900px){.analytics__code{grid-template-columns:minmax(0,1.2fr) minmax(220px,.8fr)}}.analytics__code p{color:var(--muted-foreground)}
+</style>

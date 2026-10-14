@@ -21,3 +21,7 @@ Opaque sessions are also simpler to explain, which matters for a project whose a
 Redis becomes load-bearing for authentication: if it is wiped, every user is logged out. That is the acceptable failure mode, and it is the boundary recorded in ADR-0005 — nothing durable lives in Redis, so "everyone logs in again" is the worst case.
 
 The token is stored in Redis under the SHA-256 of its value rather than the value itself, so a cache dump does not yield usable sessions.
+
+## Implementation boundary
+
+Login-session validity and clinical consent are separate checks. The opaque token authenticates a User; it does not carry a clinical Permission. Every clinical read still checks the live PostgreSQL consent predicate in [`accessible_entries`](../../backend/app/modules/records/repository.py). A valid session cannot keep a revoked Consent alive. The session choice simplifies server-side session invalidation; immediate consent enforcement comes from the database query, and would still be required with JWT authentication.

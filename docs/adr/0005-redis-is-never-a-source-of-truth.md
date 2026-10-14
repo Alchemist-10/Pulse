@@ -4,7 +4,7 @@ status: accepted
 
 # Redis holds sessions, rate limits and short-lived tokens — never a source of truth
 
-Redis stores exactly three things: session records, rate-limit counters, and short-lived verification challenges. Everything has a TTL. If Redis is wiped, every user is logged out and nothing else is lost.
+Redis stores exactly three things: session records, rate-limit counters, and short-lived verification/step-up markers. Everything has a TTL. If Redis is wiped, every user is logged out and nothing else is lost.
 
 ## Why
 

@@ -4,7 +4,7 @@ status: accepted
 
 # Administrators cannot read clinical data
 
-The `ADMINISTRATOR` role manages users, roles, providers and the duplicate review queue. It grants no access to Medical Entries or Medical Documents whatsoever.
+The `ADMINISTRATOR` role manages the duplicate review queue and merges (`ADMIN_DUPLICATE_REVIEW`); user/role/provider management is not implemented. It grants no access to Medical Entries or Medical Documents whatsoever.
 
 ## Why
 

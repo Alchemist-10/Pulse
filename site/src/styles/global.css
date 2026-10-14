@@ -1,0 +1,208 @@
+/*
+ * Pulse site tokens. Values are copied from the app's theme
+ * (frontend/src/app/globals.css, :root and .dark) so the story site and the
+ * product read as one thing. light-dark() keeps both themes in one block;
+ * the toggle only flips `color-scheme` on <html>.
+ */
+:root {
+  color-scheme: light dark;
+
+  --background: light-dark(oklch(0.966 0.009 5), oklch(0.19 0.024 8));
+  --canvas-top: light-dark(oklch(0.995 0.003 20), oklch(0.19 0.024 8));
+  --canvas-bottom: light-dark(oklch(0.934 0.023 5), oklch(0.245 0.043 5));
+  --foreground: light-dark(oklch(0.252 0.023 5), oklch(0.985 0.001 106.423));
+  --card: light-dark(oklch(0.996 0.003 20), oklch(0.258 0.029 8));
+  --primary: light-dark(oklch(0.405 0.117 8), oklch(0.78 0.091 4));
+  --primary-hover: light-dark(oklch(0.35 0.105 8), oklch(0.835 0.075 4));
+  --primary-soft: light-dark(oklch(0.926 0.038 7), oklch(0.342 0.052 6));
+  --primary-foreground: light-dark(oklch(0.997 0.002 20), oklch(0.19 0.024 8));
+  --secondary: light-dark(oklch(0.935 0.018 4), oklch(0.315 0.034 8));
+  --muted: light-dark(oklch(0.95 0.012 6), oklch(0.315 0.034 8));
+  --muted-foreground: light-dark(oklch(0.455 0.023 7), oklch(0.709 0.01 56.259));
+  --accent: light-dark(oklch(0.917 0.032 6), oklch(0.37 0.052 7));
+  --border: light-dark(oklch(0.86 0.022 5), oklch(0.83 0.026 5 / 20%));
+  --input: light-dark(oklch(0.83 0.026 5), oklch(0.83 0.026 5 / 28%));
+  --ring: light-dark(oklch(0.53 0.12 8), oklch(0.78 0.091 4));
+
+  --chart-2: light-dark(oklch(0.59 0.095 348), oklch(0.72 0.09 346));
+  --chart-3: light-dark(oklch(0.57 0.11 270), oklch(0.75 0.09 270));
+  --chart-4: light-dark(oklch(0.57 0.13 65), oklch(0.8 0.11 65));
+  --chart-5: light-dark(oklch(0.52 0.105 165), oklch(0.76 0.08 165));
+
+  /* Domain states, same as the app. Each is always paired with a label or icon. */
+  --critical: light-dark(oklch(0.505 0.213 27.518), oklch(0.808 0.114 19.571));
+  --critical-surface: light-dark(oklch(0.971 0.013 17.38), oklch(0.258 0.092 26.042));
+  --consent-active: light-dark(oklch(0.393 0.095 152.535), oklch(0.925 0.084 155.995));
+  --consent-active-surface: light-dark(oklch(0.982 0.018 155.826), oklch(0.266 0.065 152.934));
+  --consent-revoked: light-dark(oklch(0.505 0.213 27.518), oklch(0.808 0.114 19.571));
+  --consent-expired: light-dark(oklch(0.414 0.112 45.904), oklch(0.924 0.12 95.746));
+  --audit-normal: light-dark(oklch(0.49 0.013 58.071), oklch(0.709 0.01 56.259));
+  --audit-denied: light-dark(oklch(0.408 0.123 38.172), oklch(0.901 0.076 70.697));
+  --audit-denied-surface: light-dark(oklch(0.98 0.016 73.684), oklch(0.266 0.079 36.259));
+  --break-glass: light-dark(oklch(0.525 0.223 3.958), oklch(0.823 0.12 346.018));
+  --break-glass-surface: light-dark(oklch(0.971 0.014 343.198), oklch(0.284 0.109 3.907));
+  --superseded: light-dark(oklch(0.553 0.013 58.071), oklch(0.709 0.01 56.259));
+
+  --glass-fill: light-dark(oklch(1 0 0 / 84%), oklch(0.3 0.03 7 / 88%));
+  --glass-border: light-dark(oklch(1 0 0 / 76%), oklch(0.9 0.04 6 / 13%));
+  --shadow-ink: light-dark(oklch(0.31 0.063 5 / 11%), oklch(0.06 0.015 8 / 45%));
+  --shadow-card: 0 20px 42px -25px var(--shadow-ink), 0 6px 16px -10px var(--shadow-ink);
+
+  --radius: 0.875rem;
+  --font-sans: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Malayalam", system-ui, sans-serif;
+  --font-mono: "Noto Sans Mono", ui-monospace, monospace;
+
+  /* Layout. The spine sits in the gutter; content hangs off it. */
+  --gutter: 16px;
+  --spine-x: 20px;
+  --content-start: 48px;
+  --measure: 68ch;
+  --wide: 1120px;
+
+  /* Type scale: perfect fourth, 17px base. */
+  --step--1: 0.85rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.42rem;
+  --step-2: 1.89rem;
+  --step-3: clamp(2.1rem, 1.6rem + 2.2vw, 2.52rem);
+  --step-4: clamp(2.5rem, 1.6rem + 4vw, 3.36rem);
+  --step-5: clamp(2.9rem, 1.4rem + 6.4vw, 4.48rem);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+    --spine-x: 56px;
+    --content-start: 112px;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-sans);
+  font-size: 100%;
+  scroll-behavior: smooth;
+  scrollbar-color: var(--input) var(--background);
+  scrollbar-width: thin;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 70% 38% at 95% 4%, var(--primary-soft), transparent 78%),
+    linear-gradient(to bottom, var(--canvas-top), var(--canvas-bottom));
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  text-wrap: balance;
+  margin: 0;
+}
+p { margin: 0; text-wrap: pretty; }
+a { color: var(--primary); text-underline-offset: 0.25em; text-decoration-thickness: 1px; }
+a:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
+img, svg { display: block; max-width: 100%; }
+code, kbd, pre { font-family: var(--font-mono); font-size: 0.9em; }
+::selection { background: var(--primary-soft); color: var(--foreground); }
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: var(--gutter); top: -100px; z-index: 100;
+  background: var(--primary); color: var(--primary-foreground);
+  padding: 0.5rem 1rem; border-radius: 999px; text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+
+/* Shared surfaces: the app's material language, used sparingly. */
+.surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.4);
+  box-shadow: var(--shadow-card);
+}
+.glass {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: var(--card); backdrop-filter: none; }
+}
+
+/* Inline code chip and code blocks (shiki dual theme). */
+:not(pre) > code {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.08em 0.38em;
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
+}
+pre.astro-code, .code {
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  background-color: var(--card) !important;
+}
+.astro-code, .astro-code span { color: var(--shiki-light); }
+/* GitHub Dark Dimmed's comment grey is too faint on the burgundy surface. */
+.astro-code span[style*="#768390"] { --shiki-dark: var(--muted-foreground) !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .astro-code,
+  :root:not([data-theme="light"]) .astro-code span { color: var(--shiki-dark); }
+}
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span { color: var(--shiki-dark); }
+
+/* Buttons: pill, as in the app. Text says what happens. */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  min-height: 44px; padding: 0.6rem 1.25rem;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--card); color: var(--foreground);
+  font: inherit; font-weight: 500; font-size: 0.95rem;
+  text-decoration: none; cursor: pointer;
+  transition: background-color 160ms, box-shadow 160ms, transform 160ms var(--ease-out);
+}
+.btn:hover { color: var(--foreground); box-shadow: var(--shadow-card); text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--primary); border-color: transparent; color: var(--primary-foreground); }
+.btn-primary:hover { background: var(--primary-hover); color: var(--primary-foreground); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

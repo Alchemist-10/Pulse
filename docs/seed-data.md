@@ -11,7 +11,7 @@ Synthea (pinned version + fixed seed)
    │  clinical content: conditions (SNOMED-CT), observations (LOINC), medications (RxNorm)
    ▼
 Indian identity overlay (deterministic, same seed)
-   │  names · phone numbers · addresses · medication brand names
+   │  names · phone numbers · addresses
    ▼
 Duplicate planting
    │  known duplicate pairs + deliberate near-miss non-duplicates
@@ -21,14 +21,20 @@ Committed dataset  ──▶  loader runs on first `docker compose up`
 
 Both the Synthea invocation and the overlay are seeded, so the dataset is reproducible. It is committed rather than regenerated because Synthea is Java and `git clone && docker compose up` must work without a JDK.
 
-**Phase 1 scope.** Phase 1 has no clinical tables, so the first-boot loader
-(`backend/app/db/seed_loader.py`, run from the backend container entrypoint)
-loads identity only — Provider, ProviderStaff, User, Patient — and is
-idempotent via a `seed_marker` row (migration `0003`). The transformed
-Synthea clinical rows are committed now under `seed/data/clinical/` but are
-**not** loaded until Phase 2. Pins, regenerate steps, demo credentials and
-the planted-pair catalogue live in [`seed/README.md`](../seed/README.md);
-the Synthea release + seeds are also in [`tech-stack.md`](./tech-stack.md).
+**Loader scope.** The first-boot loader (`backend/app/db/seed_loader.py`, run from the backend container entrypoint) loads identity, then a capped deterministic selection of Medical Entries (at most 3 diagnoses, 2 procedures, 2 prescriptions and 3 labs per Patient). It is idempotent via a `seed_marker` row (migration `0003`), and afterwards queues duplicate candidates. Medications keep their Synthea RxNorm descriptions. Pins, regenerate steps, demo credentials and the planted-pair catalogue live in [`seed/README.md`](../seed/README.md); the Synthea release + seeds are also in [`tech-stack.md`](./tech-stack.md).
+
+## What is in the dataset
+
+From `seed/data/MANIFEST.json`:
+
+| | |
+|---|---|
+| Patients | 125 (120 Synthea + 5 planted), 37 unclaimed |
+| Users | 103 (88 patient, 12 provider staff, 2 clinician, 1 admin) |
+| Providers | 6 |
+| Raw clinical rows | 3,908 conditions, 6,290 encounters, 5,122 medications, 73,845 observations, 13,226 procedures |
+| Planted pairs | 3 duplicates (`token_order_swap`, `dob_typo`, `initials_vs_expanded`) + 2 near-miss siblings |
+| Pins | Synthea v4.0.0, patient seed 424242, clinician seed 20260901, population 120, overlay seed 20260901, phone sentinel `+91 90000` |
 
 The near-miss non-duplicates matter as much as the planted duplicates: with only true pairs planted, duplicate detection can be *demonstrated* but its precision cannot be *measured*. Two siblings with the same surname and adjacent dates of birth are the interesting case.
 
@@ -38,9 +44,8 @@ The near-miss non-duplicates matter as much as the planted duplicates: with only
 |---|---|
 | Names — Hindi, Tamil, Gujarati, Marathi, Odia, English | Faker's Indian locales (`hi_IN`, `ta_IN`, `gu_IN`, `mr_IN`, `or_IN`, `en_IN`) |
 | Names — Malayalam | A Pulse-maintained provider. See below. |
-| Addresses | data.gov.in Pincode Directory |
+| Addresses | A small hand-curated pincode list (`seed/data/reference/pincodes.csv`) |
 | Phone numbers | A Pulse sentinel prefix. See below. |
-| Medication brands | `junioralive/Indian-Medicine-Dataset` |
 
 ## Gap 1 — Malayalam names
 

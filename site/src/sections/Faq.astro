@@ -1,0 +1,135 @@
+---
+import Chapter from "../components/Chapter.astro";
+import { consent, dedup, notImplemented, seed, stats } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const g = (slug: string) => `${base}/guide/${slug}`;
+
+// Each answer was written from the doc named in its links, checked 2026-10-14.
+const faqs = [
+  {
+    q: "Why not JWT?",
+    a: "Opaque sessions make login-session invalidation a server-side lookup. A self-contained JWT needs an additional check to invalidate it before expiry, and this laptop-scale deployment gains little from stateless authentication. Clinical consent is a separate database check on every read: a valid login session never substitutes for an active permission.",
+    links: [{ t: "ADR-0003", s: "adr/0003-opaque-redis-sessions-not-jwt" }],
+  },
+  {
+    q: "Why a modular monolith and not microservices?",
+    a: "Microservices buy independent deployment and scaling, and Pulse runs as one Compose stack on a laptop with no scaling requirement. The costs would be real: network calls between domains and distributed transactions. The module boundaries are drawn as if extraction were coming, and CI lints cross-module imports and raw SQL to keep them honest.",
+    links: [{ t: "Architecture", s: "architecture" }, { t: "ADR-0016", s: "adr/0016-transactional-audit-and-safe-identity-merges" }],
+  },
+  {
+    q: "How does consent revocation take effect immediately?",
+    a: "Revoking stamps the consent and deletes its permission row in the same transaction. Every clinical read builds its query from accessible_entries, which checks that row, so the next statement after the commit is denied. Nothing caches a permission decision. A statement already running at the moment of revocation is not interrupted.",
+    links: [{ t: "ADR-0006", s: "adr/0006-consent-enforced-by-one-query-builder" }, { t: "Workflows", s: "workflows" }],
+  },
+  {
+    q: "Can an administrator see my records?",
+    a: "No. The Administrator role holds no clinical permission, so the timeline, entry detail and audit endpoints refuse it. The duplicate-review screen shows identity fields and a count of entries, never their contents. There is no override; the emergency route is break-glass, used by a Clinician, limited to " + consent.breakGlassMinutes + " minutes and shown to you.",
+    links: [{ t: "ADR-0007", s: "adr/0007-administrators-cannot-read-clinical-data" }],
+  },
+  {
+    q: "How was the dataset made, and is any of it real?",
+    a: `None of it is real. Clinical content comes from Synthea ${seed.synthea} with a fixed seed, and a deterministic overlay replaces its American names, addresses and phone numbers with Indian ones. The phone numbers use the sentinel prefix ${seed.phonePrefix}. The result is ${seed.patients} Patients, of which ${seed.patients - seed.population} are planted for testing duplicate detection, and it is committed to the repository.`,
+    links: [{ t: "Seed data", s: "seed-data" }, { t: "Seed README", s: "seed" }],
+  },
+  {
+    q: "Why Synthea?",
+    a: "Hand-written histories do not scale past a handful of patients and come out too clean, with every value in range. Synthea generates longitudinal records with real coded vocabularies (SNOMED CT, LOINC, RxNorm), and the analytics are only as credible as the codes underneath. It is a Java tool, so the output is committed and nobody needs a JDK to run the demo.",
+    links: [{ t: "ADR-0015", s: "adr/0015-synthea-plus-indian-overlay-seed-data" }],
+  },
+  {
+    q: "How are duplicates detected, and can a merge be undone?",
+    a: `Candidates are blocked first by a trigram name hit, the same birth year or the same phone, then scored on name (${dedup.weights.name}), birth date (${dedup.weights.dob}) and phone (${dedup.weights.phone}) against a threshold of ${dedup.threshold}. A match only creates a review item; an Administrator performs any merge. A merge can be reversed while nothing has been built on it, and a reversal blocked by later corrections or documents returns a coded 409 for manual review.`,
+    links: [{ t: "ADR-0011", s: "adr/0011-merges-are-human-only-and-reversible" }, { t: "ADR-0016", s: "adr/0016-transactional-audit-and-safe-identity-merges" }],
+  },
+  {
+    q: "Why 404 instead of 403?",
+    a: "A 403 on a patient's records says the record exists, which discloses that a named person is a patient at all. A 404 makes a denied read indistinguishable from a patient who does not exist. 403 is kept for a role that fails outright, such as an Administrator reaching a clinical endpoint.",
+    links: [{ t: "Learnings", s: "learnings" }, { t: "ADR-0006", s: "adr/0006-consent-enforced-by-one-query-builder" }],
+  },
+  {
+    q: "Why not translate diagnoses?",
+    a: "The interface is localised and clinical data is not. A Diagnosis recorded as \"Type 2 diabetes mellitus\" reads that way in every locale, because translating it would be inventing a medical claim. The API returns error codes so that the interface text can be translated without touching the backend.",
+    links: [{ t: "ADR-0013", s: "adr/0013-error-codes-not-messages" }, { t: "Locale review", s: "locale-review" }],
+  },
+  {
+    q: "What is not implemented?",
+    a: `Not built: ${notImplemented.join("; ")}. Hindi, Tamil and Malayalam have not been reviewed by a native speaker. No compliance certification or real-patient readiness is claimed.`,
+    links: [{ t: "Workflows", s: "workflows" }, { t: "Verification and operations", s: "verification-and-operations" }],
+  },
+  {
+    q: "How do I run it?",
+    a: "You need Docker and free ports 80 and 8025. Clone the repository and run docker compose up --build -d --wait, then open http://localhost. The first boot migrates and seeds the database by itself; the last chapter has the commands and the demo logins.",
+    links: [{ t: "Running Pulse", s: "running" }, { t: "Demo script", s: "demo" }],
+  },
+  {
+    q: "What would you change for production?",
+    a: "The repository's own list is HTTPS with secure cookies, production frontend serving, external credentials, a restricted trusted-proxy policy, and tested restores of the database and uploads together. Email through SMTP is best effort, and guaranteed delivery would need a durable outbox. Native-speaker locale review, load testing and an accessibility audit are also still open.",
+    links: [{ t: "Verification and operations", s: "verification-and-operations" }, { t: "Locale review", s: "locale-review" }],
+  },
+  {
+    q: "Where are the design decisions recorded?",
+    a: `In ${stats.adrs} architecture decision records under docs/adr, each with its alternatives and consequences. Patterns that are not big enough for an ADR, such as repository and service layers or cursor pagination, are explained in the learnings file. The architecture page ties them together.`,
+    links: [{ t: "Architecture", s: "architecture" }, { t: "Learnings", s: "learnings" }, { t: "Domain model", s: "domain-model" }],
+  },
+];
+---
+
+<Chapter
+  id="faq"
+  n={20}
+  title="Questions a grader would ask"
+  lede="Short answers, each pointing at the document that holds the long one."
+>
+  <ul class="faq">
+    {faqs.map((f, i) => (
+      <li>
+        <details open={i === 0}>
+          <summary>
+            <span>{f.q}</span>
+            <svg class="faq__chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </summary>
+          <div class="faq__a">
+            <p>{f.a}</p>
+            <p class="faq__links">
+              Read:{" "}
+              {f.links.map((l, j) => (
+                <>
+                  {j > 0 && ", "}{" "}
+                  <a href={g(l.s)}>{l.t}</a>
+                </>
+              ))}
+            </p>
+          </div>
+        </details>
+      </li>
+    ))}
+  </ul>
+</Chapter>
+
+<style>
+  .faq { list-style: none; margin: 0; padding: 0; }
+  .faq li { border-bottom: 1px solid var(--border); }
+  .faq li:first-child { border-top: 1px solid var(--border); }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    min-height: 44px;
+    padding: 1.1rem 0.25rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 500;
+    font-size: var(--step-1);
+    line-height: 1.3;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { color: var(--primary); }
+  .faq__chev { flex: none; margin-top: 0.45rem; color: var(--muted-foreground); transition: transform 200ms var(--ease-out); }
+  details[open] .faq__chev { transform: rotate(180deg); }
+  .faq__a { padding: 0 0.25rem 1.4rem; display: grid; gap: 0.7rem; }
+  .faq__a p { color: var(--muted-foreground); }
+  .faq__links { font-size: 0.95rem; }
+</style>

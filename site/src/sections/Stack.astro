@@ -1,0 +1,126 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { stack, blob } from "../data/facts";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const compose = sourceExcerpt("compose.yaml", 61, 90);
+const routing = sourceExcerpt("frontend/src/i18n/routing.ts", 1, 8);
+---
+
+<Chapter
+  id="stack"
+  n={14}
+  title="The stack follows the shape of the problem"
+  lede="Pulse needs typed clinical records, live row-level access checks, and a demo that boots locally. The choices below support those constraints, with their operating limits stated plainly."
+  wide
+>
+  <div class="stack">
+    <div class="stack__opening">
+      <p>Each layer has one job: a localized web app, a Python API that owns domain rules, durable relational state, short-lived session state, and one proxy in front. Docker Compose brings the six local services up together.</p>
+      <a href={`${base}/guide/tech-stack`}>Pinned versions and known version traps</a>
+    </div>
+
+    <div class="stack__layers" aria-label="Pulse technology choices and their roles">
+      <div class="stack__layer stack__layer--web">
+        <h3>Next.js <span>{stack.frontend[0].version}</span></h3>
+        <p>React, TypeScript, next-intl and Tailwind build the localized App Router screens. The API contract is generated for the frontend, so request and response shapes are shared rather than retyped by hand.</p>
+        <p class="stack__reason">Why it fits: the UI has route-level locale segments and forms that consume a typed JSON API.</p>
+      </div>
+      <div class="stack__layer stack__layer--api">
+        <h3>FastAPI <span>{stack.backend[1].version}</span></h3>
+        <p>Python services enforce consent and orchestration. Pydantic defines the API boundary; asynchronous SQLAlchemy repositories own database queries.</p>
+        <p class="stack__reason">Why it fits: business rules stay testable in services, while API routes handle HTTP parsing and delegation.</p>
+      </div>
+      <div class="stack__layer stack__layer--data">
+        <h3>PostgreSQL <span>{stack.infra[0].version}</span></h3>
+        <p>Durable identity, clinical entries, Consent, notifications and audit events live in relational tables. Redis holds opaque sessions, throttling counters and expiring verification challenges.</p>
+        <p class="stack__reason">Why it fits: the clinical data and authorization predicates need transactional, queryable state. Redis is explicitly not a source of truth.</p>
+      </div>
+      <div class="stack__layer stack__layer--edge">
+        <h3>Compose + Caddy</h3>
+        <p>One local reverse proxy sends API and page traffic to their services on the same origin. Mailpit catches demo email without external credentials; uploaded documents persist in a named volume.</p>
+        <p class="stack__reason">Why it fits: reviewers can reproduce the synthetic demo with Docker on a laptop.</p>
+      </div>
+    </div>
+
+    <div class="stack__pins">
+      <div>
+        <h3>Versions are part of the design</h3>
+        <p>All pinned runtime and library versions are listed in the repository's tech-stack note. One deliberate constraint is TypeScript 6.0.3: the pinned type-aware ESLint tooling excludes TypeScript 6.1 and 7, so using “latest” would break the lint contract.</p>
+        <p>The codebase also documents version-specific traps for PostgreSQL 18's volume layout and Next.js build environments. Those notes make the local setup reproducible; they do not establish a production deployment.</p>
+        <p><a href={blob("docs/tech-stack.md")}>Open the version notes</a>. <a href={`${base}/guide/adr/0012-same-origin-reverse-proxy`}>ADR-0012: same-origin routing</a>. <a href={`${base}/guide/adr/0005-redis-is-never-a-source-of-truth`}>ADR-0005: Redis's boundary</a>.</p>
+      </div>
+      <div class="stack__code">
+        <CodeBlock code={routing} lang="typescript" file="frontend/src/i18n/routing.ts" lines="1-8" />
+        <CodeBlock code={compose} lang="yaml" file="compose.yaml" lines="61-90" />
+      </div>
+    </div>
+
+    <div class="stack__limits">
+      <p><strong>Use it for:</strong> a synthetic-data academic demonstration, local development and review.</p>
+      <p><strong>Before external hosting:</strong> HTTPS, production frontend serving, trusted proxy configuration, external secrets and rehearsed database plus upload restore are open work.</p>
+      <p><a href={`${base}/guide/verification-and-operations`}>Read the verified scope and remaining operations work</a>.</p>
+    </div>
+
+    <div class="stack__inventory" aria-label="Pinned technology versions">
+      <section>
+        <h3>Backend packages</h3>
+        <ul>{stack.backend.map((item) => <li><span>{item.name}</span><code>{item.version}</code></li>)}</ul>
+      </section>
+      <section>
+        <h3>Frontend packages</h3>
+        <ul>{stack.frontend.map((item) => <li><span>{item.name}</span><code>{item.version}</code></li>)}</ul>
+      </section>
+      <section>
+        <h3>Local services</h3>
+        <ul>{stack.infra.map((item) => <li><span>{item.name}</span><code>{item.version}</code></li>)}</ul>
+      </section>
+      <section>
+        <h3>Verification tools</h3>
+        <ul>{stack.testing.map((item) => <li><span>{item.name}</span><code>{item.version}</code></li>)}</ul>
+      </section>
+    </div>
+
+    <div class="stack__decision">
+      <h3>Opaque sessions simplify invalidation; Consent still comes from the database</h3>
+      <p>Pulse stores a hash-keyed session in Redis, which makes session invalidation straightforward. JWTs would not remove the database read required to check whether Consent is live. The clinical query consults current Consent-derived permission rows in PostgreSQL on each request, whatever session token format is used.</p>
+      <a href={`${base}/guide/adr/0003-opaque-redis-sessions-not-jwt`}>ADR-0003 records the session choice and trade-off</a>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  .stack { display: grid; gap: clamp(3rem, 7vw, 5.5rem); }
+  .stack__opening { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem 2rem; max-width: 78ch; }
+  .stack__opening p { max-width: 55ch; }
+  .stack__layers { display: grid; border-top: 1px solid var(--border); }
+  .stack__layer { display: grid; grid-template-columns: 1fr; gap: 0.7rem; padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+  .stack__layer h3 { font-size: var(--step-1); }
+  .stack__layer h3 span { color: var(--muted-foreground); font: 0.85rem var(--font-mono); }
+  .stack__layer p { color: var(--muted-foreground); }
+  .stack__layer .stack__reason { color: var(--foreground) !important; font-size: var(--step--1); padding-left: 0.8rem; border-left: 1px solid var(--primary); }
+  .stack__pins { display: grid; gap: 2rem; align-items: start; }
+  .stack__pins h3 { font-size: var(--step-2); margin-bottom: 0.8rem; }
+  .stack__pins > div:first-child p { margin-top: 0.8rem; color: var(--muted-foreground); }
+  .stack__code { display: grid; gap: 1.4rem; min-width: 0; }
+  .stack__limits { padding: 1.5rem; border-left: 1px solid var(--primary); background: var(--primary-soft); border-radius: 0 var(--radius) var(--radius) 0; }
+  .stack__limits p + p { margin-top: 0.65rem; }
+  .stack__limits p:last-child { font-size: var(--step--1); }
+  .stack__inventory { display: grid; gap: 1.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+  .stack__inventory section { min-width: 0; }
+  .stack__inventory h3 { font-size: var(--step-1); margin-bottom: 0.6rem; }
+  .stack__inventory ul { list-style: none; margin: 0; padding: 0; }
+  .stack__inventory li { display: flex; justify-content: space-between; gap: 0.8rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: var(--step--1); }
+  .stack__inventory li span { overflow-wrap: anywhere; }
+  .stack__inventory li code { white-space: nowrap; color: var(--muted-foreground); }
+  .stack__decision { padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+  .stack__decision h3 { font-size: var(--step-1); margin-bottom: 0.6rem; }
+  .stack__decision p { color: var(--muted-foreground); margin-bottom: 0.7rem; }
+  @media (min-width: 860px) {
+    .stack__layer { grid-template-columns: 0.6fr 0.9fr 1.25fr 1fr; gap: 1.5rem; align-items: start; }
+    .stack__pins { grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr); }
+    .stack__inventory { grid-template-columns: 1fr 1fr; column-gap: 3rem; }
+  }
+</style>

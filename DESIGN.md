@@ -2,7 +2,7 @@
 
 <!-- Design authority for the current web UI. Updated 2026-10-13. -->
 
-Pulse is a lifelong health record used by Patients, Clinicians, Provider Staff, and Administrators. The interface must make the medical history, consent, and audit trail feel continuous and trustworthy. Its new visual language combines **burgundy**, **soft neumorphic depth**, **translucent glass**, and **selective clay-like actions**. This document supersedes the visual instructions in `Pulse_design.md` and the options in `docs/design-direction.md`; those files remain as history.
+Pulse is a lifelong health record used by Patients, Clinicians, Provider Staff, and Administrators. The interface must make the medical history, consent, and audit trail feel continuous and trustworthy. Its new visual language combines **burgundy**, **soft neumorphic depth**, **translucent glass**, and **selective clay-like actions**. This document supersedes the visual instructions in `docs/archive/Pulse_design.md` and the options in `docs/design-direction.md`; those files remain as history.
 
 Rendered previews: [desktop](docs/design-preview-desktop.png) · [mobile](docs/design-preview-mobile.png). They show the signed-out home page; the same tokens and components carry the authenticated workspaces.
 

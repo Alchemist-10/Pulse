@@ -1,0 +1,52 @@
+---
+const chapters = [
+  ["problem", "Why histories fragment"],
+  ["promise", "The patient's promise"],
+  ["people", "Roles and boundaries"],
+  ["record-life", "Life of a Medical Entry"],
+  ["sharing", "Sharing and revocation"],
+  ["consent-engine", "Inside the consent engine"],
+  ["audit", "The audit trail"],
+  ["data-model", "The data model"],
+  ["analytics", "Insights from permitted data"],
+  ["duplicates", "Human duplicate review"],
+  ["seed", "Where the dataset came from"],
+  ["architecture", "A request through the architecture"],
+  ["patterns", "Patterns in the code"],
+  ["stack", "The stack and its trade-offs"],
+  ["locales", "Four languages, one clinical history"],
+  ["decisions", "Architecture decisions"],
+  ["proof", "How the rules are tested"],
+  ["different", "What makes Pulse different"],
+  ["built", "How the team built it"],
+  ["faq", "Questions a grader would ask"],
+  ["run", "Run the demo yourself"],
+];
+---
+
+<nav class="contents" aria-label="Story chapters">
+  <details>
+    <summary>Explore the chapters</summary>
+    <p>Follow the story in order, or jump to the mechanism you want to inspect.</p>
+    <ol>
+      {chapters.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}
+    </ol>
+  </details>
+</nav>
+
+<style>
+  .contents {
+    max-width: calc(var(--wide) + var(--content-start) + var(--gutter));
+    margin: 0 auto;
+    padding: 1rem var(--gutter) 0 var(--content-start);
+  }
+  details { border-block: 1px solid var(--border); padding: 1rem 0; }
+  summary { cursor: pointer; font-weight: 500; min-height: 44px; align-content: center; }
+  p { color: var(--muted-foreground); font-size: 0.95rem; margin-block: 0.5rem 1rem; }
+  ol { margin: 0; padding-left: 1.6rem; }
+  li { break-inside: avoid; padding: 0.3rem 0 0.3rem 0.3rem; font-size: 0.95rem; }
+  li::marker { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  a { display: inline-block; padding-block: 0.2rem; }
+  @media (min-width: 768px) { ol { columns: 2; column-gap: 3rem; } }
+  @media (min-width: 1100px) { ol { columns: 3; } }
+</style>

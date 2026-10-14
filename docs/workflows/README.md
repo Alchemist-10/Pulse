@@ -16,7 +16,7 @@ flowchart LR
     P -->|revokes consent| C
     C -->|removes permission; notifies clinician| H
     B[Break-glass request] -->|justification + time limit| A
-    B -->|critical event + patient alert| L
+    B -->|break-glass audit event + patient alert| L
     AD[Administrator] -->|reviews duplicate identities| D[Human-reviewed merge]
     D -->|identity links only| R
 ```
@@ -29,28 +29,28 @@ The application is a modular monolith. The browser reaches Next.js and FastAPI t
 |---|---|---|
 | Patient | `/[locale]/profile`, `/timeline`, `/timeline/[entryId]`, `/consent`, `/consent/new`, `/audit`, `/analytics`, `/notifications`, `/notifications/preferences` | View their profile and record, grant/revoke access, inspect access history, view their analytics, manage notification preferences |
 | Clinician | `/[locale]/clinician`, `/patients/[patientId]/records`, `/patients/[patientId]/records/[entryId]` | See patients who have granted access, then open only entries allowed by each active scope |
-| Provider Staff | `/[locale]/clinician`, `/patients/[patientId]/records`, `/timeline/new` | Open a record by exact Patient ID and file or correct a clinical entry with optional document attachment; they do not get general clinical read access from this role |
-| Administrator | `/[locale]/admin`, `/admin/duplicates` | View operational counts and identity fields; review possible duplicate identities and perform/reverse human-approved merges, without reading clinical content |
+| Provider Staff | `/[locale]/clinician`, `/patients/[patientId]/records`, `/timeline/new` | Open a record by exact Patient ID and file or correct a clinical entry with optional document attachment; they can file for any existing Patient ID but list only entries their own provider authored, and do not get general clinical read access from this role |
+| Administrator | `/[locale]/admin`, `/admin/duplicates` | Open the duplicate review screen from `/admin`, which shows identity fields and per-patient record counts (no operational counts); review possible duplicate identities and perform/reverse human-approved merges, without reading clinical content |
 | Public / unverified user | `/[locale]`, `/register`, `/verify-pending`, `/verify`, `/login` | Read the public entry page, create a Patient account, verify email, and sign in; protected actions require a verified authenticated session |
 
-All application pages are under a locale prefix (`en`, `hi`, `ta`, or `ml`). Clinical values are not translated. Navigation is role-aware, but backend authorization is still enforced independently.
+All application pages are under a locale prefix (`en`, `hi`, `ta`, or `ml`). Clinical values are not translated. A locale preference is saved for Patients only. Navigation is role-aware, but backend authorization is still enforced independently.
 
 ## 1. A person creates and uses an account
 
 1. A visitor registers. Self-registration creates a Patient account; provider/staff/admin onboarding is not a public signup workflow.
-2. The backend creates a time-limited verification challenge and sends a link through the configured mail adapter. Local Compose uses Mailpit.
+2. The backend creates a time-limited verification challenge and sends a link through the configured mail adapter. Local Compose uses Mailpit. The email and link are English, and the link expires after 24 hours.
 3. The user verifies the address, then logs in. The application stores an opaque session in Redis and sends it in an HttpOnly cookie.
-4. Each protected request resolves the session and account role on the server. Unverified, expired, or missing sessions cannot perform protected actions.
-5. A sensitive consent grant asks for the user's password again (step-up). Logout removes the session; logout-all invalidates the user's sessions.
+4. Each protected request resolves the session and account role on the server. Unverified, expired, or missing sessions cannot perform protected actions. Login succeeds for an unverified account; protected screens then show the verify-email error, with no automatic redirect.
+5. A sensitive consent grant asks for the user's password again (step-up), valid for a 5-minute window. Logout removes the session; logout-all is API-only and has no UI.
 
 Implementation: `frontend/src/app/[locale]/register/`, `verify-pending/`, `verify/`, `login/`, `frontend/src/lib/`, and `backend/app/modules/auth/`, `users/`. API paths are under `/api/v1`; auth routes are mounted from the auth module. See [API conventions](../api-conventions.md), [ADR-0003](../adr/0003-opaque-redis-sessions-not-jwt.md), and [demo setup](../demo.md#email-verification-local-mailpit-or-gmail-smtp).
 
 ## 2. A health record is built over time
 
 1. The Patient views their profile and chronological timeline.
-2. Provider Staff opens a patient by exact Patient ID; there is no general patient search.
-3. Staff files a typed Medical Entry (for example, diagnosis, medication, procedure, allergy, or lab result), with clinical time and optional supporting document.
-4. The backend validates the entry, stores metadata and document bytes, and returns the entry. The Patient can then view it in the timeline and detail view.
+2. Provider Staff opens a patient by exact Patient ID; there is no general patient search. Staff can file for any existing Patient ID but can list only entries their own provider authored.
+3. Staff files a typed Medical Entry (diagnosis, prescription, lab report, procedure or clinical note), with clinical time and optional supporting document.
+4. The backend validates the entry, stores metadata and document bytes, and returns the entry. Uploads accept PDF, PNG or JPEG (checked by magic bytes) up to 25 MiB, and the SHA-256 checksum is verified on read. The Patient can then view it in the timeline and detail view.
 5. When Provider Staff corrects an entry, Pulse creates a replacement entry that supersedes the earlier entry; the original is retained and the detail view shows the correction relationship.
 
 **UI boundary:** Provider Staff can file and correct entries. The entry form is role-gated; patients do not file clinical entries through it.
@@ -59,9 +59,9 @@ Implementation: `frontend/src/app/[locale]/timeline/`, the provider-staff view i
 
 ## 3. Patient grants a clinician access
 
-1. The Patient opens Access and selects a registered individual Clinician by email.
+1. The Patient opens Access and selects a registered individual Clinician by exact email. An unknown email and a non-clinician email return the same 404.
 2. They choose the scope (entry types and history window), purpose, and a required expiry between 1 and 365 days.
-3. The Patient confirms with their password. The consent record and its derived permission are written together, and the grant is audited.
+3. The Patient reviews the grant, then confirms with their password. The consent record and its derived permission are written together, and the grant is audited.
 4. The Clinician's patient list is derived from current grants. A role assignment by itself never reveals patient records.
 
 Consent states the Patient's authorization; a separate permission is the current, enforceable access state. Permission is checked on the request path, not trusted from an old browser list or cached authorization.
@@ -81,32 +81,33 @@ Implementation: `backend/app/modules/records/`, `backend/app/modules/consent/`, 
 
 ## 5. Patient revokes access or responds to an emergency
 
-**Revoke:** Patient revokes a grant from Access. The permission is removed transactionally, the event is audited, and the grantee is notified. The next Clinician request is denied immediately; the Clinician list is refreshed from current access.
+**Revoke:** Patient revokes a grant from Access. The permission is removed transactionally, the event is audited, and the grantee Clinician is emailed (an in-app row is also written, but Clinicians have no notifications UI or permission). The next Clinician request is denied immediately; the Clinician list is refreshed from current access.
 
-**Break-glass:** a Clinician can request emergency access with a written reason. The temporary access is time-limited (60 minutes), recorded as a critical audit event, and triggers an immediate Patient notification. It is a distinct path and is not a quiet bypass of consent.
+**Break-glass:** the entry point is the "not found" state inside `/patients/[id]/records`, for Clinicians only, where a Clinician can request emergency access with a written reason. The temporary access is unscoped and time-limited (60 minutes), recorded as a `BREAK_GLASS_ACCESS` audit event, and triggers an immediate notification to a registered Patient, who also sees a banner for 72 hours. It is a distinct path and is not a quiet bypass of consent.
 
 Implementation: consent routes/services, `backend/app/modules/notifications/`, `backend/app/modules/audit/`; Patient views are `/consent`, `/audit`, `/notifications`, and the Clinician portal is `/clinician`. See [demo steps](../demo.md#part-1-consent-and-access-the-graded-spine).
 
 ## 6. Patient reviews access history and notifications
 
-- The Patient's audit page shows who accessed the record and when, including emergency access; it does not repeat clinical content.
+- The Patient's audit page shows who accessed the record and when, including emergency access and the Patient's own actions; it does not repeat clinical content. It filters by action, actor role and date range.
 - Audit events are append-only at the database permission layer.
-- In-app notifications can be read and marked read; Patients can set preferences for optional event types. Mandatory security notifications cannot be opted out of.
-- A consent grant is not a notification sent to the granting Patient; revocation and break-glass have their own notification behavior.
+- In-app notifications can be read and marked read; Patients can set preferences for optional event types. Mandatory security notifications cannot be opted out of. Only the `IN_APP` channel is configurable.
+- The notification types are: consent revoked (mandatory, email and in-app), break-glass (mandatory, email and in-app, registered Patients only), record uploaded (when a document is attached), and the daily digest ("records viewed N times").
+- Granting consent notifies nobody; the `CONSENT_GRANTED` preference toggle currently has no effect.
 
 Implementation: `frontend/src/app/[locale]/audit/`, `frontend/src/app/[locale]/notifications/`, `backend/app/modules/audit/`, and `backend/app/modules/notifications/`. See [ADR-0008](../adr/0008-audit-log-is-append-only-by-grant.md).
 
 ## 7. Patient views analytics
 
-Analytics are computed when requested from currently accessible patient entries. They summarize information such as lab trends, visits, medications, provider contributions, and data-quality flags. They are not a separate copy of the medical record and cannot use a broader access path than the record view.
+Analytics are computed when requested from currently accessible patient entries. They summarize information such as lab trends, visits, medications, provider contributions, and data-quality flags. They are not a separate copy of the medical record and cannot use a broader access path than the record view. Viewing analytics is itself audited (`ANALYTICS_VIEWED`).
 
 Implementation: `frontend/src/app/[locale]/analytics/` and `backend/app/modules/analytics/`. See [ADR-0009](../adr/0009-analytics-computed-on-read.md).
 
 ## 8. Administrator reviews possible duplicate identities
 
-1. The administrator opens the duplicate review queue.
+1. Duplicate detection runs at first boot over the seeded Patients (scoring: name 0.5, date of birth 0.3, phone 0.2; threshold 0.5; blocking by trigram name, birth year and phone). The administrator opens the duplicate review queue, which lists the pending candidates. The planted near-miss siblings score below the threshold and are never queued, which is what makes precision measurable. For any candidate the administrator rejects, "Not a duplicate" closes it without an audit event.
 2. They compare identity fields and decide whether a pair is a duplicate; the system does not automatically merge records.
-3. A confirmed merge is recorded with a reversible link. An administrator can inspect and reverse prior merges.
+3. A confirmed merge is recorded with a reversible link. Merge preconditions: neither Patient is already merged, there is no open merge, the loser is unclaimed (`user_id` null), and the loser has no live grants (otherwise 409). An administrator can inspect and reverse prior merges; reversal returns 409 if later changes conflict.
 4. This is identity maintenance only; administrators cannot use it to inspect clinical entries.
 
 Implementation: `/[locale]/admin` and its duplicate review screen; `backend/app/modules/admin/`. See [ADR-0011](../adr/0011-merges-are-human-only-and-reversible.md) and [ADR-0016](../adr/0016-transactional-audit-and-safe-identity-merges.md).
@@ -155,10 +156,21 @@ PostgreSQL is the durable source of truth. Redis supports session and short-live
 
 The following boundaries are documented so that a workflow diagram is not mistaken for a claim that every capability has a screen:
 
-- Provider-created unclaimed-patient onboarding and claim reconciliation are not exposed.
+- Provider-created unclaimed-patient onboarding and claim reconciliation are not implemented.
 - Correction creation is available to Provider Staff from an entry detail screen; Patients do not correct provider-filed entries themselves.
-- Credential-change and administrator role-management workflows are not exposed.
+- Credential-change and administrator role-management workflows are not implemented.
 - Patient search is not available in Provider Staff flow; the Patient ID must be known.
 - Native-speaker review for Hindi, Tamil, and Malayalam, accessibility certification, load testing, and a backup/restore rehearsal remain acceptance work.
+
+### Not implemented
+
+- Admin audit viewer
+- Admin user/role management
+- Patient search
+- Provider-created patient and claim
+- Password/email change
+- Logout-all UI
+- Notifications for non-patients
+- SMS
 
 For current operational requirements and deployment boundaries, see [verification and operations](../verification-and-operations.md). For a click-by-click rehearsal, see [demo](../demo.md).

@@ -1,0 +1,309 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { consent } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const excerpt = sourceExcerpt("backend/app/modules/records/repository.py", 98, 134);
+
+const kinds = [
+  { id: "DIAGNOSIS", label: "Diagnosis", text: "Type 2 diabetes mellitus" },
+  { id: "LAB_REPORT", label: "Lab report", text: "HbA1c 7.9 %" },
+  { id: "PRESCRIPTION", label: "Prescription", text: "Metformin 500 mg" },
+  { id: "PROCEDURE", label: "Procedure", text: "Retinal screening" },
+  { id: "CLINICAL_NOTE", label: "Clinical note", text: "Follow-up in 3 months" },
+];
+---
+
+<Chapter
+  id="consent-engine"
+  n={6}
+  title="One door, and it checks every time"
+  lede="Every read of clinical data in Pulse goes through a single query builder. A Clinician's role opens nothing by itself: the patient's consent is part of the SQL."
+  wide
+>
+  <div class="ce">
+    <div class="ce__text">
+      <p>
+        <code>accessible_entries(actor, patient_id)</code> returns a filter, not a result. Timelines, single entries,
+        analytics and document downloads all start from it. The enforcement lint checks for direct
+        <code>select(MedicalEntry)</code> calls outside the records repository. It guards a convention;
+        it is not a proof against every possible bypass.
+      </p>
+      <p>
+        Try this synthetic illustration. Change the consent and send the same request again. Revocation deletes the
+        permission row in the same transaction. Queries starting after that commit see the revocation;
+        an already-running query is not interrupted.
+      </p>
+    </div>
+
+    <div class="sim surface" data-sim>
+      <noscript><p>This illustration shows an active consent. Enable JavaScript to compare active, revoked and expired access.</p></noscript>
+      <div class="sim__controls">
+        <fieldset class="seg">
+          <legend>Patient's consent for Dr. Rao</legend>
+          <div class="seg__opts">
+            <label><input type="radio" name="consent" value="active" checked /> <span>Active</span></label>
+            <label><input type="radio" name="consent" value="revoked" /> <span>Revoked</span></label>
+            <label><input type="radio" name="consent" value="expired" /> <span>Expired</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="scope" data-scope>
+          <legend>Entry types the consent covers</legend>
+          <div class="scope__opts">
+            {kinds.map((k) => (
+              <label>
+                <input type="checkbox" name="scope" value={k.id} checked={k.id !== "CLINICAL_NOTE"} />
+                <span>{k.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <button class="btn btn-primary sim__send" type="button" data-send>
+          Send request as Dr. Rao
+        </button>
+      </div>
+
+      <div class="sim__run">
+        <p class="sim__req"><code>GET /api/v1/patients/7f3c…/entries</code></p>
+        <ol class="pipe" data-pipe>
+          <li data-node><span class="pipe__name">Route</span><code>requires(RECORDS_READ)</code></li>
+          <li data-node><span class="pipe__name">Service</span><code>resolve_patient_access</code></li>
+          <li data-node><span class="pipe__name">Query builder</span><code>accessible_entries()</code></li>
+          <li data-node><span class="pipe__name">PostgreSQL</span><code>WHERE … consent predicate</code></li>
+        </ol>
+
+        <div class="result" data-result aria-live="polite">
+          <p class="result__status" data-status>HTTP 200, 4 entries</p>
+          <ul class="result__entries" data-entries>
+            {kinds.map((k) => (
+              <li data-kind={k.id} hidden={k.id === "CLINICAL_NOTE"}>
+                <span>{k.label}</span> {k.text}
+              </li>
+            ))}
+          </ul>
+          <pre class="result__err" data-err hidden>{`{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Patient not found.",
+    "requestId": "c1d2…"
+  }
+}`}</pre>
+        </div>
+
+        <div class="audit">
+          <p class="audit__title">Server audit events</p>
+          <p class="audit__note">Denied reads carry no Patient link, so they do not appear in the Patient's audit view.</p>
+          <ol class="audit__log" data-audit>
+            <li class="audit__row">
+              <span class="tag tag--ok">ENTRY_VIEWED</span> Clinician, 4 entries, inside consent
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ce__rules" data-stagger>
+    <div>
+      <h3>404, never 403</h3>
+      <p>
+        A denied read looks exactly like a patient who does not exist. A 403 would confirm that the person is a Pulse
+        patient at all.
+      </p>
+    </div>
+    <div>
+      <h3>Scoped, then timed</h3>
+      <p>
+        A consent names a Clinician, a set of entry types and an optional date window, and expires {consent.minDays} to
+        {consent.maxDays} days after it is granted. Granting needs a fresh password check; revoking deliberately does not.
+      </p>
+    </div>
+    <div>
+      <h3>One event per access</h3>
+      <p>
+        A 50-entry timeline writes one <code>ENTRY_VIEWED</code> describing the query, not 50 rows. A denied read writes
+        <code>ACCESS_DENIED</code>. No clinical value ever goes into the event.
+      </p>
+    </div>
+  </div>
+
+  <div class="ce__code">
+    <CodeBlock code={excerpt} lang="python" file="backend/app/modules/records/repository.py" lines="98-134" />
+    <p class="ce__more">
+      Why one builder instead of checks in each route: <a href={`${base}/guide/adr/0006-consent-enforced-by-one-query-builder`}>ADR-0006</a>.
+      Why consent goes to a person, not a hospital: <a href={`${base}/guide/adr/0010-consent-is-granted-to-individuals`}>ADR-0010</a>.
+    </p>
+  </div>
+</Chapter>
+
+<style>
+  .ce { display: grid; gap: 2.5rem; }
+  @media (min-width: 1000px) {
+    .ce { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: start; }
+    .ce__text { position: sticky; top: 96px; }
+  }
+  .ce__text p + p { margin-top: 1em; }
+
+  .sim { padding: clamp(1rem, 3vw, 1.75rem); display: grid; gap: 1.5rem; }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend { font-weight: 500; font-size: 0.92rem; margin-bottom: 0.6rem; }
+  .sim__controls { display: grid; gap: 1.25rem; }
+
+  .seg__opts, .scope__opts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .seg label, .scope label { position: relative; }
+  .seg input, .scope input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .seg span, .scope span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0.4rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    font-size: 0.9rem;
+    transition: background-color 160ms, color 160ms, border-color 160ms;
+  }
+  .seg input:checked + span { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+  .scope input:checked + span { background: var(--primary-soft); border-color: color-mix(in oklch, var(--primary) 35%, transparent); }
+  .scope input:checked + span::before { content: "✓"; font-size: 0.8em; }
+  .seg input:focus-visible + span, .scope input:focus-visible + span { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .scope[disabled] { opacity: 0.45; }
+  .sim__send { justify-self: start; }
+
+  .sim__run { display: grid; gap: 1rem; min-width: 0; }
+  .sim__req { font-size: 0.85rem; }
+  .pipe {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    position: relative;
+  }
+  .pipe li {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.7rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--background);
+    font-size: 0.78rem;
+    min-width: 0;
+    transition: border-color 200ms, background-color 200ms, transform 200ms var(--ease-out);
+  }
+  .pipe li code { font-size: 0.72rem; overflow-wrap: anywhere; background: none; border: 0; padding: 0; }
+  .pipe__name { font-weight: 700; font-size: 0.82rem; }
+  .pipe li.is-hot { border-color: var(--primary); background: var(--primary-soft); transform: translateY(-2px); }
+  @media (max-width: 640px) {
+    .pipe { grid-template-columns: 1fr 1fr; }
+  }
+
+  .result {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 0.9rem 1rem;
+    min-height: 168px;
+    background: var(--background);
+  }
+  .result__status { font-weight: 700; font-size: 0.92rem; }
+  .result[data-state="ok"] .result__status { color: var(--consent-active); }
+  .result[data-state="denied"] .result__status { color: var(--audit-denied); }
+  .result__entries { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+  .result__entries li { font-size: 0.88rem; }
+  .result__entries li span { color: var(--primary); font-weight: 500; margin-right: 0.4rem; }
+  .result__entries li[hidden] { display: none; }
+  .result__err { margin: 0.6rem 0 0; font-size: 0.78rem; white-space: pre; overflow-x: auto; }
+
+  .audit__title { font-weight: 500; font-size: 0.88rem; margin-bottom: 0.4rem; }
+  .audit__note { font-size: 0.82rem; color: var(--muted-foreground); margin-bottom: 0.6rem; }
+  .audit__log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; max-height: 9.5rem; overflow: hidden; }
+  .audit__row { font-size: 0.82rem; color: var(--muted-foreground); display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .tag { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.08rem 0.45rem; border-radius: 6px; }
+  .tag--ok { color: var(--audit-normal); background: var(--muted); }
+  .tag--denied { color: var(--audit-denied); background: var(--audit-denied-surface); }
+
+  .ce__rules {
+    display: grid;
+    gap: 2rem;
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--border);
+  }
+  @media (min-width: 800px) { .ce__rules { grid-template-columns: repeat(3, 1fr); } }
+  .ce__rules h3 { font-size: var(--step-1); margin-bottom: 0.6rem; }
+  .ce__rules p { color: var(--muted-foreground); }
+
+  .ce__code { margin-top: 4rem; max-width: 820px; }
+  .ce__more { margin-top: 1rem; color: var(--muted-foreground); font-size: 0.95rem; }
+</style>
+
+<script>
+  import { gsap, reducedMotion } from "../scripts/motion";
+
+  const sim = document.querySelector<HTMLElement>("[data-sim]");
+  if (sim) {
+    const $ = <T extends Element>(s: string) => sim.querySelector<T>(s)!;
+    const scope = $("[data-scope]") as HTMLFieldSetElement;
+    const result = $("[data-result]") as HTMLElement;
+    const status = $("[data-status]") as HTMLElement;
+    const err = $("[data-err]") as HTMLElement;
+    const list = $("[data-entries]") as HTMLElement;
+    const audit = $("[data-audit]") as HTMLElement;
+    const nodes = [...sim.querySelectorAll<HTMLElement>("[data-node]")];
+    const send = $("[data-send]") as HTMLButtonElement;
+
+    const read = () => {
+      const state = (sim.querySelector<HTMLInputElement>("input[name=consent]:checked")?.value ?? "active");
+      const types = [...sim.querySelectorAll<HTMLInputElement>("input[name=scope]:checked")].map((i) => i.value);
+      return { state, types };
+    };
+
+    const sync = () => {
+      const { state, types } = read();
+      scope.disabled = state !== "active";
+      // The real ConsentCreate schema rejects an empty entry-type list.
+      scope.querySelectorAll<HTMLInputElement>("input").forEach((input) => {
+        input.disabled = types.length === 1 && input.checked;
+      });
+    };
+    sim.addEventListener("change", sync);
+    sync();
+
+    const render = () => {
+      const { state, types } = read();
+      const allowed = state === "active" && types.length > 0;
+      result.dataset.state = allowed ? "ok" : "denied";
+      err.hidden = allowed;
+      list.hidden = !allowed;
+      list.querySelectorAll<HTMLElement>("li").forEach((li) => (li.hidden = !types.includes(li.dataset.kind!)));
+      status.textContent = allowed
+        ? `HTTP 200, ${types.length} ${types.length === 1 ? "entry" : "entries"}`
+        : "HTTP 404, indistinguishable from a patient who does not exist";
+
+      const row = document.createElement("li");
+      row.className = "audit__row";
+      const why = state === "revoked" ? "consent revoked" : state === "expired" ? "consent expired" : "nothing in scope";
+      row.innerHTML = allowed
+        ? `<span class="tag tag--ok">ENTRY_VIEWED</span> Clinician, ${types.length} entries, inside consent`
+        : `<span class="tag tag--denied">ACCESS_DENIED</span> Clinician, ${why}`;
+      audit.prepend(row);
+      if (!reducedMotion()) gsap.from(row, { opacity: 0, y: -8, duration: 0.4, ease: "power2.out" });
+    };
+
+    send.addEventListener("click", () => {
+      if (reducedMotion()) return render();
+      send.disabled = true;
+      const tl = gsap.timeline({ onComplete: () => { send.disabled = false; } });
+      nodes.forEach((n, i) => {
+        tl.call(() => n.classList.add("is-hot"), [], i * 0.22);
+        tl.call(() => n.classList.remove("is-hot"), [], i * 0.22 + 0.3);
+      });
+      tl.call(render, [], nodes.length * 0.22 + 0.1);
+      tl.from(result, { opacity: 0.4, duration: 0.3 }, nodes.length * 0.22 + 0.1);
+    });
+  }
+</script>

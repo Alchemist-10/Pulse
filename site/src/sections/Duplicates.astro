@@ -1,0 +1,77 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import { dedup, blob } from "../data/facts";
+import { reviewPairs } from "../data/story-c";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Chapter id="duplicates" n={10} title="A match becomes a question for a person" lede="Duplicate detection compares Patient identities and creates a review item. It never merges automatically, because a wrong merge can attach one person's medical history to another." wide>
+  <div class="dupe">
+    <div class="dupe__intro">
+      <p>Candidate blocking uses a trigram-name hit, shared birth year or matching phone. A shortlisted pair is scored with name similarity, date-of-birth similarity and phone equality, weighted {dedup.weights.name}, {dedup.weights.dob} and {dedup.weights.phone}. Scores at or above {dedup.threshold} enter the review queue.</p>
+      <p>Names are lowercased, punctuation is split, and tokens are sorted before padded-trigram similarity is measured. That lets regional name-order differences surface for review.</p>
+      <p>The seeded examples below are entirely synthetic. Select one to see the same scoring rule used by the backend. A score suggests review; an Administrator makes the decision.</p>
+      <a href={`${base}/guide/adr/0011-merges-are-human-only-and-reversible`}>Why merge decisions must be human and reversible</a>
+    </div>
+    <div class="dupe__capture"><Screenshot name="admin-duplicates-desktop" alt="Administrator duplicate review queue showing identity fields and entry counts, without clinical contents" url="/en/admin/duplicates" /></div>
+    <div class="dupe__admin"><Screenshot name="admin-desktop" alt="Administrator dashboard with operational counts and a route to duplicate review" url="/en/admin" /><p>Duplicate detection runs on the seeded Patients at first boot. Pending candidates are ordered by score. The two planted sibling near-misses fall below the threshold, so they test precision without entering the queue.</p></div>
+    <div class="dupe__demo" data-duplicate-demo>
+      <div class="dupe__choices" role="group" aria-label="Synthetic duplicate review examples">
+        {reviewPairs.map((pair, index) => <button type="button" data-pair={index} aria-pressed={index === 0}>{pair.label}</button>)}
+      </div>
+      <div class="dupe__result" aria-live="polite">
+        <p class="dupe__synthetic">Synthetic seed identities</p>
+        <div class="dupe__people">
+          <div><span>Patient A</span><strong data-a-name>{reviewPairs[0].a.name}</strong><small data-a-meta>{reviewPairs[0].a.dob} / {reviewPairs[0].a.phone}</small></div>
+          <div><span>Patient B</span><strong data-b-name>{reviewPairs[0].b.name}</strong><small data-b-meta>{reviewPairs[0].b.dob} / {reviewPairs[0].b.phone}</small></div>
+        </div>
+        <div class="dupe__score"><div><span>Similarity</span><strong data-score>1.000</strong></div><div><span>Queue threshold</span><strong>{dedup.threshold.toFixed(3)}</strong></div><p data-decision>Candidate for human review</p></div>
+        <p data-expectation>{reviewPairs[0].expectation}. The match does not merge these Patients.</p>
+      </div>
+    </div>
+    <div class="dupe__limits">
+      <h3>What the queue exposes</h3>
+      <p>The Administrator sees names, date of birth, phone, claimed state and entry counts. Clinical contents stay outside this screen. The Administrator can mark a pair as not duplicate or choose which Patient identity survives a merge.</p>
+      <p>A merge is permitted only when the losing Patient is unclaimed and has no live grants, and neither identity is already merged. Pulse tombstones the losing identity and keeps a record of moved entries. An Administrator can reverse the merge; later conflicting changes can prevent reversal.</p>
+      <p><a href={blob("backend/app/modules/users/service.py")}>Scoring and review logic</a> / <a href={blob("backend/app/modules/admin/service.py")}>Admin identity projection</a> / <a href={`${base}/guide/domain-model#data-quality`}>Domain model</a></p>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  .dupe{display:grid;gap:2rem;align-items:start}.dupe__intro{max-width:68ch}.dupe__intro p+p{margin-top:1em}.dupe a{color:var(--primary)}
+  @media(min-width:950px){.dupe{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}.dupe__intro{position:sticky;top:6rem}.dupe__capture{grid-column:2}.dupe__admin{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.6fr);gap:2rem;align-items:center}}
+  .dupe__admin{display:grid;gap:1rem;align-items:center}.dupe__admin p{color:var(--muted-foreground);max-width:45ch}
+  .dupe__demo{grid-column:1/-1;display:grid;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:1rem}
+  @media(min-width:820px){.dupe__demo{grid-template-columns:minmax(190px,.55fr) minmax(0,1.45fr)}}
+  .dupe__choices{display:grid;align-content:start;border-bottom:1px solid var(--border)}@media(min-width:820px){.dupe__choices{border:0;border-right:1px solid var(--border)}}
+  .dupe__choices button{min-height:48px;padding:.7rem 1rem;border:0;border-bottom:1px solid var(--border);background:transparent;text-align:left;color:var(--foreground);font:inherit;cursor:pointer}
+  .dupe__choices button[aria-pressed="true"]{background:var(--card);box-shadow:inset 3px 0 var(--primary);font-weight:600}.dupe__choices button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
+  .dupe__result{padding:clamp(1rem,3vw,2rem);min-width:0}.dupe__synthetic{font:var(--step--1) var(--font-mono);color:var(--muted-foreground);margin-bottom:.8rem}
+  .dupe__people{display:grid;gap:.75rem}@media(min-width:600px){.dupe__people{grid-template-columns:1fr 1fr}}
+  .dupe__people>div{padding:.85rem;border:1px solid var(--border);background:var(--card);border-radius:var(--radius);min-width:0}.dupe__people span,.dupe__people small{display:block;color:var(--muted-foreground);font-size:var(--step--1)}.dupe__people strong{display:block;margin:.35rem 0;overflow-wrap:anywhere;font-size:var(--step-0)}
+  .dupe__score{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0;padding:1rem 0;border-block:1px solid var(--border)}.dupe__score>div{display:grid;gap:.2rem}.dupe__score span{color:var(--muted-foreground);font-size:var(--step--1)}.dupe__score strong{font:600 var(--step-1) var(--font-mono)}.dupe__score p{grid-column:1/-1;margin:0;color:var(--primary);font-weight:600}
+  .dupe__result [data-expectation]{color:var(--muted-foreground);font-size:var(--step--1)}.dupe__limits{grid-column:1/-1;max-width:74ch;margin-top:1.5rem}.dupe__limits h3{font-size:var(--step-1);margin-bottom:.5rem}.dupe__limits p{color:var(--muted-foreground);margin-top:.55rem}
+</style>
+
+<script>
+  import { reviewPairs } from "../data/story-c";
+  import { dedup } from "../data/facts";
+  const demo = document.querySelector<HTMLElement>("[data-duplicate-demo]");
+  if (demo) {
+    const buttons = [...demo.querySelectorAll<HTMLButtonElement>("[data-pair]")];
+    const render = (index: number) => {
+      const pair = reviewPairs[index];
+      buttons.forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
+      demo.querySelector("[data-a-name]")!.textContent = pair.a.name;
+      demo.querySelector("[data-a-meta]")!.textContent = `${pair.a.dob} / ${pair.a.phone}`;
+      demo.querySelector("[data-b-name]")!.textContent = pair.b.name;
+      demo.querySelector("[data-b-meta]")!.textContent = `${pair.b.dob} / ${pair.b.phone}`;
+      demo.querySelector("[data-score]")!.textContent = pair.score.toFixed(3);
+      demo.querySelector("[data-decision]")!.textContent = pair.score >= dedup.threshold ? "Candidate for human review" : "Below review threshold";
+      demo.querySelector("[data-expectation]")!.textContent = `${pair.expectation}. A score never merges these Patients.`;
+    };
+    buttons.forEach((button, index) => button.addEventListener("click", () => render(index)));
+  }
+</script>

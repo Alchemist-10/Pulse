@@ -1,8 +1,8 @@
 # Pulse Design System v1.1 — archived
 
-> This is a historical design proposal. The current burgundy material UI specification is [DESIGN.md](DESIGN.md), which supersedes the palette, surface, shadow, and glass restrictions below. Keep this file for decision history only.
+> This is a historical design proposal. The current burgundy material UI specification is [DESIGN.md](../../DESIGN.md), which supersedes the palette, surface, shadow, and glass restrictions below. Keep this file for decision history only.
 **Companion to Pulse SRS v1.1 and Pulse UML Diagrams v1.0**
-*Machine-readable reference. Every rule here is binding. Where this document and visual memory of "typical healthcare apps" disagree, this document wins. Where this document and the companion HTML preview disagree, this document wins — the HTML is a rendering of these tokens, not a second source of truth.*
+*Machine-readable reference, kept as decision history. The rules below were binding when written and are now superseded by DESIGN.md. The companion HTML preview was a rendering of these tokens, not a second source of truth.*
 
 **Changelog from v1.0:** replaced the type system (Fraunces → Faustina, Public Sans → Elms Sans) with rationale in §2.0; fixed five implementation-drift bugs (thread node size, display type scale, primary-button hover shadow, consent icon, provenance icon); added five previously-missing components (§5.9–§5.13); added §11 research grounding.
 

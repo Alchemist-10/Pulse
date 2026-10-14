@@ -1,0 +1,141 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import { localeCaptures, timelineLabels, clinicalExample } from "../data/story-d";
+import { stats, blob } from "../data/facts";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Chapter
+  id="locales"
+  n={15}
+  title="The interface changes language; clinical facts stay put"
+  lede="English, Hindi, Tamil and Malayalam have locale-prefixed routes and feature-based message catalogs. Diagnosis text, medication names and note text are shown exactly as recorded in every locale."
+  wide
+>
+  <div class="locale">
+    <div class="locale__principle">
+      <h3>Translate the controls around the record</h3>
+      <p>The selector below swaps between real seeded timeline captures. The page label changes with the chosen locale. The same synthetic Diagnosis remains visible in English because translating clinical content would create a new claim.</p>
+      <div class="locale__clinical" aria-label="Clinical content remains the same">
+        <span>Example Diagnosis in the synthetic demo</span>
+        <strong>{clinicalExample}</strong>
+      </div>
+      <p class="locale__route"><code>/en/timeline</code><code>/hi/timeline</code><code>/ta/timeline</code><code>/ml/timeline</code></p>
+      <p><a href={`${base}/guide/adr/0013-error-codes-not-messages`}>ADR-0013: machine-readable errors</a>. <a href={blob("docs/locale-review.md")}>Locale review record</a></p>
+    </div>
+
+    <div class="locale__demo" data-locale-demo data-labels={JSON.stringify(Object.fromEntries(timelineLabels.map(({ code, text }) => [code, text])))}>
+      <fieldset class="locale__selector">
+        <legend>Choose a captured timeline language</legend>
+        <div class="locale__buttons" role="group" aria-label="Timeline language">
+          {localeCaptures.map((capture, index) => (
+            <button type="button" data-locale-button={capture.code} aria-pressed={index === 0 ? "true" : "false"}>
+              {capture.name}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <p class="locale__live" aria-live="polite" data-locale-live>{timelineLabels[0].text}</p>
+      <div class="locale__screens">
+        {localeCaptures.map((capture) => (
+          <div data-locale-panel={capture.code}>
+            <Screenshot
+              name={capture.screen}
+              alt={`${capture.name} interface screenshot of a synthetic Patient timeline. Clinical content remains in its recorded language.`}
+              frame={capture.code === "en" ? "browser" : "phone"}
+              url={capture.url}
+            />
+          </div>
+        ))}
+      </div>
+      <noscript><p class="locale__noscript">All four captured pages are shown below. The language labels above describe the page in each locale.</p></noscript>
+    </div>
+
+    <div class="locale__implementation">
+      <div>
+        <h3>The routing protects the API boundary</h3>
+        <p>Locale paths are defined in the routing config. The middleware matcher excludes <code>/api</code>, because Caddy sends API requests to FastAPI on the same origin. Indian number and date formatting uses the platform's <code>Intl</code> conventions.</p>
+      </div>
+      <div class="locale__catalog">
+        <p><strong>{stats.locales} locales</strong><span>en, hi, ta, ml</span></p>
+        <p><strong>{stats.catalogFiles} message files per locale</strong><span>Feature namespaces keep translation edits apart.</span></p>
+        <p><strong>{stats.catalogKeys} leaf keys</strong><span>Automated key checks catch missing strings.</span></p>
+      </div>
+    </div>
+
+    <aside class="locale__review">
+      <span class="locale__flag" aria-hidden="true">!</span>
+      <div>
+        <h3>Translation quality is an open review item</h3>
+        <p>Hindi, Tamil and Malayalam catalogs were machine translated and consistency checked. No native speaker review is recorded. The build can verify keys; it cannot certify natural phrasing, clinical suitability or accessibility.</p>
+        <a href={`${base}/guide/locale-review`}>Read the specific review gaps</a>
+      </div>
+    </aside>
+  </div>
+</Chapter>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-locale-demo]");
+  if (root) {
+    const labels = JSON.parse(root.dataset.labels ?? "{}") as Record<string, string>;
+    const live = root.querySelector<HTMLElement>("[data-locale-live]");
+    root.querySelectorAll<HTMLElement>("[data-locale-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.localePanel !== "en";
+    });
+    root.dataset.enhanced = "true";
+    root.querySelectorAll<HTMLButtonElement>("[data-locale-button]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const locale = button.dataset.localeButton;
+        if (!locale) return;
+        root.querySelectorAll<HTMLElement>("[data-locale-panel]").forEach((panel) => {
+          panel.hidden = panel.dataset.localePanel !== locale;
+        });
+        root.querySelectorAll<HTMLButtonElement>("[data-locale-button]").forEach((item) => {
+          item.setAttribute("aria-pressed", String(item === button));
+        });
+        if (live) live.textContent = labels[locale] ?? labels.en;
+      });
+    });
+  }
+</script>
+
+<style>
+  .locale { display: grid; gap: clamp(3rem, 7vw, 5.5rem); }
+  .locale__principle { max-width: 68ch; }
+  .locale h3 { font-size: var(--step-2); margin-bottom: 0.75rem; }
+  .locale__principle > p { color: var(--muted-foreground); }
+  .locale__clinical { display: grid; gap: 0.25rem; margin: 1.5rem 0; padding: 1rem 1.2rem; border-left: 1px solid var(--primary); background: var(--primary-soft); border-radius: 0 var(--radius) var(--radius) 0; }
+  .locale__clinical span { color: var(--muted-foreground); font-size: var(--step--1); }
+  .locale__clinical strong { font-size: var(--step-1); }
+  .locale__route { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .locale__demo { display: grid; gap: 1rem; padding: clamp(1rem, 3vw, 2rem); background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.3); box-shadow: var(--shadow-card); }
+  .locale__selector { min-width: 0; padding: 0; margin: 0; border: 0; }
+  .locale__selector legend { margin-bottom: 0.6rem; font-size: var(--step--1); color: var(--muted-foreground); }
+  .locale__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .locale__buttons button { min-height: 44px; padding: 0.55rem 1rem; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }
+  .locale__buttons button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .locale__buttons button:hover { border-color: var(--primary); }
+  .locale__live { min-height: 1.6em; color: var(--primary); font-weight: 700; }
+  .locale__screens > div { max-width: 100%; }
+  .locale__screens > div[hidden] { display: none; }
+  .locale__screens :global(.shot) { max-width: 100%; }
+  .locale__implementation { display: grid; gap: 1.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+  .locale__implementation > div:first-child p { max-width: 60ch; color: var(--muted-foreground); }
+  .locale__catalog { display: grid; border-top: 1px solid var(--border); }
+  .locale__catalog p { display: grid; gap: 0.15rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .locale__catalog span { color: var(--muted-foreground); font-size: var(--step--1); }
+  .locale__review { display: grid; grid-template-columns: auto 1fr; gap: 1rem; padding: 1.4rem; border: 1px solid var(--border); border-radius: var(--radius); }
+  .locale__flag { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--audit-denied); background: var(--audit-denied-surface); font-weight: 700; }
+  .locale__review h3 { font-size: var(--step-1); }
+  .locale__review p { color: var(--muted-foreground); margin-bottom: 0.7rem; }
+  .locale__noscript { color: var(--muted-foreground); font-size: var(--step--1); }
+  @media (min-width: 900px) {
+    .locale__demo { grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr); align-items: start; }
+    .locale__selector, .locale__live { grid-column: 1; }
+    .locale__screens { grid-column: 2; grid-row: 1 / span 3; justify-self: center; width: 100%; }
+    .locale__screens [data-locale-panel="hi"], .locale__screens [data-locale-panel="ta"], .locale__screens [data-locale-panel="ml"] { max-width: 320px; margin-inline: auto; }
+    .locale__implementation { grid-template-columns: 1fr 1fr; gap: 3rem; }
+  }
+</style>

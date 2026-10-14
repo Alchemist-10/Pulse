@@ -4,9 +4,11 @@ A lifelong electronic health record platform. Patients own their medical history
 
 Built for an Indian demographic, in English, Hindi, Tamil and Malayalam. An academic project — it never touches real patient data — held to real engineering practice.
 
+Project site: <https://moneytosms.github.io/Pulse/> · Guide: <https://moneytosms.github.io/Pulse/guide/>
+
 ## Status
 
-**Records, consent and the demo portals are implemented.** The stack includes entry filing/corrections, persistent documents, scoped consent and emergency access, audit history, localized notifications, computed analytics and administrator duplicate review. See [`docs/verification-and-operations.md`](docs/verification-and-operations.md) for checks, operational limits and remaining product workflows.
+**Phases 0–4 and P4.5 packaging are complete; locale review is outstanding (Hindi, Tamil and Malayalam are unreviewed by native speakers, see [`docs/locale-review.md`](docs/locale-review.md)).** Records, consent and the demo portals are implemented. The stack includes entry filing/corrections, persistent documents, scoped consent and emergency access, audit history, localized notifications, computed analytics and administrator duplicate review. See [`docs/verification-and-operations.md`](docs/verification-and-operations.md) for checks, operational limits and remaining product workflows.
 
 | | |
 |---|---|
@@ -25,7 +27,7 @@ The whole system comes up on any machine with Docker:
 ```bash
 git clone https://github.com/moneytosms/Pulse.git
 cd Pulse
-docker compose up
+docker compose up --build -d --wait
 ```
 
 On first boot the backend runs migrations and seeds identity data. Then:
@@ -69,6 +71,6 @@ Work is sliced in [`docs/delivery-plan.md`](docs/delivery-plan.md).
 
 ## Not in scope
 
-ABHA/ABDM live integration · real SMS or email delivery · DPDP certification · native mobile apps · FHIR export · OCR of uploaded documents · ML · multi-tenancy · Kubernetes.
+ABHA/ABDM live integration · real SMS delivery (email goes to Mailpit by default, with optional Gmail SMTP) · DPDP certification · native mobile apps · FHIR export · OCR of uploaded documents · ML · multi-tenancy · Kubernetes.
 
 The design is DPDP-shaped and takes ABDM's consent framework as inspiration. Neither is a compliance claim.

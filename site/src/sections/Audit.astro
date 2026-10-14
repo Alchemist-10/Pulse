@@ -1,0 +1,51 @@
+---
+import Chapter from "../components/Chapter.astro";
+import Screenshot from "../components/Screenshot.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { stats, blob } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const excerpt = sourceExcerpt("backend/app/modules/records/service.py", 140, 177);
+---
+
+<Chapter id="audit" n={7} title="A record read leaves an audit event" lede="Access transparency is part of the read path. A successful timeline request writes one event for the request, even when the page returns many Medical Entries." wide>
+  <div class="audit">
+    <div class="audit__top">
+      <div class="audit__text">
+        <p>The event records who acted, their role at the time, what resource they touched, when, and whether the request succeeded. The Patient sees a filtered projection: actor, action, time and entry type, without internal identifiers or clinical contents.</p>
+        <p>The app database role can insert and select audit rows. It has no update or delete grant, so immutability is enforced by PostgreSQL permissions.</p>
+        <p>A denied clinical read is also recorded server-side. Its event has no Patient link, so it does not appear in a Patient's audit view. This avoids exposing whether a denied identifier belongs to a Patient.</p>
+        <p>Metadata is kept to non-clinical fields by a typed shape and project rule. The break-glass justification is free text, so it still needs care not to include clinical details.</p>
+        <a href={`${base}/guide/adr/0008-audit-log-is-append-only-by-grant`}>Why append-only is a database rule</a>
+      </div>
+      <Screenshot name="audit-desktop" alt="Patient audit screen listing record views and consent events" url="/en/audit" />
+    </div>
+    <div class="audit__path">
+      <svg viewBox="0 0 980 214" role="img" aria-labelledby="audit-diagram-title" class="audit__svg">
+        <title id="audit-diagram-title">A service emits an audit event inside the request transaction, then the database permits inserts and reads only</title>
+        <defs><marker id="audit-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" class="arrow" /></marker></defs>
+        <g class="box"><rect x="12" y="68" width="210" height="82" rx="8"/><text x="117" y="100" text-anchor="middle">records.service</text><text x="117" y="126" text-anchor="middle" class="small">ENTRY_VIEWED</text></g>
+        <path d="M226 109H365" marker-end="url(#audit-arrow)" class="path" />
+        <g class="box"><rect x="376" y="68" width="220" height="82" rx="8"/><text x="486" y="100" text-anchor="middle">audit.service.emit()</text><text x="486" y="126" text-anchor="middle" class="small">explicit event write</text></g>
+        <path d="M600 109H738" marker-end="url(#audit-arrow)" class="path" />
+        <g class="box box--db"><rect x="748" y="50" width="220" height="118" rx="8"/><text x="858" y="87" text-anchor="middle">audit_event</text><text x="858" y="114" text-anchor="middle" class="small">GRANT: SELECT, INSERT</text><text x="858" y="141" text-anchor="middle" class="small">no UPDATE / no DELETE</text></g>
+        <text x="490" y="198" text-anchor="middle" class="caption">One event describes the access request, not one event per returned row.</text>
+      </svg>
+    </div>
+    <div class="audit__bottom">
+      <CodeBlock code={excerpt} lang="python" file="backend/app/modules/records/service.py" lines="140-177" />
+      <p><strong>{stats.auditActions} named audit actions.</strong> The event model captures actor, action, resource, outcome and request context. <a href={blob("backend/app/modules/audit/models.py")}>Audit model</a> / <a href={`${base}/guide/domain-model#audit`}>Audit fields and projection</a></p>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  .audit{display:grid;gap:clamp(3rem,7vw,5rem)}.audit__top{display:grid;gap:2rem;align-items:start}
+  @media(min-width:950px){.audit__top{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}.audit__text{position:sticky;top:6rem}}
+  .audit__text p+p{margin-top:1em}.audit__text a,.audit__bottom a{color:var(--primary)}
+  .audit__path{padding:clamp(1rem,3vw,2rem);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto}
+  .audit__svg{width:100%;min-width:620px;height:auto;display:block}.audit__svg rect{fill:var(--background);stroke:var(--border);stroke-width:1.5}.audit__svg .box--db rect{stroke:var(--primary)}
+  .audit__svg text{fill:var(--foreground);font:500 16px var(--font-sans)}.audit__svg .small,.audit__svg .caption{fill:var(--muted-foreground);font-size:12px}.audit__svg .path{fill:none;stroke:var(--primary);stroke-width:2}.audit__svg .arrow{fill:var(--primary)}
+  .audit__bottom{display:grid;gap:1.5rem;align-items:start}.audit__bottom p{max-width:55ch;color:var(--muted-foreground)}.audit__bottom strong{color:var(--foreground)}
+  @media(min-width:900px){.audit__bottom{grid-template-columns:minmax(0,1.2fr) minmax(220px,.8fr)}}
+</style>

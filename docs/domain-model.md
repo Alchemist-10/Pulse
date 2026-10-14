@@ -11,11 +11,12 @@ Supersedes `docs/archive/core_schema_rough.md`. Where the two disagree, this one
 ## Identity and people
 
 ```
-Role (1) ──< (N) User
 User (0..1) ──── (1) Patient
 User (0..1) ──── (1) Provider Staff
 Provider (1) ──< (N) Provider Staff
 ```
+
+Role is an enum column on `user`, not an entity.
 
 **Patient is the aggregate root for everything clinical.** All medical data hangs beneath a Patient. There is no separate "Patient Record" entity — see [ADR-0002](./adr/0002-patient-is-the-aggregate-root.md).
 
@@ -86,11 +87,12 @@ This replaces the unspecified "Version Information" field in the original rough 
 
 | Index | Serves |
 |---|---|
-| `medical_entry (patient_id, occurred_at DESC)` | the patient timeline |
-| `medical_entry (patient_id, entry_type, occurred_at DESC)` | type-filtered views |
+| `medical_entry (patient_id, occurred_at)` | the patient timeline |
+| `medical_entry (patient_id, entry_type, occurred_at)` | type-filtered views |
 | `lab_report (code_system, code)` | "show all HbA1c results" |
 | `diagnosis (code_system, code)` | "show diabetes history" |
 | `prescription (medication_name)` | "show current medications" |
+| `medical_entry (superseded_by_id)` (`ix_medical_entry_superseded_by`, migration 0009) | correction-chain lookups |
 
 ### Reading entries
 
@@ -132,11 +134,11 @@ patient (1) ──< (N) consent ──── (1) access_permission
 | `expires_at` | **mandatory** |
 | `granted_at`, `revoked_at`, `revocation_reason` | lifecycle |
 
-Consent rows are never deleted. Revoking stamps `revoked_at`; "did this patient ever agree to this?" must stay answerable.
+Consent rows are never deleted. Revoking stamps `consent.revoked_at` and deletes the `access_permission` row atomically; that delete is the no-cache mechanism. "Did this patient ever agree to this?" stays answerable because the consent row remains.
 
 **Grants are to individual Clinicians.** A patient can meaningfully agree that *Dr Meera Nair* may read their history. Nobody can meaningfully agree that *a hospital* may — that is four thousand people.
 
-**Expiry is mandatory**, default 30 days, maximum one year, renewable. A consent that never expires is one nobody revisits.
+**Expiry is mandatory**: 1 to 365 days from grant, with no default. Out of range returns `CONSENT_EXPIRY_OUT_OF_RANGE` (422). A consent that never expires is one nobody revisits.
 
 **Entry-type scoping is supported; per-entry selection is not.** "Share my lab reports but not my clinical notes" is one array filter. "Tick nine of your two hundred entries" is a UI nobody completes.
 
@@ -152,7 +154,7 @@ Five rules, in order; anything unmatched is denied.
 
 ### Break-glass
 
-Emergency access without consent. Requires a written clinical justification, expires after 60 minutes, writes a `CRITICAL` audit event, and notifies the Patient immediately. The answer to abuse is not prevention — it is that everyone knows within seconds.
+Emergency access without consent. Requires a written clinical justification and expires after 60 minutes. It is unscoped and not revocable. Each grant is recorded in `break_glass_access(patient_id, clinician_user_id, justification, granted_at, expires_at)`, which is `INSERT`/`SELECT` only, and emits a `BREAK_GLASS_ACCESS` audit action (there is no severity column). Requests are throttled to 5 per minute. The Patient is notified if registered, and sees a banner for 72 hours. The answer to abuse is not prevention — it is that everyone knows within seconds.
 
 ### Enforcement
 
@@ -186,7 +188,7 @@ user (1) ──< (N) audit_event
 
 **No clinical data in `metadata`. Ever.** Not a diagnosis name, not a lab value, not a note excerpt. Logging the contents of a viewed record would create a second copy of the medical record outside consent enforcement, readable by anyone who can read audit logs — undoing every access control in the project. Metadata holds identifiers, counts, entry types, and the break-glass justification.
 
-This rule is also what makes [ADR-0007](./adr/0007-administrators-cannot-read-clinical-data.md) true: administrators can read the full audit log precisely because it contains no clinical content.
+Metadata is clinical-free by construction: it is a closed `AuditMetadata` type. Administrators have no audit read endpoint (see [ADR-0007](./adr/0007-administrators-cannot-read-clinical-data.md)); `GET /audit-events` requires `AUDIT_READ_SELF`, which only Patients hold.
 
 **Events are emitted explicitly in the service layer**, not via ORM hooks. The most important audit events are *reads*, and a read produces no database write for a hook to fire on — `ENTRY_VIEWED` would have been invisible. The read path is narrow because every read composes from `accessible_entries`, so coverage is tractable.
 
@@ -200,7 +202,7 @@ Patients see a filtered projection: clinician name and provider, action, timesta
 
 **There is no `summary_insight` table.** Analytics are computed on read, through `accessible_entries`. See [ADR-0009](./adr/0009-analytics-computed-on-read.md).
 
-Series for v1: lab trends per test code, vital sign trends, visit frequency by month, active medications over time, and provider upload counts.
+Series for v1: lab trends per test code, visit frequency by month, active medications over time, and provider upload counts. Lab and vital trends share `lab-trend` (vitals are LOINC observations stored in `lab_report`). The six endpoints under `/api/v1/patients/{id}/analytics/` are `lab-tests`, `lab-trend`, `visit-frequency`, `active-medications`, `provider-entry-counts` and `data-quality-flags`.
 
 Abnormality flagging compares a value against `reference_low` / `reference_high` **on its own row**, not against a central reference table — ranges are lab-specific and assay-specific, and a shared table would produce confidently wrong flags on historical data.
 
@@ -228,16 +230,22 @@ Preferences are per event type per channel. Mandatory events — break-glass, co
 ## Data quality
 
 ```
-patient (1) ──< (N) data_quality_flag
 duplicate_review_item ──── two patient ids
 patient_merge ──── audit trail of a completed merge
 ```
+
+| Table | Columns |
+|---|---|
+| `duplicate_review_item` | `patient_id_a`, `patient_id_b` (unique pair), `score`, `status` (`PENDING` / `MERGED` / `NOT_DUPLICATE`), `decided_at`, `decided_by_user_id` |
+| `patient_merge` | `winner`, `loser`, `actor`, `occurred_at`, `reversed_at`, `moved_entry_ids` (JSONB) |
+
+`patient.merged_into_id` tombstones the loser. A GIN trigram index on `patient.full_name` serves blocking (migration 0008).
 
 ### Duplicate detection
 
 Deduplication is over **Patient identities**, not entries. The realistic case is two Providers each creating an unclaimed Patient for the same walk-in.
 
-Scoring uses `pg_trgm`: trigram similarity on a normalised name (0.5), date of birth with transposition tolerance (0.3), phone (0.2).
+Scoring uses `pg_trgm`: trigram similarity on a normalised name (0.5), date of birth with transposition tolerance (0.3), phone (0.2). The candidate threshold is 0.5.
 
 **Name normalisation sorts tokens.** Indian naming conventions place the given name first in some regions and last in others, so "Menon Ramesh" and "Ramesh Menon" are the same person and must not score as unrelated.
 
@@ -251,7 +259,13 @@ Human-only, reversible, tombstoned. See [ADR-0011](./adr/0011-merges-are-human-o
 
 ### Flags
 
-`MISSING_DOB` · `MISSING_CONTACT` · `FUTURE_DATED_ENTRY` · `IMPLAUSIBLE_DOB` · `UNCLAIMED_LONG_LIVED`
+There is no flag table; flags are computed on read:
+
+- `MISSING_DOB`
+- `IMPLAUSIBLE_DOB`: date of birth more than 130 years ago
+- `MISSING_CONTACT`: phone is null
+- `UNCLAIMED_LONG_LIVED`: unclaimed for more than 365 days
+- `FUTURE_DATED_ENTRY`
 
 Informational. They never block anything.
 

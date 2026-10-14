@@ -7,10 +7,7 @@ after each step) see [`docs/demo.md`](docs/demo.md) — this
 document is the flatter reference: every field, every button, every seeded
 value, in one place.
 
-Checked against the tree at commit `f3c15f2` (2026-09-15). The seeded
-Administrator (`admin0@example.com`) landed in that commit — this doc does
-**not** carry the old "promote a user by hand" workaround that
-`docs/demo.md` still documents as a known gap; that gap is closed.
+Checked against the tree on 2026-10-14.
 
 ## 1. Prerequisites
 
@@ -113,9 +110,11 @@ already has seed history, unlike a brand-new signup.
 ### 5.3 File a Medical Entry — `/en/timeline/new`
 
 Only **Provider staff** can file (`RECORDS_WRITE`); a Patient gets 403.
-Log in as `staff000@example.com`, open **Patients**, paste the Patient ID,
-"Open record", then **File new entry** — the form arrives with the Patient
-ID prefilled.
+Log in as `staff000@example.com`, land on `/en/clinician`, paste the
+Patient ID into the Patient ID box to open `/en/patients/{id}/records`
+(there is no "Patients" page), then **File new entry** — the form arrives
+with the Patient ID prefilled. Staff can file for any existing Patient ID,
+but the record view lists only entries their own provider authored.
 
 Field set changes based on **Entry type**; here's what to fill for each:
 
@@ -210,10 +209,10 @@ zero clinical data on this screen or any admin screen, by construction
 
 ### 5.12 Duplicate review — `/en/admin/duplicates`
 
-Still as Administrator. Seeded planted pairs
-(`seed/data/identity/planted_pairs.csv`) populate the queue: 3 true
-duplicates (token-order-swap, DOB-typo, initials-vs-expanded variants)
-plus 2 near-miss siblings that should **not** merge. If empty, an earlier
+Still as Administrator. First-boot detection queues the seeded planted
+pairs (`seed/data/identity/planted_pairs.csv`): 3 true duplicates
+(token-order-swap, DOB-typo, initials-vs-expanded variants). The 2 planted
+near-miss siblings score below the 0.5 threshold and are **not** queued. If empty, an earlier
 session already reviewed everything — that's expected, say so rather than
 treating it as broken. "Merge" is reversible: every unreversed merge, by any
 administrator, is listed under "Reversible merges" with a "Reverse merge"
@@ -228,10 +227,13 @@ no free-text input to fill.
 
 ```bash
 cd backend
-uv run pytest -q                              # 205 tests, needs Docker (testcontainers: real Postgres + Redis)
+uv sync --frozen --group dev
+uv run python scripts/generate_api.py --check
+uv run pytest -q                              # the backend suite, needs Docker (testcontainers: real Postgres + Redis)
 uv run ruff check .
 uv run mypy .
 uv run python scripts/lint_cross_module_imports.py
+uv run python scripts/lint_module_sql.py
 uv run python scripts/lint_entry_query.py
 uv run python scripts/lint_actor_first.py
 uv run python scripts/stub_inventory.py       # should report 0 — no @stub endpoints remain
@@ -242,6 +244,7 @@ uv run python scripts/stub_inventory.py       # should report 0 — no @stub end
 ```bash
 cd frontend
 npm ci
+npm run check:locales
 npm run lint
 npx tsc --noEmit
 npm run build
@@ -249,11 +252,11 @@ npm run build
 
 ```bash
 npx playwright install --with-deps chromium   # once
-npx playwright test                            # 23 e2e specs, fully mocked — no running stack needed
+npx playwright test                            # the mocked Playwright suite (13 spec files), no running stack needed
 ```
 
 Locale switching works on every screen above — swap the path prefix
-(`/en` ↔ `/hi` ↔ `/ta` ↔ `/ml`). Tamil and Malayalam have **not** had a
+(`/en` ↔ `/hi` ↔ `/ta` ↔ `/ml`). Hindi, Tamil and Malayalam have **not** had a
 native-speaker review pass yet (`docs/locale-review.md`) — expect
 possible awkward phrasing there, not missing strings (missing keys throw
 in dev/CI, never silently fall back outside production).
@@ -275,4 +278,4 @@ docker compose down -v         # stop AND wipe the volume — next `up` reseeds 
 - No patient search/picker UI — every screen that needs a Patient ID
   (timeline/new, consent/new) takes it as a plain text field. Use the IDs
   in §4.
-- Tamil/Malayalam: machine-translated, unreviewed by a native speaker.
+- Hindi, Tamil and Malayalam: machine-translated, unreviewed by a native speaker.

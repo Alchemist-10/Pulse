@@ -2,6 +2,8 @@
 
 > These early options predate the current [burgundy material UI system](../DESIGN.md). The current document governs new frontend work.
 
+> **Outcome:** typography Option A (Noto) adopted. The colour section is superseded by the burgundy material theme in [`DESIGN.md`](../DESIGN.md).
+
 Typography and colour, researched and narrowed but **not chosen**. Choosing is the first task of the frontend slice, because screens are cheaper to judge than to describe.
 
 Everything below was verified on 2026-08-22 — font coverage by inspecting the actual woff2 binaries, contrast ratios by computing them. Where something could not be verified, it says so. Claims about which fonts cover which scripts are the ones most worth trusting here, because several widely repeated ones turned out to be wrong.
@@ -71,6 +73,8 @@ Whichever wins: **pin specific weights**. Requesting a full variable range inste
 
 ## Colour
 
+> **Superseded** by the burgundy material theme in [`DESIGN.md`](../DESIGN.md). Kept as history.
+
 ### Token source
 
 **Radix Colors**, not a hand-rolled Tailwind palette. Radix UI is already the component stack, the 12-step scales ship tuned light *and* dark variants, and Tailwind v4's CSS-first `@theme` maps them cleanly.
@@ -91,6 +95,8 @@ Of every accent tested, only **Iris** (5.37:1) and Plum (4.75:1) let white text 
 Direction (c) is the technical recommendation; (a) is the safe fallback if someone vetoes a non-blue clinical product. If Jade is wanted, note it beat Teal only because Teal 11 lands at 4.47:1 — a fail by a hair, but a fail.
 
 ### Semantic colours
+
+> **Superseded** (history only): see [`DESIGN.md`](../DESIGN.md).
 
 These carry meaning, so they need a redundant non-colour cue — colour alone is a WCAG 1.4.1 failure, and this is read by clinicians under time pressure on cheap screens.
 
@@ -127,6 +133,8 @@ Clinicians document on night shifts in dim rooms; patients check results at nigh
 Use the Radix dark ramp as intended: step 1 as the page, step 2 for cards, steps 3–4 for popovers, and step 12 (`#edeef0`) for body text rather than pure white.
 
 ### How the tokens ship
+
+> **Superseded** (history only): the shipped tokens are described in [`DESIGN.md`](../DESIGN.md).
 
 Two layers in one `tokens.css`: primitives (the raw Radix scales, referenced by nobody directly) and semantic aliases (`--color-critical`, `--color-consent-active`, `--color-superseded`) mapped into Tailwind's namespace via `@theme`. Components write `text-critical`, never a hex and never `red-500`.
 

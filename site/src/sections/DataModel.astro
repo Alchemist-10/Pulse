@@ -1,0 +1,55 @@
+---
+import Chapter from "../components/Chapter.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import { sourceExcerpt } from "../lib/source";
+import { entryKinds, blob } from "../data/facts";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const excerpt = sourceExcerpt("backend/app/modules/records/models.py", 49, 94);
+---
+
+<Chapter id="data-model" n={8} title="One entry trunk, five typed branches" lede="Patient is the aggregate root. Each Medical Entry has a shared identity and timeline fields, then exactly one subtype table stores the fields for its kind." wide>
+  <div class="model">
+    <p class="model__intro">Joined-table inheritance keeps common fields together while typed columns remain queryable. A subtype row uses the same primary key as its row in <code>medical_entry</code>. Each entry can have multiple Medical Documents in a separate metadata table; their bytes live behind the storage adapter.</p>
+    <div class="model__diagram-wrap" tabindex="0" aria-label="Scrollable data model diagram">
+      <svg class="model__diagram" viewBox="0 0 940 460" role="img" aria-labelledby="model-title model-desc">
+        <title id="model-title">Patient and Medical Entry joined-table inheritance</title>
+        <desc id="model-desc">Patient has many Medical Entry rows. Each row connects to exactly one of five subtype tables. Medical Document rows attach to an entry.</desc>
+        <defs><marker id="model-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" class="arrow"/></marker></defs>
+        <g class="node node--root"><rect x="342" y="22" width="256" height="66" rx="8"/><text x="470" y="50" text-anchor="middle">patient</text><text x="470" y="72" text-anchor="middle" class="small">aggregate root / 1 → many</text></g>
+        <path d="M470 90V133" class="edge" marker-end="url(#model-arrow)"/>
+        <g class="node node--trunk"><rect x="292" y="145" width="356" height="106" rx="8"/><text x="470" y="176" text-anchor="middle">medical_entry</text><text x="470" y="203" text-anchor="middle" class="small">id / patient_id / entry_type</text><text x="470" y="226" text-anchor="middle" class="small">occurred_at / recorded_at / superseded_by_id</text></g>
+        <path d="M470 254V278M94 278H846M94 278V302M282 278V302M470 278V302M658 278V302M846 278V302" class="edge"/>
+        {entryKinds.map((kind, index) => {
+          const x = 14 + index * 188;
+          return <g class="node"><rect x={x} y="306" width="160" height="96" rx="8"/><text x={x + 80} y="336" text-anchor="middle">{kind.table}</text><text x={x + 80} y="364" text-anchor="middle" class="small">{kind.kind.toLowerCase()}</text><text x={x + 80} y="387" text-anchor="middle" class="small">entry-specific fields</text></g>;
+        })}
+        <path d="M648 198H790V422" class="edge" marker-end="url(#model-arrow)"/>
+        <g class="node node--doc"><rect x="700" y="408" width="220" height="46" rx="8"/><text x="810" y="437" text-anchor="middle">medical_document metadata</text></g>
+      </svg>
+    </div>
+    <div class="model__details">
+      <div class="model__kinds">
+        <h3>Subtype fields stay typed</h3>
+        <dl>{entryKinds.map((kind) => <div><dt>{kind.kind.replaceAll("_", " ")}</dt><dd><code>{kind.table}</code><br />{kind.columns.join(" / ")}</dd></div>)}</dl>
+      </div>
+      <div class="model__rules">
+        <h3>Two boundaries protect meaning</h3>
+        <p><strong>Clinical fields are not metadata.</strong> The entry JSONB column holds provenance such as an import batch or source filename. Clinical values belong in typed subtype columns.</p>
+        <p><strong>Clinical time is not recorded time.</strong> The timeline uses <code>occurred_at</code>; <code>recorded_at</code> tells when the row entered Pulse.</p>
+        <p><strong>A Patient may be unclaimed.</strong> The Patient's User link is nullable, which lets Provider Staff file for someone before registration.</p>
+        <a href={`${base}/guide/adr/0001-medical-entry-joined-table-inheritance`}>Why joined tables</a> / <a href={blob("backend/app/modules/records/models.py")}>Model implementation</a>
+      </div>
+    </div>
+    <CodeBlock code={excerpt} lang="python" file="backend/app/modules/records/models.py" lines="49-94" />
+  </div>
+</Chapter>
+
+<style>
+  .model{display:grid;gap:2rem}.model__intro{max-width:72ch}.model__diagram-wrap{overflow-x:auto;overscroll-behavior-inline:contain;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);padding:1rem}
+  .model__diagram{display:block;width:100%;min-width:760px;height:auto}.model__diagram .node rect{fill:var(--background);stroke:var(--border);stroke-width:1.5}.model__diagram .node--root rect,.model__diagram .node--trunk rect{stroke:var(--primary)}
+  .model__diagram text{fill:var(--foreground);font:500 14px var(--font-sans)}.model__diagram .small{fill:var(--muted-foreground);font-size:11px}.model__diagram .edge{fill:none;stroke:var(--primary);stroke-width:1.7}.model__diagram .arrow{fill:var(--primary)}
+  .model__details{display:grid;gap:2.5rem}.model__details h3{font-size:var(--step-1);margin-bottom:.8rem}@media(min-width:850px){.model__details{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
+  .model__kinds dl{margin:0}.model__kinds dl>div{display:grid;grid-template-columns:minmax(105px,.5fr) minmax(0,1.5fr);gap:1rem;padding:.8rem 0;border-top:1px solid var(--border)}.model__kinds dl>div:last-child{border-bottom:1px solid var(--border)}
+  .model__kinds dt{font-weight:600}.model__kinds dd{margin:0;color:var(--muted-foreground);font-size:var(--step--1);overflow-wrap:anywhere}.model__kinds dd code{color:var(--foreground)}
+  .model__rules p{color:var(--muted-foreground);margin-bottom:.85rem}.model__rules strong{color:var(--foreground)}.model__rules a{color:var(--primary)}
+</style>
