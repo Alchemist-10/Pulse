@@ -161,7 +161,7 @@ const patM = await session("patient", PHONE);
   const p = patM.page;
   await p.goto("/en/timeline"); await shot(p, "timeline-phone");
   await p.goto(`/en/timeline/${entryId}`); await shot(p, "entry-detail-phone");
-  await p.goto("/en/profile"); await shot(p, "profile-phone");
+  await p.goto("/en/settings/profile"); await shot(p, "profile-phone");
   for (const [loc, nm] of [["hi", "timeline-hi-phone"], ["ta", "timeline-ta-phone"], ["ml", "timeline-ml-phone"]]) {
     await p.goto(`/${loc}/timeline`); await shot(p, nm);
   }
@@ -185,7 +185,6 @@ const patM = await session("patient", PHONE);
   await p.getByLabel("Clinician email").fill(EMAIL.clinician);
   await p.getByRole("combobox", { name: "Purpose" }).click();
   await p.getByRole("option", { name: "Treatment" }).click();
-  await p.locator('input[type="datetime-local"]').fill(new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 16));
   await p.getByRole("radio", { name: "All entry types", exact: true }).check();
   await shot(p, "consent-new-desktop", true);
   await p.getByRole("button", { name: "Review access", exact: true }).click();
@@ -195,6 +194,24 @@ const patM = await session("patient", PHONE);
   await p.getByRole("button", { name: "Grant access" }).click();
   await p.getByText("Access granted").waitFor();
   await patM.page.goto("/en/consent"); await shot(patM.page, "consent-list-phone");
+}
+
+// ---- D2. Patient writes the emergency card and makes a QR -----------------
+{
+  const p = patD.page;
+  await p.goto("/en/settings/emergency-card"); await settle(p);
+  await p.getByLabel("Blood type").fill("B+");
+  await p.getByLabel("Allergies").fill("Penicillin (rash)");
+  await p.getByLabel("Conditions").fill("Type 2 diabetes mellitus");
+  await p.getByLabel("Current medications").fill("Metformin 500 mg twice daily");
+  await p.getByLabel("Name").fill("Asha Rao");
+  await p.getByLabel("Relationship").fill("Spouse");
+  await p.getByLabel("Phone").fill("9000000000");
+  await p.getByRole("button", { name: "Save emergency card" }).click();
+  await p.getByText("Emergency card saved").waitFor();
+  await p.getByRole("button", { name: "Generate QR code" }).click();
+  await p.getByRole("img", { name: "QR code that opens your emergency card" }).waitFor();
+  await shot(p, "emergency-card-desktop", true);
 }
 
 // ---- E. Clinician reads, patient revokes, clinician denied + break-glass ---
@@ -224,8 +241,10 @@ const clin = await session("clinician");
   await p.getByText("Record not found").waitFor();
   await p.getByLabel("Justification").fill("Patient unconscious in the emergency department; consent cannot be obtained.");
   await shot(p, "clinician-denied-desktop", true);
-  await p.getByRole("button", { name: "Request emergency access" }).click();
-  await settle(p);
+  await p.getByRole("button", { name: "Open emergency card" }).click();
+  await p.getByText("Penicillin (rash)").waitFor();
+  await shot(p, "emergency-view-desktop");
+  await p.goto("/en/clinician/scan"); await shot(p, "clinician-scan-desktop");
 }
 
 // ---- F. Patient sees banner, notifications, audit --------------------------
