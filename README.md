@@ -50,7 +50,7 @@ Modules: `auth · users · patients · providers · records · consent · audit 
 
 ## Reading order
 
-Start with [`CONTEXT.md`](CONTEXT.md) — the glossary. Terms in this project mean specific things, and two distinctions carry the whole design: **Consent is not Permission**, and **the interface is localised, clinical data is not**.
+Start with the [`documentation index`](docs/README.md) to choose a reading path. For the product from a user's point of view, read the [end-to-end workflow map](docs/workflows/README.md). Then use [`CONTEXT.md`](CONTEXT.md) as the glossary. Terms in this project mean specific things, and two distinctions carry the whole design: **Consent is not Permission**, and **the interface is localised, clinical data is not**.
 
 Then [`docs/architecture.md`](docs/architecture.md) for how it is built, [`docs/domain-model.md`](docs/domain-model.md) for the entities, [`docs/api-conventions.md`](docs/api-conventions.md) for what every endpoint looks like, and [`docs/adr/`](docs/adr/) for the decisions that were expensive enough to write down.
 

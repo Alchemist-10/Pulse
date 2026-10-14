@@ -50,9 +50,9 @@ say while doing it.
 | Duplicate review, human-only merge, reversal | 14 |
 | Four locales; clinical content never translated | 15 |
 
-Not demonstrable in the UI: corrections. The backend supersedes entries
-and the entry detail screen shows "This entry corrects an earlier one.",
-but no screen files a correction. Mention it at step 3 instead of showing it.
+Corrections are demonstrable in the UI. As Provider Staff, open a filed
+entry's detail page and choose the correction action. Pulse creates a new
+entry that supersedes the original; it does not overwrite the original.
 
 ## Email verification: local Mailpit or Gmail SMTP
 
@@ -155,6 +155,9 @@ Keep the Patient ID above ready to paste. There is no patient search.
    *Say:* providers contribute records and patients own them; a Patient
    can't file clinical entries. Entries are never edited in place. A
    correction inserts a new entry and marks the old one superseded.
+   To demonstrate this, open the filed entry and use the correction action;
+   submit a changed value and show that the replacement links back to the
+   original. The original remains in the record history.
 
 4. **Timeline.** In the Patient window, go to `/en/timeline`. The new
    entry is on top. Show the entry-type filter and the "Critical" label on an abnormal lab.
