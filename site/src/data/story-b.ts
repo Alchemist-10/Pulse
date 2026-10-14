@@ -6,7 +6,7 @@ export const stages = [
   {
     state: "Consent recorded",
     permission: "Live permission: active",
-    note: "The Patient selects an individual Clinician, entry types, an optional clinical-date window, purpose and expiry.",
+    note: "The Patient selects an individual Clinician, entry types, an optional clinical-date window and purpose. Access lasts until revoked.",
   },
   // Record reads are filtered then audited: backend/app/modules/records/service.py:132-169.
   {

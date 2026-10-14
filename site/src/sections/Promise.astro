@@ -69,7 +69,7 @@ const clauses = [
         <h3>Clinicians read it only with the patient's consent</h3>
         <p>
           A role alone opens nothing. A Clinician reads a Patient's entries through a consent that names that Clinician,
-          limits the entry types and an optional date window, and expires within {consent.minDays} to {consent.maxDays} days. Consent goes to a person, never to a hospital, so agreeing to it can mean something.
+          limits the entry types and an optional date window, and lasts until the Patient revokes it. Consent goes to a person, never to a hospital, so agreeing to it can mean something.
         </p>
         <p>
           The check is part of the SQL, in one query builder every read goes through. A refused read returns 404, so a
@@ -77,7 +77,7 @@ const clauses = [
         </p>
         <p>
           There is one deliberate exception. A Clinician can request {consent.breakGlassMinutes}-minute emergency access
-          with a written reason, and the Patient is shown a banner on their timeline.
+          with a written reason. It opens only the Patient’s emergency card, never their records, and the Patient is notified.
         </p>
         <p class="how">
           <a href="#consent-engine">The consent engine, try it</a>

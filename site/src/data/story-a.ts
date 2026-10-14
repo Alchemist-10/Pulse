@@ -26,7 +26,9 @@ export const permissionGroups: { group: string; items: Perm[] }[] = [
       { id: "CONSENT_READ_SELF", label: "Review own consents", held: ["PATIENT"] },
       { id: "CONSENT_MANAGE_SELF", label: "Grant and revoke own consents", held: ["PATIENT"] },
       { id: "CONSENT_READ_GRANTED", label: "List patients whose consent names me", held: ["CLINICIAN"] },
-      { id: "BREAK_GLASS_REQUEST", label: "Request emergency access with a reason", held: ["CLINICIAN"] },
+      { id: "BREAK_GLASS_REQUEST", label: "Request emergency-card access with a reason", held: ["CLINICIAN"] },
+      { id: "EMERGENCY_CARD_MANAGE_SELF", label: "Edit own emergency card and QR", held: ["PATIENT"] },
+      { id: "EMERGENCY_CARD_VIEW", label: "View an emergency card by QR or break-glass", held: ["PATIENT", "CLINICIAN", "PROVIDER_STAFF"] },
     ],
   },
   {

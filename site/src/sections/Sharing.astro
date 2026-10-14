@@ -10,13 +10,13 @@ const labels = ["Patient chooses scope", "Clinician requests entries", "Patient 
 <Chapter id="sharing" n={5} title="Consent names a person and a limit" lede="A Clinician role alone reveals no Patient record. A Patient grants an individual Clinician access to selected entry types and a date window, for a set time." wide>
   <div class="share">
     <div class="share__visual">
-      <Screenshot name="consent-new-desktop" alt="Patient consent form selecting a Clinician, scope, purpose and expiry" url="/en/consent/new" />
+      <Screenshot name="consent-new-desktop" alt="Patient consent form selecting a Clinician, scope and purpose" url="/en/consent/new" />
       <div class="share__mini"><Screenshot name="clinician-denied-desktop" alt="Clinician record view after access has been revoked, showing not-found state" url="/en/patients/…/records" /></div>
       <div class="share__grant-shots"><Screenshot name="consent-list-phone" alt="Patient's list of existing consent grants" frame="phone" url="/en/consent" /><Screenshot name="consent-stepup-desktop" alt="Patient reviews the consent grant and confirms with password" url="/en/consent/new" /></div>
     </div>
     <div class="share__explain">
       <p>Consent is the Patient's agreement. Permission is the live system state derived from it. The distinction lets Pulse preserve the agreement while withdrawing access immediately.</p>
-      <p>Granting asks the Patient to confirm their password. Revoking does not add that friction. Expiry is required and must be between {consent.minDays} and {consent.maxDays} days out.</p>
+      <p>Granting asks the Patient to confirm their password. Revoking does not add that friction. Consent has no required expiry: it stays active until the Patient revokes it, and an optional history window limits which entries are shared.</p>
       <p>Try the sequence. It is a model of the backend state changes, not a request to the running application.</p>
       <a href={`${base}/guide/workflows#4-patient-shares-a-record-with-a-clinician`}>Read the sharing workflow</a>
     </div>
@@ -33,14 +33,15 @@ const labels = ["Patient chooses scope", "Clinician requests entries", "Patient 
   </div>
   <div class="share__emergency">
     <div><h3>Emergency access is a separate route</h3>
-      <p>If an authorized Clinician reaches a not-found patient-record page, they can request break-glass access with a written reason. This path is unscoped and expires after {consent.breakGlassMinutes} minutes. It is audited as <code>BREAK_GLASS_ACCESS</code>.</p>
+      <p>If an authorized Clinician reaches a not-found patient-record page, they can request break-glass access with a written reason. It opens only the Patient’s emergency card, never their records, and expires after {consent.breakGlassMinutes} minutes. It is audited as <code>BREAK_GLASS_ACCESS</code>.</p>
       <p>For a registered Patient, the system sends an immediate notification and shows a banner for {consent.breakGlassBannerHours} hours. The grant cannot be revoked early; it expires at its stated time.</p>
+      <p>The card is written by the Patient in Settings, field by field, and hidden fields are never sent. A QR code lets anyone signed in to Pulse open it; every view is audited and the Patient is notified.</p>
       <a href={`${base}/guide/workflows#5-patient-revokes-access-or-responds-to-an-emergency`}>See revocation and emergency access</a>
     </div>
     <div class="share__emergency-shots"><Screenshot name="clinician-home-desktop" alt="Clinician portal showing the list of currently consented Patients" url="/en/clinician" /><Screenshot name="clinician-records-desktop" alt="Clinician viewing entries inside an active consent scope" url="/en/patients/…/records" /><Screenshot name="breakglass-banner-phone" alt="Patient timeline with a banner announcing emergency access" frame="phone" url="/en/timeline" /></div>
   </div>
   <div class="share__notify">
-    <div><h3>Notifications follow the access event</h3><p>Revocation notifies the Clinician by email and writes an in-app row, although Clinicians have no notifications screen. Break-glass notifies a registered Patient by email and in-app. Those security notifications are mandatory.</p><p>Patients can set preferences for optional in-app events. The daily “records viewed” digest is computed when read. Granting consent sends no notification; its preference toggle currently has no effect.</p><p>Only the in-app channel is configurable in Patient preferences.</p></div>
+    <div><h3>Notifications follow the access event</h3><p>Revocation notifies the Clinician by email and writes an in-app row, although Clinicians have no notifications screen. Break-glass and emergency-card views notify a registered Patient by email and in-app. Those security notifications are mandatory.</p><p>Patients can set preferences for optional in-app events. The daily “records viewed” digest is computed when read. Granting consent sends no notification; its preference toggle currently has no effect.</p><p>Only the in-app channel is configurable in Patient preferences.</p></div>
     <Screenshot name="notifications-phone" alt="Patient notifications list with security and record activity notices" frame="phone" url="/en/notifications" />
   </div>
   <p class="share__source">The persisted Consent and derived AccessPermission are separate records. <a href={blob("backend/app/modules/consent/models.py")}>Model definitions</a> / <a href={`${base}/guide/adr/0010-consent-is-granted-to-individuals`}>ADR-0010</a></p>

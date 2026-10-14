@@ -7,22 +7,22 @@ export const blob = (p: string) => `${REPO}/blob/main/${p}`;
 export const tree = (p: string) => `${REPO}/tree/main/${p}`;
 
 export const stats = {
-  endpoints: 43, // 41 decorators in backend/app/modules/*/routes.py + 2 in app/main.py
-  modules: 10, // backend/app/modules/*
+  endpoints: 54, // decorators in backend/app/modules/*/routes.py + app/main.py
+  modules: 11, // backend/app/modules/*
   roles: 4, // app/core/authz.py:11-15
-  permissions: 16, // app/core/authz.py:18-63
+  permissions: 18, // app/core/authz.py:18-67
   entryKinds: 5, // app/modules/records/models.py:30-35 (EntryType)
   errorCodes: 21, // app/core/errors.py:8-33
-  auditActions: 18, // app/modules/audit/models.py:28-47
-  migrations: 9, // app/db/migrations/versions/0001..0009
-  adrs: 16, // docs/adr/0001..0016
+  auditActions: 19, // app/modules/audit/models.py:28-47
+  migrations: 10, // app/db/migrations/versions/0001..0010
+  adrs: 17, // docs/adr/0001..0017
   locales: 4, // frontend/src/i18n/routing.ts:5
-  catalogKeys: 540, // leaf keys per locale, frontend/src/i18n/messages/{en,hi,ta,ml}/*.json
-  catalogFiles: 14, // per locale
-  pages: 20, // frontend/src/app/[locale]/**/page.tsx
-  backendTests: 273, // `uv run pytest` after #69 (testcontainers Postgres + Redis)
-  e2eSpecs: 13, // frontend/e2e/*.spec.ts (mocked API)
-  e2eTests: 78, // `npx playwright test --list`
+  catalogKeys: 652, // leaf keys per locale, frontend/src/i18n/messages/{en,hi,ta,ml}/*.json
+  catalogFiles: 16, // per locale
+  pages: 29, // frontend/src/app/[locale]/**/page.tsx
+  backendTests: 285, // `uv run pytest` (testcontainers Postgres + Redis)
+  e2eSpecs: 14, // frontend/e2e/*.spec.ts (mocked API)
+  e2eTests: 79, // `npx playwright test --list`
   liveSpecs: 1, // frontend/e2e-live/demo-spine.live.spec.ts, real stack, no mocks
   ciLints: 4, // backend/scripts/lint_{cross_module_imports,module_sql,entry_query,actor_first}.py
   composeServices: 6, // compose.yaml
@@ -32,28 +32,28 @@ export const roles = [
   {
     id: "PATIENT",
     name: "Patient",
-    owns: "Owns the record. Reads their own timeline, grants and revokes consent, sees every access in their audit log, reads analytics and notifications.",
+    owns: "Owns the record. Reads their own timeline, grants and revokes consent, keeps an emergency card with a QR, sees every access in their audit log, reads analytics and notifications.",
     cannot: "Cannot file or edit clinical entries.",
-    permissions: 12,
+    permissions: 14,
   },
   {
     id: "PROVIDER_STAFF",
     name: "Provider Staff",
     owns: "Files Medical Entries for any existing Patient, including Patients who have never registered, attaches documents and files corrections.",
     cannot: "Can list only entries their own provider authored.",
-    permissions: 4,
+    permissions: 5,
   },
   {
     id: "CLINICIAN",
     name: "Clinician",
-    owns: "Reads a Patient's record only inside an active consent, filtered to its entry types, date window and expiry. Can request 60-minute emergency access with a written reason.",
+    owns: "Reads a Patient's record only inside an active consent, filtered to its entry types, date window and expiry. Can request 60-minute emergency-card access with a written reason, or scan a Patient’s QR.",
     cannot: "The role alone grants no clinical access at all.",
-    permissions: 5,
+    permissions: 6,
   },
   {
     id: "ADMINISTRATOR",
     name: "Administrator",
-    owns: "Reviews duplicate Patient candidates, merges them and reverses merges.",
+    owns: "Reviews duplicate Patient candidates, merges and reverses merges, and browses patient and user directories as identity and counts only.",
     cannot: "Cannot read clinical data on any endpoint, ever (ADR-0007). Holds no RECORDS_READ.",
     permissions: 4,
   },

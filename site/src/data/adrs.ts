@@ -119,6 +119,14 @@ export const adrGroups: AdrGroup[] = [
         overLabel: "Tightens", // 0016 "Supported merges and reversals", last paragraph
         consequence: "If the audit write fails, the read fails. Email still runs after the commit and is best effort, because guaranteed delivery would need a durable outbox.", // 0016 intro paragraph
       },
+      {
+        n: "0017",
+        slug: "adr/0017-emergency-card-replaces-break-glass-record-access",
+        claim: "Break-glass reveals only a Patient-written emergency card, not the record. A QR opens the same card for any signed-in user, audited each time.",
+        over: "Unscoped record access without consent for 60 minutes, which break-glass used to mean.",
+        overLabel: "Replaces", // 0017 intro paragraph
+        consequence: "A Clinician who needs records in an emergency still needs consent; the card carries what is safe to share without it.", // 0017 "Consequences"
+      },
     ],
   },
   {
