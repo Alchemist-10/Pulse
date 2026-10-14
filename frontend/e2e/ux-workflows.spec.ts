@@ -53,9 +53,6 @@ async function grantDetails(page: Page) {
     .fill("clinician@example.com");
   await page.getByRole("combobox", { name: "Purpose", exact: true }).click();
   await page.getByRole("option", { name: "Treatment", exact: true }).click();
-  await page
-    .getByLabel("Access expires", { exact: true })
-    .fill(expiry.slice(0, 16));
 }
 
 test("an untouched or empty selected scope cannot grant broad access", async ({
@@ -233,7 +230,7 @@ test("audit dates and actor filters remain applied on subsequent pages", async (
   await expect
     .poll(() => requests.at(-1)?.searchParams.get("until"))
     .toBe("2026-10-10T00:00:00.000Z");
-  await page.getByRole("button", { name: "Load more", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect
     .poll(() => requests.at(-1)?.searchParams.get("cursor"))
     .toBe("next-page");

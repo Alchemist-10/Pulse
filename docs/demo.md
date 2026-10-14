@@ -34,7 +34,7 @@ say while doing it.
 | Seeded logins, one per role | 2 |
 | Provider Staff files a Medical Entry (coded fields, document attachment) | 3 |
 | Timeline: chronological, filterable by type, label as well as colour | 4 |
-| Consent grant: one named clinician, scoped, mandatory expiry, step-up | 5 |
+| Consent grant: one named clinician, scoped, open-ended until revoked, step-up | 5 |
 | Clinician reads a record with consent | 6 |
 | "Who accessed my records" audit view | 7 |
 | Revoke with no step-up | 8 |
@@ -173,10 +173,10 @@ Keep the Patient ID above ready to paste. There is no patient search.
 5. **Grant consent.** Go to **Access**, "Grant access" (`/en/consent/new`). Enter
    `clinician0@example.com` as "Clinician email" and leave all "Entry
    types" unticked, which grants every type. Set "Purpose" to
-   "Treatment" and set "Access expires". Enter `Pulse@demo1` in "Confirm
+   "Treatment" (access stays on until revoked). Enter `Pulse@demo1` in "Confirm
    with your password" (step-up) and submit.
    *Say:* consent goes to one named clinician, never an organisation, it
-   always expires, and granting it asks for your password again.
+   lasts until you revoke it, and granting it asks for your password again.
    Also show that an email which is not a registered clinician gets
    "No clinician is registered with that email."
 

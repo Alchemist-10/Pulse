@@ -6,6 +6,7 @@ import { TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminDirectory } from "@/components/AdminDirectory";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Me } from "@/lib/auth";
@@ -82,6 +83,8 @@ export default function AdminDashboardPage() {
         <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
         <p className="text-pretty text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      <AdminDirectory />
 
       <Card>
         <CardHeader>

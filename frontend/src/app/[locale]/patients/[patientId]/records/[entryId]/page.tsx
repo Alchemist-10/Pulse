@@ -24,6 +24,8 @@ import { ClinicalText } from "@/components/ClinicalText";
 import { DocumentAttachmentForm } from "@/components/DocumentAttachmentForm";
 import { EntryStatus } from "@/components/EntryStatus";
 import { DocumentViewer } from "@/components/DocumentViewer";
+import { EntryPager } from "@/components/EntryPager";
+import { PatientSubNav } from "@/components/PatientSubNav";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { Me } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -142,6 +144,14 @@ export default function ClinicianEntryDetailPage({
 
   return (
     <section className="space-y-8 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+      <PatientSubNav
+        patientId={patientId}
+        active="records"
+        backFallback={`/patients/${patientId}/records`}
+      />
+      {state.status === "ready" && (
+        <EntryPager patientId={patientId} entryId={entryId} />
+      )}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

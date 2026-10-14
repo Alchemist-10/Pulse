@@ -78,7 +78,7 @@ export default function LoginPage() {
           ? "/admin"
           : me.role === "CLINICIAN" || me.role === "PROVIDER_STAFF"
             ? "/clinician"
-            : "/profile";
+            : "/settings/profile";
       router.push(destination);
     } catch (err) {
       setFormError(errorMessage(err));

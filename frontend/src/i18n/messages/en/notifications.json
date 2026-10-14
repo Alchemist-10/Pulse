@@ -23,7 +23,8 @@
       "CONSENT_REVOKED": "Consent revoked",
       "RECORD_UPLOADED": "Record uploaded",
       "BREAK_GLASS_ACCESS": "Emergency access",
-      "DAILY_DIGEST": "Activity since last check"
+      "DAILY_DIGEST": "Activity since last check",
+      "EMERGENCY_CARD_VIEWED": "Emergency card viewed"
     }
   },
   "preferences": {
@@ -46,12 +47,15 @@
     "CONSENT_REVOKED": "Consent was revoked. Access under that consent has ended.",
     "RECORD_UPLOADED": "A provider attached a document to your record.",
     "BREAK_GLASS_ACCESS": "A clinician used emergency access to your records without consent.",
-    "DAILY_DIGEST": "Your records were viewed {count, plural, one {# time} other {# times}} since your last check."
+    "DAILY_DIGEST": "Your records were viewed {count, plural, one {# time} other {# times}} since your last check.",
+    "EMERGENCY_CARD_VIEWED": "Someone opened your emergency card."
   },
   "preview": {
     "recent": "Recent activity",
     "unreadLabel": "Notifications, unread recent activity",
     "close": "Close notifications",
     "viewAll": "View all notifications"
-  }
+  },
+  "markAllRead": "Mark all as read",
+  "markAllReadDone": "All notifications marked as read"
 }

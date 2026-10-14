@@ -45,19 +45,35 @@ function mock(page: import("@playwright/test").Page, role: string) {
       });
     }
     if (url.pathname === `/api/v1/patients/${PATIENT_ID}/entries`) {
-      return granted ? json(200, { items: [ENTRY], nextCursor: null }) : json(404, notFound);
+      return json(404, notFound);
+    }
+    if (url.pathname === `/api/v1/patients/${PATIENT_ID}/emergency-card`) {
+      return granted
+        ? json(200, {
+            patientId: PATIENT_ID,
+            patientName: "Synthetic Patient",
+            bloodType: "O+",
+            allergies: "Penicillin",
+            conditions: null,
+            medications: null,
+            nextOfKinName: null,
+            nextOfKinPhone: null,
+            nextOfKinRelation: null,
+            notes: null,
+          })
+        : json(404, notFound);
     }
     return json(404, notFound);
   });
   return { justification: () => justification };
 }
 
-test("clinician requests emergency access after a 404 and then reads the record", async ({ page }) => {
+test("clinician requests emergency access after a 404 and then sees only the emergency card", async ({ page }) => {
   const state = mock(page, "CLINICIAN");
   await page.goto(`/en/patients/${PATIENT_ID}/records`);
 
   await expect(page.getByText("We could not find that record.")).toBeVisible();
-  const submit = page.getByRole("button", { name: "Request emergency access" });
+  const submit = page.getByRole("button", { name: "Open emergency card" });
   await submit.click();
   await expect(page.getByText("Enter a justification.")).toBeVisible();
   expect(state.justification()).toBeNull();
@@ -65,7 +81,8 @@ test("clinician requests emergency access after a 404 and then reads the record"
   await page.getByLabel("Justification").fill("Unconscious in ED, no consent possible");
   await submit.click();
 
-  await expect(page.getByText("Acute asthma")).toBeVisible();
+  await expect(page.getByText("Penicillin")).toBeVisible();
+  await expect(page.getByText("Acute asthma")).toHaveCount(0);
   expect(state.justification()).toBe("Unconscious in ED, no consent possible");
 });
 
@@ -74,5 +91,5 @@ test("provider staff never see the emergency access form", async ({ page }) => {
   await page.goto(`/en/patients/${PATIENT_ID}/records`);
 
   await expect(page.getByText("We could not find that record.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Request emergency access" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open emergency card" })).toHaveCount(0);
 });

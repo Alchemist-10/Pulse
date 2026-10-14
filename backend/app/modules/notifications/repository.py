@@ -100,6 +100,16 @@ async def mark_read(
     return await get_notification(session, user_id, notification_id)
 
 
+async def mark_all_read(session: AsyncSession, user_id: UUID, read_at: datetime) -> int:
+    """Sets `read_at` on every unread row of the user; returns rows changed."""
+    result = await session.execute(
+        update(Notification)
+        .where(Notification.user_id == user_id, Notification.read_at.is_(None))
+        .values(read_at=read_at)
+    )
+    return result.rowcount if isinstance(result, CursorResult) else 0
+
+
 async def get_last_digest_created_at(session: AsyncSession, user_id: UUID) -> datetime | None:
     stmt = (
         select(Notification.created_at)

@@ -42,7 +42,7 @@ class Consent(PulseSchema):
     purpose: ConsentPurpose
     purpose_text: str | None = Field(default=None, max_length=500)
     status: ConsentStatus
-    expires_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
     granted_at: datetime
     revoked_at: datetime | None = None
     revocation_reason: str | None = None
@@ -55,7 +55,7 @@ class ConsentCreate(PulseSchema):
     to_date: date | None = None
     purpose: ConsentPurpose
     purpose_text: str | None = Field(default=None, max_length=500)
-    expires_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def validate_scope(self) -> ConsentCreate:
@@ -98,7 +98,7 @@ class ConsentedPatient(PulseSchema):
 
     patient_id: UUID
     full_name: str
-    expires_at: AwareDatetime
+    expires_at: AwareDatetime | None = None
 
 
 class ClinicianLookup(PulseSchema):
@@ -117,4 +117,4 @@ class LivePermission:
     entry_types: list[str] | None
     from_date: date | None
     to_date: date | None
-    expires_at: datetime
+    expires_at: datetime | None

@@ -84,7 +84,7 @@ def _not_found() -> PulseError:
 def _status(row: ConsentRow, now: datetime) -> ConsentStatus:
     if row.revoked_at is not None:
         return ConsentStatus.REVOKED
-    if row.expires_at <= now:
+    if row.expires_at is not None and row.expires_at <= now:
         return ConsentStatus.EXPIRED
     return ConsentStatus.ACTIVE
 
@@ -131,7 +131,8 @@ async def lookup_clinician(session: AsyncSession, actor: Actor, email: str) -> C
 
 @transactional
 async def grant_consent(session: AsyncSession, actor: Actor, payload: ConsentCreate) -> Consent:
-    """Step-up gated at the route. `expires_at` must be 1-365 days out;
+    """Step-up gated at the route. `expires_at` is optional (none = until
+    revoked), else 1-365 days out;
     Consent + its derived AccessPermission are written in one transaction
     (`repository.create_consent_and_permission`)."""
     own = await users_service.get_own_patient_profile(session, actor)
@@ -142,7 +143,9 @@ async def grant_consent(session: AsyncSession, actor: Actor, payload: ConsentCre
     if grantee is None or grantee.role != Role.CLINICIAN:
         raise _not_found()
     now = datetime.now(UTC)
-    if not (now + _MIN_EXPIRY <= payload.expires_at <= now + _MAX_EXPIRY):
+    if payload.expires_at is not None and not (
+        now + _MIN_EXPIRY <= payload.expires_at <= now + _MAX_EXPIRY
+    ):
         raise PulseError(
             ErrorCode.CONSENT_EXPIRY_OUT_OF_RANGE,
             "Consent expiry must be between 1 and 365 days from now.",
@@ -359,3 +362,12 @@ async def active_break_glass_for(
 
 async def has_live_patient_grants(session: AsyncSession, patient_id: UUID) -> bool:
     return await repository.has_live_patient_grants(session, patient_id)
+
+
+async def consent_counts_for_patient(
+    session: AsyncSession, actor: Actor, patient_id: UUID
+) -> tuple[int, int]:
+    """Administrator-only (active, total) counts — identity-level metadata."""
+    if actor.role is not Role.ADMINISTRATOR:
+        raise PulseError(ErrorCode.FORBIDDEN, "Administrator access required.", http_status=403)
+    return await repository.count_for_patient(session, patient_id)

@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
@@ -261,6 +262,7 @@ export default function AnalyticsPage() {
 
   return (
     <section className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300 motion-reduce:animate-none space-y-8">
+      <BackButton fallback="/timeline" />
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
           {t("title")}

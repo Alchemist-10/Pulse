@@ -41,5 +41,53 @@
     "cancel": "Cancel",
     "loadMore": "Load more candidates",
     "loadMoreMerges": "Load more merges"
+  },
+  "directory": {
+    "stats": {
+      "patients": "Patients",
+      "claimed": "Claimed accounts",
+      "pending": "Pending duplicates",
+      "users": "User accounts",
+      "clinicians": "Clinicians",
+      "staff": "Provider staff"
+    },
+    "tabs": {
+      "patients": "Patients",
+      "users": "Users"
+    },
+    "search": {
+      "patients": "Search by name or phone",
+      "users": "Search by email"
+    },
+    "roleFilter": "Role",
+    "allRoles": "All roles",
+    "cols": {
+      "name": "Name",
+      "dob": "Date of birth",
+      "phone": "Phone",
+      "location": "Location",
+      "account": "Account",
+      "records": "Records",
+      "registered": "Registered",
+      "email": "Email",
+      "role": "Role",
+      "verified": "Email verified"
+    },
+    "claimed": "Claimed",
+    "unclaimed": "Unclaimed",
+    "yes": "Yes",
+    "no": "No",
+    "empty": "Nothing matches.",
+    "loadMore": "Load more",
+    "detail": {
+      "note": "Identity and counts only. Administrators never see record contents.",
+      "notFound": "No such patient.",
+      "sex": "Sex",
+      "address": "Address",
+      "locale": "Interface language",
+      "activeConsents": "Active consents",
+      "totalConsents": "All consents",
+      "auditEvents": "Audit events"
+    }
   }
 }

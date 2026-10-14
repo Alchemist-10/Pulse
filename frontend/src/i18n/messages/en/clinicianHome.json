@@ -13,7 +13,10 @@
     "until": "Access until {date}",
     "error": "Could not load your patients.",
     "loadMore": "Load more patients",
-    "retry": "Try again"
+    "retry": "Try again",
+    "untilRevoked": "Until revoked",
+    "search": "Search by name",
+    "noMatch": "No patient matches that name."
   },
   "form": {
     "title": "Open a patient record",
@@ -25,5 +28,8 @@
       "required": "Enter a Patient ID."
     },
     "submit": "Open record"
+  },
+  "scan": {
+    "cta": "Scan a patient's emergency QR"
   }
 }

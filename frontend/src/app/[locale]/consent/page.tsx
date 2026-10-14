@@ -268,7 +268,9 @@ function ConsentRow({
           <dd className="text-foreground">
             {consent.status === "REVOKED" && consent.revokedAt
               ? formatDateTime(consent.revokedAt, `${locale}-IN`)
-              : formatDateTime(consent.expiresAt, `${locale}-IN`)}
+              : consent.expiresAt
+                ? formatDateTime(consent.expiresAt, `${locale}-IN`)
+                : t("list.untilRevoked")}
           </dd>
         </div>
       </dl>
@@ -376,7 +378,9 @@ export default function ConsentListPage() {
     const nextExpiry =
       state.status === "ready" && view === "active"
         ? Math.min(
-            ...state.items.map((item) => new Date(item.expiresAt).getTime()),
+            ...state.items.flatMap((item) =>
+              item.expiresAt ? [new Date(item.expiresAt).getTime()] : [],
+            ),
           )
         : Infinity;
     const timer = Number.isFinite(nextExpiry)

@@ -33,6 +33,6 @@ The visual authority is [`../DESIGN.md`](../DESIGN.md) and the application theme
 
 ## Screenshots and publishing
 
-The 29 images in `src/assets/screens/` are genuine captures of seeded synthetic data, recorded by [`scripts/capture.mjs`](scripts/capture.mjs). The capture script creates entries and exercises consent, correction and emergency access, so use a disposable fresh demo stack. Never run it against real patient data or a database you need to preserve. See the repository [running guide](../RUNNING.md) for demo setup.
+The 32 images in `src/assets/screens/` are genuine captures of seeded synthetic data, recorded by [`scripts/capture.mjs`](scripts/capture.mjs). The capture script creates entries and exercises consent, correction and emergency access, so use a disposable fresh demo stack. Never run it against real patient data or a database you need to preserve. See the repository [running guide](../RUNNING.md) for demo setup.
 
 The [Pages workflow](../.github/workflows/pages.yml) checks and publishes pushes to `main`; pull requests run its checks without publishing. Team and course credits intentionally remain placeholders in `facts.ts`, awaiting confirmation. There is no demo video to embed.

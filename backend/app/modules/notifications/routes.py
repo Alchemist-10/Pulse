@@ -39,6 +39,14 @@ async def list_notifications(
 
 
 @router.post(
+    "/notifications/read-all",
+    dependencies=[requires(Permission.NOTIFICATION_MANAGE_SELF)],
+)
+async def mark_all_notifications_read(ctx: CurrentUser, session: SessionDep) -> dict[str, int]:
+    return {"updated": await service.mark_all_read(session, ctx.actor)}
+
+
+@router.post(
     "/notifications/{notification_id}/read",
     dependencies=[requires(Permission.NOTIFICATION_MANAGE_SELF)],
 )

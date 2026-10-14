@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { use, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
@@ -116,6 +117,7 @@ export default function EntryDetailPage({
 
   return (
     <section className="animate-in fade-in-0 slide-in-from-bottom-1 space-y-8 duration-300 motion-reduce:animate-none">
+      <BackButton fallback="/timeline" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

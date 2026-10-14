@@ -1,8 +1,14 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BellIcon, CircleCheckIcon, InfoIcon } from "lucide-react";
+import {
+  BellIcon,
+  CheckCheckIcon,
+  CircleCheckIcon,
+  InfoIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +27,7 @@ import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import {
+  markAllNotificationsRead,
   NOTIFICATIONS_CHANGED_EVENT,
   type Notification,
 } from "@/lib/notifications";
@@ -219,6 +226,29 @@ export default function NotificationsPage() {
     );
   }
 
+  const [markingAll, setMarkingAll] = useState(false);
+
+  async function markAll() {
+    setMarkingAll(true);
+    try {
+      await markAllNotificationsRead();
+      const now = new Date().toISOString();
+      setState((prev) =>
+        prev.status === "ready"
+          ? {
+              ...prev,
+              items: prev.items.map((n) => ({ ...n, readAt: n.readAt ?? now })),
+            }
+          : prev,
+      );
+      toast.success(t("markAllReadDone"));
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setMarkingAll(false);
+    }
+  }
+
   function loadMore() {
     if (state.status !== "ready" || !state.nextCursor) return;
     const cursor = state.nextCursor;
@@ -257,6 +287,7 @@ export default function NotificationsPage() {
 
   return (
     <section className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300 motion-reduce:animate-none space-y-8">
+      <BackButton fallback="/timeline" />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
@@ -266,9 +297,23 @@ export default function NotificationsPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href="/notifications/preferences">{t("preferencesCta")}</Link>
-        </Button>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          {state.status === "ready" && state.items.some((n) => !n.readAt) && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={markingAll}
+              aria-busy={markingAll}
+              onClick={() => void markAll()}
+            >
+              {markingAll ? <Spinner /> : <CheckCheckIcon />}
+              {t("markAllRead")}
+            </Button>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link href="/settings/notifications">{t("preferencesCta")}</Link>
+          </Button>
+        </div>
       </div>
 
       {state.status === "loading" && (

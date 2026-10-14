@@ -54,3 +54,38 @@ class MergeRecord(MergeResult):
 
     winner_name: str
     loser_name: str
+
+
+class AdminPatientRow(AdminPatientIdentity):
+    sex: str | None
+    city: str | None
+    state: str | None
+    created_at: datetime
+
+
+class AdminPatientDetail(AdminPatientRow):
+    """Drilldown: identity + counts. Never entry content (ADR-0007)."""
+
+    address_line: str | None
+    locale_preference: str
+    active_consent_count: int
+    total_consent_count: int
+    audit_event_count: int
+
+
+class AdminUserRow(PulseSchema):
+    id: UUID
+    email: str
+    role: str
+    email_verified: bool
+    created_at: datetime
+
+
+class AdminSummary(PulseSchema):
+    patients: int
+    claimed_patients: int
+    pending_duplicates: int
+    users_patient: int = 0
+    users_clinician: int = 0
+    users_provider_staff: int = 0
+    users_administrator: int = 0

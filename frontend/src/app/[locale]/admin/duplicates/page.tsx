@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TriangleAlertIcon } from "lucide-react";
@@ -224,6 +225,7 @@ export default function DuplicateReviewPage() {
 
   return (
     <section className="space-y-8 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+      <BackButton fallback="/admin" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

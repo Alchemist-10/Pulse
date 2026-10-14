@@ -1,3 +1,4 @@
+import { api } from "./api";
 import type { NotificationType } from "./generated/api";
 export const NOTIFICATIONS_CHANGED_EVENT = "pulse:notifications-changed";
 export {
@@ -20,4 +21,10 @@ export type {
  * record-uploaded and the daily digest are all opt-outable.
  */
 export const MANDATORY_NOTIFICATION_TYPES: ReadonlySet<NotificationType> =
-  new Set(["BREAK_GLASS_ACCESS", "CONSENT_REVOKED"]);
+  new Set(["BREAK_GLASS_ACCESS", "CONSENT_REVOKED", "EMERGENCY_CARD_VIEWED"]);
+
+/** Marks every unread notification read; tells the bell and list to refresh. */
+export async function markAllNotificationsRead(): Promise<void> {
+  await api.post<{ updated: number }>("/notifications/read-all");
+  window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
+}

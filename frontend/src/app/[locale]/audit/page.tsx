@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useId, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ActivityIcon, CircleAlertIcon, InfoIcon } from "lucide-react";
@@ -14,7 +15,6 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ import { AuditActionValues, RoleValues } from "@/lib/generated/api";
 import { formatDateTime } from "@/lib/format";
 import type { Page } from "@/lib/records";
 
-const LIMIT = 20;
+const PAGE_SIZES = [10, 20, 50] as const;
 const BREAK_GLASS_ACTION = "BREAK_GLASS_ACCESS";
 
 type LoadState =
@@ -94,6 +94,11 @@ export default function AuditEventsPage() {
     through: "",
   });
   const [applied, setApplied] = useState(filters);
+  const [pageSize, setPageSize] = useState<number>(20);
+  // Cursor stack: entry i is the cursor that loads page i + 1. Cursors are
+  // opaque and forward-only; Previous pops, never offsets.
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
+  const cursor = cursorStack.length ? cursorStack[cursorStack.length - 1] : null;
   const [filterError, setFilterError] = useState(false);
   const tTimeline = useTranslations("timeline");
   const errorMessage = useApiErrorMessage();
@@ -105,7 +110,7 @@ export default function AuditEventsPage() {
   const paginationRequest = useRef<AbortController | null>(null);
   const query = new URLSearchParams({
     patientId: patientId ?? "",
-    limit: String(LIMIT),
+    limit: String(pageSize),
   });
   if (applied.action) query.set("action", applied.action);
   if (applied.actorRole) query.set("actorRole", applied.actorRole);
@@ -157,7 +162,9 @@ export default function AuditEventsPage() {
       if (active) setState({ status: "loading" });
     });
     api
-      .get<Page<AuditEventProjection>>(`/audit-events?${queryString}`)
+      .get<Page<AuditEventProjection>>(
+        `/audit-events?${queryString}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
+      )
       .then((page) => {
         if (!active) return;
         setState({
@@ -185,43 +192,7 @@ export default function AuditEventsPage() {
     };
     // errorMessage / router are stable for the page lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientId, retryToken, queryString]);
-
-  function loadMore() {
-    if (!patientId || state.status !== "ready" || !state.nextCursor) return;
-    const cursor = state.nextCursor;
-    paginationRequest.current?.abort();
-    const controller = new AbortController();
-    paginationRequest.current = controller;
-    setState({ ...state, loadingMore: true, loadMoreError: null });
-    api
-      .get<Page<AuditEventProjection>>(
-        `/audit-events?${queryString}&cursor=${encodeURIComponent(cursor)}`,
-        { signal: controller.signal },
-      )
-      .then((page) => {
-        if (controller.signal.aborted) return;
-        setState((prev) =>
-          prev.status === "ready"
-            ? {
-                status: "ready",
-                items: [...prev.items, ...page.items],
-                nextCursor: page.nextCursor,
-                loadingMore: false,
-                loadMoreError: null,
-              }
-            : prev,
-        );
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        setState((prev) =>
-          prev.status === "ready"
-            ? { ...prev, loadingMore: false, loadMoreError: errorMessage(err) }
-            : prev,
-        );
-      });
-  }
+  }, [patientId, retryToken, queryString, cursor]);
 
   function actionLabel(action: string): string {
     const key = `actions.${action}`;
@@ -237,6 +208,7 @@ export default function AuditEventsPage() {
 
   return (
     <section className="space-y-8">
+      <BackButton fallback="/timeline" />
       <div className="space-y-1">
         <h1 className="workspace-heading">{t("title")}</h1>
         <p className="text-pretty text-sm text-muted-foreground">
@@ -267,6 +239,7 @@ export default function AuditEventsPage() {
               }
               setFilterError(false);
               paginationRequest.current?.abort();
+              setCursorStack([]);
               setApplied(filters);
             }}
             className="space-y-3"
@@ -498,25 +471,52 @@ export default function AuditEventsPage() {
             {t("filters.detailsHint")}
           </p>
 
-          {state.loadMoreError && (
-            <Alert variant="destructive">
-              <AlertTitle>{t("error.title")}</AlertTitle>
-              <AlertDescription>{state.loadMoreError}</AlertDescription>
-            </Alert>
-          )}
-
-          {state.nextCursor && (
-            <Button
-              variant="outline"
-              disabled={state.loadingMore}
-              aria-busy={state.loadingMore}
-              onClick={loadMore}
-              className="min-h-11 w-full sm:min-h-8 sm:w-auto"
-            >
-              {state.loadingMore && <Spinner />}
-              {state.loadingMore ? t("loadingMore") : t("loadMore")}
-            </Button>
-          )}
+          <nav
+            aria-label={t("pagination.label")}
+            className="flex flex-wrap items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={cursorStack.length === 0}
+                onClick={() => setCursorStack((stack) => stack.slice(0, -1))}
+                className="min-h-11 sm:min-h-8"
+              >
+                {t("pagination.previous")}
+              </Button>
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {t("pagination.page", { page: cursorStack.length + 1 })}
+              </span>
+              <Button
+                variant="outline"
+                disabled={!state.nextCursor}
+                onClick={() =>
+                  state.nextCursor &&
+                  setCursorStack((stack) => [...stack, state.nextCursor as string])
+                }
+                className="min-h-11 sm:min-h-8"
+              >
+                {t("pagination.next")}
+              </Button>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              {t("pagination.pageSize")}
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setCursorStack([]);
+                  setPageSize(Number(e.target.value));
+                }}
+                className="h-9 rounded-md border bg-background px-2 text-foreground"
+              >
+                {PAGE_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </nav>
         </div>
       )}
     </section>

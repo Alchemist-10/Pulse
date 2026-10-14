@@ -237,3 +237,37 @@ async def test_revoke_of_someone_elses_consent_is_404(
     await register_and_login(email="consent-stranger@example.com")
     resp = await client.post(f"/api/v1/consents/{consent_id}/revocation", json={})
     assert resp.status_code == 404
+
+
+async def test_grant_without_expiry_is_active_until_revoked(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await register_and_login(email="consent-noexp@example.com")
+    pid = (await client.get("/api/v1/patients/me")).json()["id"]
+    await rh.insert_entry(
+        app_database_url, patient_id=pid, occurred_at=datetime(2025, 1, 1, tzinfo=UTC)
+    )
+    await register_and_login(email="consent-clin-noexp@example.com", role="CLINICIAN")
+    clin_id = str(await rh.user_id_for_email(app_database_url, "consent-clin-noexp@example.com"))
+    await register_and_login(email="consent-noexp@example.com")
+    await client.post("/api/v1/auth/step-up", json={"password": _PW})
+
+    body = _grant_body(clin_id)
+    del body["expiresAt"]
+    resp = await client.post("/api/v1/consents", json=body)
+    assert resp.status_code == 200
+    consent = resp.json()
+    assert consent["status"] == "ACTIVE"
+    assert consent["expiresAt"] is None
+
+    await register_and_login(email="consent-clin-noexp@example.com", role="CLINICIAN")
+    seen = await client.get(f"/api/v1/patients/{pid}/entries")
+    assert seen.status_code == 200
+    assert len(seen.json()["items"]) == 1
+
+    await register_and_login(email="consent-noexp@example.com")
+    assert (
+        await client.post(f"/api/v1/consents/{consent['id']}/revocation", json={})
+    ).status_code == 200
+    await register_and_login(email="consent-clin-noexp@example.com", role="CLINICIAN")
+    assert (await client.get(f"/api/v1/patients/{pid}/entries")).status_code == 404

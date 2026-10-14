@@ -32,6 +32,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ClinicalText } from "@/components/ClinicalText";
+import { PatientSubNav } from "@/components/PatientSubNav";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Me } from "@/lib/auth";
@@ -179,6 +180,7 @@ export default function ClinicianPatientRecordsPage({
 
   return (
     <section className="space-y-8 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+      <PatientSubNav patientId={patientId} active="records" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
@@ -234,7 +236,7 @@ export default function ClinicianPatientRecordsPage({
       )}
 
       {state.status === "notFound" && role === "CLINICIAN" && (
-        <BreakGlassForm patientId={patientId} onGranted={() => setRetryToken((n) => n + 1)} />
+        <BreakGlassForm patientId={patientId} onGranted={() => router.push(`/patients/${patientId}/emergency`)} />
       )}
 
       {state.status === "error" && (

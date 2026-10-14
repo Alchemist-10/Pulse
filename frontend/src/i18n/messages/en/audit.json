@@ -37,7 +37,8 @@
     "CONSENT_REVOKED": "Consent revoked",
     "LOGIN_SUCCESS": "Sign-in succeeded",
     "LOGIN_FAILURE": "Sign-in failed",
-    "BREAK_GLASS_ACCESS": "Emergency access granted"
+    "BREAK_GLASS_ACCESS": "Emergency access granted",
+    "EMERGENCY_CARD_VIEWED": "Emergency card viewed"
   },
   "loadMore": "Load more",
   "loadingMore": "Loading more…",
@@ -59,5 +60,12 @@
     "detailsHint": "A dash means this action was not tied to one Provider or entry type.",
     "title": "Filter access history",
     "applied": "Filters applied"
+  },
+  "pagination": {
+    "label": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "pageSize": "Rows per page"
   }
 }

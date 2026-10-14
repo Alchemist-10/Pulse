@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { hasLocale, NextIntlClientProvider, useTranslations } from "next-intl";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { PwaRegister } from "@/components/PwaRegister";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,19 @@ export function generateStaticParams() {
 
 export const metadata: Metadata = {
   title: "Pulse",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: { capable: true, title: "Pulse", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#7b1e3a",
 };
 
 type Props = {
@@ -75,6 +89,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <TooltipProvider>
               <Shell>{children}</Shell>
               <Toaster richColors />
+              <PwaRegister />
             </TooltipProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

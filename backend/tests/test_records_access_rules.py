@@ -392,11 +392,11 @@ async def test_expired_break_glass_sees_nothing(
     assert rows == []
 
 
-async def test_active_break_glass_sees_all_entries_unscoped(
+async def test_active_break_glass_sees_no_entries(
     db_session: AsyncSession, app_database_url: str
 ) -> None:
-    """Break-glass is emergency access without Consent (domain-model.md)
-    — unlike rule 3, it carries no entry-type or date scoping."""
+    """Break-glass reveals the emergency card only (ADR-0017) — never
+    Medical Entries."""
     patient = await _patient(db_session, await _user(db_session, Role.PATIENT))
     clinician = await _user(db_session, Role.CLINICIAN)
     await db_session.commit()
@@ -423,4 +423,5 @@ async def test_active_break_glass_sees_all_entries_unscoped(
     actor = Actor(user_id=clinician.id, role=Role.CLINICIAN)
     stmt = await repository.accessible_entries(db_session, actor, patient.id)
     ids = {r.id for r in (await db_session.execute(stmt)).scalars().all()}
-    assert ids == {lab_entry, note_entry}
+    assert ids == set()
+    assert lab_entry and note_entry

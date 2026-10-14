@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -64,7 +65,6 @@ export default function GrantConsentPage() {
   const [toDate, setToDate] = useState("");
   const [purpose, setPurpose] = useState<ConsentPurpose | "">("");
   const [purposeText, setPurposeText] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
   const [password, setPassword] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,17 +90,12 @@ export default function GrantConsentPage() {
 
     if (submitting) return;
     if (!review) {
-      if (!granteeEmail.trim() || !purpose || !expiresAt) {
+      if (!granteeEmail.trim() || !purpose) {
         setFormError(t("new.validation.requiredFields"));
         return;
       }
       if (!scope || (scope === "selected" && selectedTypes.size === 0)) {
         setFormError(t("new.validation.scopeRequired"));
-        return;
-      }
-      const expiry = new Date(expiresAt);
-      if (Number.isNaN(expiry.getTime()) || expiry.getTime() <= Date.now()) {
-        setFormError(t("new.validation.expiryFuture"));
         return;
       }
       if (fromDate && toDate && fromDate > toDate) {
@@ -126,7 +121,6 @@ export default function GrantConsentPage() {
             toDate: toDate || null,
             purpose,
             purposeText: purpose === "OTHER" ? purposeText.trim() : null,
-            expiresAt: expiry.toISOString(),
           },
         });
       } catch (err) {
@@ -178,13 +172,15 @@ export default function GrantConsentPage() {
         <Alert className="border-consent-active/40 text-consent-active">
           <AlertTitle>{t("new.success.title")}</AlertTitle>
           <AlertDescription>
-            {t("new.success.details", {
+            {t(granted.expiresAt ? "new.success.details" : "new.success.detailsOpen", {
               email: review?.clinician.email ?? granteeEmail,
               types:
                 granted.entryTypes
                   ?.map((type) => tTimeline(`entryTypes.${type}`))
                   .join(", ") ?? t("list.scope.allTypes"),
-              expiry: formatDateTime(granted.expiresAt, `${locale}-IN`),
+              expiry: granted.expiresAt
+                ? formatDateTime(granted.expiresAt, `${locale}-IN`)
+                : "",
             })}
           </AlertDescription>
         </Alert>
@@ -204,11 +200,11 @@ export default function GrantConsentPage() {
   const purposeTextId = `${formId}-purpose-text`;
   const fromDateId = `${formId}-from-date`;
   const toDateId = `${formId}-to-date`;
-  const expiresAtId = `${formId}-expires-at`;
   const passwordId = `${formId}-password`;
 
   return (
     <section className="animate-in fade-in-0 slide-in-from-bottom-1 motion-reduce:animate-none mx-auto max-w-lg space-y-8 duration-300">
+      <BackButton fallback="/consent" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -416,24 +412,9 @@ export default function GrantConsentPage() {
               </Field>
             )}
 
-            <Field data-invalid={!!errors.expiresAt}>
-              <FieldLabel htmlFor={expiresAtId}>{f.expiresAt}</FieldLabel>
-              <Input
-                id={expiresAtId}
-                type="datetime-local"
-                aria-invalid={!!errors.expiresAt}
-                aria-describedby={
-                  errors.expiresAt ? `${expiresAtId}-error` : undefined
-                }
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-              />
-              {errors.expiresAt && (
-                <FieldError id={`${expiresAtId}-error`}>
-                  {errors.expiresAt}
-                </FieldError>
-              )}
-            </Field>
+            <p className="text-sm text-muted-foreground">
+              {t("new.scope.untilRevoked")}
+            </p>
           </fieldset>
         )}
         {review && (
@@ -469,10 +450,7 @@ export default function GrantConsentPage() {
                       ? `: ${review.payload.purposeText}`
                       : ""),
                 ],
-                [
-                  f.expiresAt,
-                  formatDateTime(review.payload.expiresAt, `${locale}-IN`),
-                ],
+                [t("new.review.duration"), t("new.review.untilRevoked")],
               ].map(([label, value]) => (
                 <div key={label}>
                   <dt className="text-muted-foreground">{label}</dt>

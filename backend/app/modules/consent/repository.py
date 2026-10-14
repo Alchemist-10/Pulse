@@ -54,7 +54,7 @@ async def create_consent_and_permission(
     to_date: date | None,
     purpose: ConsentPurpose,
     purpose_text: str | None,
-    expires_at: datetime,
+    expires_at: datetime | None,
 ) -> Consent:
     consent = Consent(
         patient_id=patient_id,
@@ -104,6 +104,14 @@ async def revoke_consent(
     return consent
 
 
+def _permission_live() -> ColumnElement[bool]:
+    """NULL `expires_at` = no expiry, live until revoked."""
+    return or_(
+        AccessPermission.expires_at.is_(None),
+        AccessPermission.expires_at > func.statement_timestamp(),
+    )
+
+
 async def list_consents_for_patient(
     session: AsyncSession,
     patient_id: UUID,
@@ -114,7 +122,9 @@ async def list_consents_for_patient(
 ) -> tuple[list[Consent], str | None]:
     limit = max(1, min(limit, _MAX_LIMIT))
     stmt = select(Consent).where(Consent.patient_id == patient_id)
-    active = (Consent.revoked_at.is_(None)) & (Consent.expires_at > func.statement_timestamp())
+    active = (Consent.revoked_at.is_(None)) & or_(
+        Consent.expires_at.is_(None), Consent.expires_at > func.statement_timestamp()
+    )
     if view == "active":
         stmt = stmt.where(active)
     elif view == "history":
@@ -143,7 +153,7 @@ async def list_live_permissions_for_grantee(
     limit = max(1, min(limit, _MAX_LIMIT))
     stmt = select(AccessPermission).where(
         AccessPermission.grantee_user_id == grantee_user_id,
-        AccessPermission.expires_at > now,
+        or_(AccessPermission.expires_at.is_(None), AccessPermission.expires_at > now),
     )
     if cursor is not None:
         c_at, c_id = _unpack_cursor(cursor)
@@ -171,7 +181,7 @@ async def create_break_glass(
     patient_id: UUID,
     clinician_user_id: UUID,
     justification: str,
-    expires_at: datetime,
+    expires_at: datetime | None,
 ) -> BreakGlassAccess:
     grant = BreakGlassAccess(
         patient_id=patient_id,
@@ -195,7 +205,7 @@ def clinical_access_predicate(
         .where(
             AccessPermission.patient_id == patient_id,
             AccessPermission.grantee_user_id == grantee_user_id,
-            AccessPermission.expires_at > func.statement_timestamp(),
+            _permission_live(),
             or_(
                 AccessPermission.entry_types.is_(None),
                 cast(entry_type, String) == func.any(AccessPermission.entry_types),
@@ -212,16 +222,7 @@ def clinical_access_predicate(
         .correlate_except(AccessPermission)
         .exists()
     )
-    emergency = (
-        select(BreakGlassAccess.id)
-        .where(
-            BreakGlassAccess.patient_id == patient_id,
-            BreakGlassAccess.clinician_user_id == grantee_user_id,
-            BreakGlassAccess.expires_at > func.statement_timestamp(),
-        )
-        .exists()
-    )
-    return or_(permission, emergency)
+    return permission
 
 
 async def live_permissions_for(
@@ -233,7 +234,7 @@ async def live_permissions_for(
                 select(AccessPermission).where(
                     AccessPermission.patient_id == patient_id,
                     AccessPermission.grantee_user_id == grantee_user_id,
-                    AccessPermission.expires_at > func.statement_timestamp(),
+                    _permission_live(),
                 )
             )
         ).all()
@@ -261,7 +262,7 @@ async def has_live_patient_grants(session: AsyncSession, patient_id: UUID) -> bo
         select(AccessPermission.id)
         .where(
             AccessPermission.patient_id == patient_id,
-            AccessPermission.expires_at > func.statement_timestamp(),
+            _permission_live(),
         )
         .exists()
     )
@@ -274,3 +275,18 @@ async def has_live_patient_grants(session: AsyncSession, patient_id: UUID) -> bo
         .exists()
     )
     return bool(await session.scalar(select(or_(permission, emergency))))
+
+
+async def count_for_patient(session: AsyncSession, patient_id: UUID) -> tuple[int, int]:
+    """(active, total) consents. Counts only — no grantee, scope or reason."""
+    active = await session.scalar(
+        select(func.count(Consent.id)).where(
+            Consent.patient_id == patient_id,
+            Consent.revoked_at.is_(None),
+            or_(Consent.expires_at.is_(None), Consent.expires_at > func.statement_timestamp()),
+        )
+    )
+    total = await session.scalar(
+        select(func.count(Consent.id)).where(Consent.patient_id == patient_id)
+    )
+    return int(active or 0), int(total or 0)

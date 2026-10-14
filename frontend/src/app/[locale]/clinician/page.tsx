@@ -13,6 +13,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Me } from "@/lib/auth";
 import type { ConsentedPatient } from "@/lib/consent";
+import { fuzzyFilter } from "@/lib/fuzzy";
 import { formatDate } from "@/lib/format";
 import type { Page } from "@/lib/records";
 
@@ -43,6 +44,7 @@ export default function ClinicianHomePage() {
   const [gate, setGate] = useState<GateState>({ status: "loading" });
   const [patients, setPatients] = useState<PatientsState>({ status: "loading" });
   const [patientId, setPatientId] = useState("");
+  const [search, setSearch] = useState("");
   const [patientsRetry, setPatientsRetry] = useState(0);
   const paginationRequest = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +154,10 @@ export default function ClinicianHomePage() {
         <p className="text-pretty text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
+      <Button asChild variant="outline" className="w-full">
+        <Link href="/clinician/scan">{t("scan.cta")}</Link>
+      </Button>
+
       {gate.role === "CLINICIAN" && (
         <Card>
           <CardHeader>
@@ -170,9 +176,24 @@ export default function ClinicianHomePage() {
             {patients.status === "ready" && patients.items.length === 0 && (
               <p className="text-sm text-muted-foreground">{t("patients.empty")}</p>
             )}
+            {patients.status === "ready" && patients.items.length > 3 && (
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("patients.search")}
+                aria-label={t("patients.search")}
+                className="mb-3"
+              />
+            )}
+            {patients.status === "ready" &&
+              patients.items.length > 0 &&
+              fuzzyFilter(patients.items, search, (p) => p.fullName).length === 0 && (
+                <p className="text-sm text-muted-foreground">{t("patients.noMatch")}</p>
+              )}
             {patients.status === "ready" && patients.items.length > 0 && (
               <ul className="space-y-2">
-                {patients.items.map((patient) => (
+                {fuzzyFilter(patients.items, search, (p) => p.fullName).map((patient) => (
                   <li key={patient.patientId}>
                     <Link
                       href={`/patients/${patient.patientId}/records`}
@@ -183,7 +204,9 @@ export default function ClinicianHomePage() {
                         {patient.patientId}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {t("patients.until", { date: formatDate(patient.expiresAt) })}
+                        {patient.expiresAt
+                          ? t("patients.until", { date: formatDate(patient.expiresAt) })
+                          : t("patients.untilRevoked")}
                       </span>
                     </Link>
                   </li>

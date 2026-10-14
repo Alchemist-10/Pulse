@@ -125,7 +125,7 @@ test("login redirects to the profile and renders identity fields", async ({ page
   await page.getByLabel("Password").fill("correct horse battery");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page).toHaveURL(/\/en\/profile$/);
+  await expect(page).toHaveURL(/\/en\/settings\/profile$/);
   await expect(page.getByRole("heading", { name: "Your profile" })).toBeVisible();
   await expect(page.getByText("Aarav Menon")).toBeVisible();
   // Date rendered day-first via Intl (en-IN), not the raw ISO string.
