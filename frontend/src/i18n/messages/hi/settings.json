@@ -1,0 +1,9 @@
+{
+  "title": "सेटिंग्स",
+  "tabs": {
+    "profile": "प्रोफ़ाइल",
+    "notifications": "सूचनाएँ",
+    "emergencyCard": "आपातकालीन कार्ड",
+    "scan": "QR स्कैन"
+  }
+}

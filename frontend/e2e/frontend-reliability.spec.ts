@@ -86,7 +86,7 @@ test("failed logout stays visible with a retry until the session is terminated",
     signedIn = false;
     return r.fulfill({ status: 204 });
   });
-  await page.goto("/en/profile");
+  await page.goto("/en/settings/profile");
   await expect(
     page.getByText("Synthetic Patient", { exact: true }),
   ).toBeVisible();
@@ -98,7 +98,7 @@ test("failed logout stays visible with a retry until the session is terminated",
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/en\/profile$/);
+  await expect(page).toHaveURL(/\/en\/settings\/profile$/);
   fail = false;
   await page
     .getByRole("button", { name: "Retry sign out", exact: true })
@@ -294,7 +294,7 @@ test("initial patient lookup can be retried on timeline, profile and analytics",
     json(r, { items: [entry], nextCursor: null }),
   );
   await page.route("**/api/v1/patients/*/analytics/*", (r) => json(r, []));
-  for (const path of ["timeline", "profile", "analytics"]) {
+  for (const path of ["timeline", "settings/profile", "analytics"]) {
     available = false;
     await page.goto(`/en/${path}`);
     await expect(
@@ -306,7 +306,7 @@ test("initial patient lookup can be retried on timeline, profile and analytics",
       await expect(
         page.getByText("Synthetic original", { exact: true }),
       ).toBeVisible();
-    if (path === "profile")
+    if (path === "settings/profile")
       await expect(
         page.getByText("Synthetic Patient", { exact: true }),
       ).toBeVisible();
@@ -383,7 +383,7 @@ test("patient header fits mobile and tablet widths in every locale", async ({
   await base(page);
   const results = [];
   for (const locale of ["en", "hi", "ta", "ml"]) {
-    await page.goto(`/${locale}/profile`);
+    await page.goto(`/${locale}/settings/profile`);
     await expect(
       page.getByText("Synthetic Patient", { exact: true }),
     ).toBeVisible();
@@ -421,7 +421,7 @@ test("mobile menu supports keyboard access and theme toggle updates the root", a
 }) => {
   await base(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/en/profile");
+  await page.goto("/en/settings/profile");
   await expect(
     page.getByText("Synthetic Patient", { exact: true }),
   ).toBeVisible();
@@ -430,7 +430,7 @@ test("mobile menu supports keyboard access and theme toggle updates the root", a
   await expect(page.getByRole("dialog")).toBeVisible();
   await page
     .getByRole("dialog")
-    .getByRole("link", { name: "Profile", exact: true })
+    .getByRole("link", { name: "Settings", exact: true })
     .focus();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -591,6 +591,8 @@ test("staff attach a document to an existing entry without creating another entr
   await base(page, "PROVIDER_STAFF");
   let posts = 0;
   await page.route("**/api/v1/patients/**", (r) => {
+    if (r.request().method() === "GET")
+      return json(r, { items: [], nextCursor: null });
     expect(r.request().method()).toBe("POST");
     expect(new URL(r.request().url()).pathname).toBe(
       `/api/v1/patients/${PID}/entries/${EID}/documents`,

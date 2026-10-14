@@ -1,0 +1,57 @@
+{
+  "loading": "Loading your emergency card…",
+  "intro": "Write what responders should know and choose, field by field, what is shown. Only shared fields are ever sent to someone who opens your card.",
+  "save": "Save emergency card",
+  "saved": "Emergency card saved",
+  "shareToggle": "Show this field on the emergency card",
+  "shared": "Shown",
+  "hidden": "Hidden",
+  "fields": {
+    "bloodType": "Blood type",
+    "allergies": "Allergies",
+    "conditions": "Conditions",
+    "medications": "Current medications",
+    "nextOfKin": "Next of kin",
+    "nextOfKinName": "Name",
+    "nextOfKinRelation": "Relationship",
+    "nextOfKinPhone": "Phone",
+    "notes": "Notes"
+  },
+  "preview": {
+    "title": "What others will see",
+    "hint": "Updates as you type. Only shown fields appear."
+  },
+  "qr": {
+    "title": "QR code",
+    "body": "Anyone signed in to Pulse who scans this sees your emergency card, and you are notified each time. Print it or keep it on your phone.",
+    "alt": "QR code that opens your emergency card",
+    "generate": "Generate QR code",
+    "download": "Download",
+    "print": "Print",
+    "rotate": "Replace code",
+    "disable": "Turn off",
+    "rotateHint": "Replacing or turning off stops every printed copy working immediately."
+  },
+  "scan": {
+    "body": "Scan someone's Pulse emergency QR code to open their emergency card. The scan is recorded and they are notified.",
+    "start": "Scan with camera",
+    "stop": "Stop camera",
+    "cameraDenied": "Camera is unavailable. Paste the link below instead.",
+    "cameraLabel": "Camera preview",
+    "manual": "Or paste the link or code",
+    "manualPlaceholder": "https://…/emergency/…",
+    "open": "Open card",
+    "invalid": "That is not a Pulse emergency code."
+  },
+  "view": {
+    "title": "Emergency card",
+    "loading": "Loading emergency card…",
+    "audited": "This view is recorded and the patient is notified.",
+    "nothingShared": "This patient has not shared any emergency details.",
+    "notFound": {
+      "title": "Card not available",
+      "body": "The code is invalid, was replaced, or you do not have access."
+    },
+    "openRecords": "Open records"
+  }
+}

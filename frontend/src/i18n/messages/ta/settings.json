@@ -1,0 +1,9 @@
+{
+  "title": "அமைப்புகள்",
+  "tabs": {
+    "profile": "சுயவிவரம்",
+    "notifications": "அறிவிப்புகள்",
+    "emergencyCard": "அவசர அட்டை",
+    "scan": "QR ஸ்கேன்"
+  }
+}

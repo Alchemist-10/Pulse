@@ -54,7 +54,7 @@ test("patient ID copy writes the displayed ID to the clipboard", async ({ page, 
     id: PATIENT_ID, fullName: "Synthetic Patient", dateOfBirth: null, phone: null, sex: null,
     addressLine: null, city: null, state: null, localePreference: "en", claimed: true,
   }) }));
-  await page.goto("/en/profile");
+  await page.goto("/en/settings/profile");
   await page.getByRole("button", { name: "Copy patient ID" }).click();
   await expect(page.getByText("Patient ID copied", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PATIENT_ID);
@@ -68,7 +68,7 @@ test("patient ID copy falls back when the Clipboard API is denied", async ({ pag
     id: PATIENT_ID, fullName: "Synthetic Patient", dateOfBirth: null, phone: null, sex: null,
     addressLine: null, city: null, state: null, localePreference: "en", claimed: true,
   }) }));
-  await page.goto("/en/profile");
+  await page.goto("/en/settings/profile");
   await page.evaluate(() => {
     Object.defineProperty(navigator.clipboard, "writeText", {
       configurable: true,
@@ -85,7 +85,7 @@ test("patient ID remains selected when both clipboard methods fail", async ({ pa
     id: PATIENT_ID, fullName: "Synthetic Patient", dateOfBirth: null, phone: null, sex: null,
     addressLine: null, city: null, state: null, localePreference: "en", claimed: true,
   }) }));
-  await page.goto("/en/profile");
+  await page.goto("/en/settings/profile");
   await page.evaluate(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -115,7 +115,7 @@ test("preferences expose only working optional delivery channels", async ({ page
     { notificationType: "RECORD_UPLOADED", channel: "SMS", enabled: true },
     { notificationType: "RECORD_UPLOADED", channel: "IN_APP", enabled: true },
   ]) }));
-  await page.goto("/en/notifications/preferences");
+  await page.goto("/en/settings/notifications");
   await expect(page.getByRole("switch", { name: "In-app" })).toBeVisible();
   await expect(page.getByRole("switch")).toHaveCount(1);
 });

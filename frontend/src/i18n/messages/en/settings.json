@@ -1,0 +1,9 @@
+{
+  "title": "Settings",
+  "tabs": {
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "emergencyCard": "Emergency card",
+    "scan": "Scan QR"
+  }
+}

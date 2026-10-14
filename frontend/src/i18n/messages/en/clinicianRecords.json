@@ -21,9 +21,17 @@
   },
   "breakGlass": {
     "title": "Emergency access",
-    "body": "No consent covers you for this patient. In an emergency you can open the record for 60 minutes. Your justification is recorded in the audit log and the patient is notified immediately.",
+    "body": "No consent covers you for this patient. In an emergency you can open the patient's emergency card (blood type, allergies, next of kin). It does not open their records. Your justification is recorded and the patient is notified immediately.",
     "justification": "Justification",
     "required": "Enter a justification.",
-    "submit": "Request emergency access"
+    "submit": "Open emergency card"
+  },
+  "nav": {
+    "label": "Patient views",
+    "records": "Records",
+    "emergency": "Emergency card",
+    "pager": "Entry navigation",
+    "newer": "Newer",
+    "older": "Older"
   }
 }

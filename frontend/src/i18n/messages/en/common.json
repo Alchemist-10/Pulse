@@ -38,7 +38,8 @@
   "actions": {
     "submit": "Submit",
     "retry": "Try again",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "back": "Back"
   },
   "nav": {
     "label": "Main",
@@ -58,6 +59,8 @@
     "account": "Account",
     "signOutFailed": "Could not sign out. Try again before leaving this device.",
     "retrySignOut": "Retry sign out",
-    "patientTasks": "Patient tasks"
+    "patientTasks": "Patient tasks",
+    "settings": "Settings",
+    "scan": "Scan QR"
   }
 }

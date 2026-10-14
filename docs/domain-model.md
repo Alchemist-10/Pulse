@@ -149,16 +149,16 @@ Five rules, in order; anything unmatched is denied.
 1. The **Patient**, always, their whole history
 2. The **authoring Provider's** staff — a hospital can read the report it filed
 3. A **Clinician with live Consent** covering the entry
-4. **Break-glass** — time-boxed, justified, loud
+4. ~~Break-glass~~ — no longer opens entries; it reveals only the emergency card ([ADR-0017](./adr/0017-emergency-card-replaces-break-glass-record-access.md))
 5. **Administrators: never.** See [ADR-0007](./adr/0007-administrators-cannot-read-clinical-data.md)
 
 ### Break-glass
 
-Emergency access without consent. Requires a written clinical justification and expires after 60 minutes. It is unscoped and not revocable. Each grant is recorded in `break_glass_access(patient_id, clinician_user_id, justification, granted_at, expires_at)`, which is `INSERT`/`SELECT` only, and emits a `BREAK_GLASS_ACCESS` audit action (there is no severity column). Requests are throttled to 5 per minute. The Patient is notified if registered, and sees a banner for 72 hours. The answer to abuse is not prevention — it is that everyone knows within seconds.
+Emergency access without consent, superseded by [ADR-0017](./adr/0017-emergency-card-replaces-break-glass-record-access.md): it now reveals only the Patient's emergency card, never Medical Entries. Requires a written clinical justification and expires after 60 minutes. It is not revocable. Each grant is recorded in `break_glass_access(patient_id, clinician_user_id, justification, granted_at, expires_at)`, which is `INSERT`/`SELECT` only, and emits a `BREAK_GLASS_ACCESS` audit action (there is no severity column). Requests are throttled to 5 per minute. The Patient is notified if registered, and sees a banner for 72 hours. The answer to abuse is not prevention — it is that everyone knows within seconds.
 
 ### Enforcement
 
-One query builder, `accessible_entries(actor, patient_id)`, applies rules 1-4 as SQL. Every read composes from it; no method returning entries takes less than an actor. See [ADR-0006](./adr/0006-consent-enforced-by-one-query-builder.md).
+One query builder, `accessible_entries(actor, patient_id)`, applies rules 1-3 as SQL. Every read composes from it; no method returning entries takes less than an actor. See [ADR-0006](./adr/0006-consent-enforced-by-one-query-builder.md).
 
 **No permission decision is cached anywhere.** Caching one for even sixty seconds makes immediate revocation false.
 

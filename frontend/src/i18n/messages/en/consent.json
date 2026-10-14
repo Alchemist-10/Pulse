@@ -29,7 +29,7 @@
       "grantee": "Grantee",
       "purpose": "Purpose",
       "scope": "Scope",
-      "expires": "Expires",
+      "expires": "Access ends",
       "granted": "Granted",
       "revokedAt": "Revoked"
     },
@@ -60,11 +60,12 @@
       "noActiveBody": "You have no active consents. Emergency access is recorded separately in your access log.",
       "noHistory": "No past consents",
       "noHistoryBody": "Revoked or expired consents will appear here."
-    }
+    },
+    "untilRevoked": "Until you revoke"
   },
   "new": {
     "title": "Grant access",
-    "subtitle": "Give a clinician access to part of your record, for a limited time.",
+    "subtitle": "Give a clinician access to part of your record until you revoke it.",
     "back": "Back to who has access",
     "fields": {
       "granteeEmail": "Clinician email",
@@ -78,7 +79,7 @@
       "password": "Confirm with your password"
     },
     "validation": {
-      "requiredFields": "Enter a grantee, purpose and expiry.",
+      "requiredFields": "Enter a grantee and purpose.",
       "clinicianNotFound": "No clinician is registered with that email.",
       "passwordRequired": "Enter your password to grant access.",
       "wrongPassword": "That password is not correct.",
@@ -93,13 +94,15 @@
       "title": "Access granted",
       "body": "The grantee can now read the entry types and date range you chose, until it expires or you revoke it.",
       "viewConsents": "Back to who has access",
-      "details": "{email} can read {types} until {expiry}, within the history dates you reviewed."
+      "details": "{email} can read {types} until {expiry}, within the history dates you reviewed.",
+      "detailsOpen": "{email} can read {types} until you revoke access, within the history dates you reviewed."
     },
     "scope": {
       "all": "All entry types",
       "selected": "Choose entry types",
       "hint": "Choose exactly what this Clinician may read.",
-      "historyHint": "These dates limit which Medical Entries are shared. Access ends at the separate expiry time below."
+      "historyHint": "Optional. These dates limit which entries are shared; leave both empty to share the whole history.",
+      "untilRevoked": "Access stays on until you revoke it. You can revoke at any time and it ends immediately."
     },
     "review": {
       "title": "Review before sharing",
@@ -109,7 +112,9 @@
       "beginning": "Beginning of history",
       "latest": "No end-date limit",
       "revokeHint": "You can revoke this consent at any time. Other active consents remain in effect.",
-      "checking": "Checking Clinician…"
+      "checking": "Checking Clinician…",
+      "duration": "Access duration",
+      "untilRevoked": "Until you revoke it"
     }
   }
 }

@@ -37,7 +37,8 @@
     "CONSENT_REVOKED": "सहमति वापस ली गई",
     "LOGIN_SUCCESS": "साइन इन सफल हुआ",
     "LOGIN_FAILURE": "साइन इन विफल हुआ",
-    "BREAK_GLASS_ACCESS": "आपातकालीन पहुँच दी गई"
+    "BREAK_GLASS_ACCESS": "आपातकालीन पहुँच दी गई",
+    "EMERGENCY_CARD_VIEWED": "आपातकालीन कार्ड देखा गया"
   },
   "loadMore": "और लोड करें",
   "loadingMore": "और लोड हो रहा है…",
@@ -59,5 +60,12 @@
     "detailsHint": "डैश का अर्थ है कि यह कार्य किसी एक Provider या प्रविष्टि प्रकार से संबंधित नहीं था।",
     "title": "प्रवेश इतिहास फ़िल्टर करें",
     "applied": "फ़िल्टर लागू हैं"
+  },
+  "pagination": {
+    "label": "पृष्ठ",
+    "previous": "पिछला",
+    "next": "अगला",
+    "page": "पृष्ठ {page}",
+    "pageSize": "प्रति पृष्ठ पंक्तियाँ"
   }
 }

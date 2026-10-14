@@ -8,6 +8,7 @@ import {
   LogOutIcon,
   MenuIcon,
   MoonIcon,
+  SettingsIcon,
   SunIcon,
   UserIcon,
 } from "lucide-react";
@@ -42,7 +43,8 @@ type NavKey =
   | "audit"
   | "notifications"
   | "analytics"
-  | "profile"
+  | "settings"
+  | "scan"
   | "patients"
   | "admin"
   | "duplicates";
@@ -53,11 +55,16 @@ const NAV: Record<Role, { key: NavKey; href: string }[]> = {
     { key: "consent", href: "/consent" },
     { key: "audit", href: "/audit" },
     { key: "analytics", href: "/analytics" },
-    { key: "notifications", href: "/notifications" },
-    { key: "profile", href: "/profile" },
+    { key: "settings", href: "/settings" },
   ],
-  CLINICIAN: [{ key: "patients", href: "/clinician" }],
-  PROVIDER_STAFF: [{ key: "patients", href: "/clinician" }],
+  CLINICIAN: [
+    { key: "patients", href: "/clinician" },
+    { key: "scan", href: "/clinician/scan" },
+  ],
+  PROVIDER_STAFF: [
+    { key: "patients", href: "/clinician" },
+    { key: "scan", href: "/clinician/scan" },
+  ],
   ADMINISTRATOR: [
     { key: "admin", href: "/admin" },
     { key: "duplicates", href: "/admin/duplicates" },
@@ -91,7 +98,14 @@ export function AppHeader() {
 
   const links = me ? NAV[me.role] : [];
   const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+    pathname === href ||
+    (pathname.startsWith(`${href}/`) &&
+      !links.some(
+        (other) =>
+          other.href !== href &&
+          other.href.startsWith(`${href}/`) &&
+          (pathname === other.href || pathname.startsWith(`${other.href}/`)),
+      ));
 
   async function signOut() {
     if (signingOut) return;
@@ -217,6 +231,14 @@ export function AppHeader() {
                     {me.email}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {me.role === "PATIENT" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">
+                        <SettingsIcon />
+                        {t("nav.settings")}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onSelect={signOut} disabled={signingOut}>
                     <LogOutIcon />
                     {t("nav.signOut")}

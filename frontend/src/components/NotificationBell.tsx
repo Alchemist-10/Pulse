@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowRightIcon, BellIcon, CheckIcon, XIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BellIcon,
+  CheckCheckIcon,
+  CheckIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -16,6 +22,7 @@ import { api, ApiError } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import {
+  markAllNotificationsRead,
   NOTIFICATIONS_CHANGED_EVENT,
   type Notification,
 } from "@/lib/notifications";
@@ -37,6 +44,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<PreviewState>({ status: "loading" });
   const request = useRef<AbortController | null>(null);
+  const [markingAll, setMarkingAll] = useState(false);
 
   const refresh = useCallback(async () => {
     request.current?.abort();
@@ -88,6 +96,17 @@ export function NotificationBell() {
 
   const unread =
     state.status === "ready" && state.items.some((item) => !item.readAt);
+
+  async function markAll() {
+    setMarkingAll(true);
+    try {
+      await markAllNotificationsRead();
+    } catch {
+      void refresh();
+    } finally {
+      setMarkingAll(false);
+    }
+  }
 
   return (
     <Popover
@@ -218,6 +237,18 @@ export function NotificationBell() {
           )}
         </div>
         <div className="border-t px-3 py-2">
+          {unread && (
+            <Button
+              variant="ghost"
+              className="h-auto min-h-11 w-full justify-between whitespace-normal text-left"
+              disabled={markingAll}
+              aria-busy={markingAll}
+              onClick={() => void markAll()}
+            >
+              {t("markAllRead")}
+              <CheckCheckIcon aria-hidden="true" />
+            </Button>
+          )}
           <Button
             asChild
             variant="ghost"

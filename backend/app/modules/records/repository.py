@@ -168,7 +168,7 @@ async def list_timeline(
     if provider_id is not None:
         stmt = stmt.where(MedicalEntry.source_provider_id == provider_id)
     if q and q.strip():
-        # Literal, case-insensitive search across owned subtype tables. Escaping
+        # Case-insensitive (plus trigram typo-tolerant) search across owned subtype tables. Escaping
         # wildcard characters avoids turning a user's '%' into an all-row match.
         needle = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         matches = []
@@ -183,7 +183,12 @@ async def list_timeline(
                 select(table.c.id)
                 .where(
                     table.c.id == MedicalEntry.id,
-                    or_(*(column.ilike(f"%{needle}%", escape="\\") for column in columns)),
+                    or_(
+                        *(column.ilike(f"%{needle}%", escape="\\") for column in columns),
+                        # Typo tolerance: pg_trgm word similarity, so "metformn"
+                        # finds "Metformin". Runs inside the access filter.
+                        *(func.word_similarity(q.strip(), column) >= 0.45 for column in columns),
+                    ),
                 )
                 .exists()
             )

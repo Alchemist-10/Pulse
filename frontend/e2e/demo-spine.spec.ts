@@ -242,7 +242,6 @@ test("full demo spine: signup, upload, grant, clinician read, audit, revoke, loc
   await page.getByLabel("Clinician email").fill("nobody@example.com");
   await page.getByRole("combobox", { name: "Purpose" }).click();
   await page.getByRole("option", { name: "Treatment" }).click();
-  await page.locator('input[type="datetime-local"]').fill("2027-01-01T00:00");
   await page
     .getByRole("radio", { name: "All entry types", exact: true })
     .check();

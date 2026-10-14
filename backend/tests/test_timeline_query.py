@@ -248,3 +248,21 @@ async def test_provider_choices_and_summary_names_follow_actor_access(
     assert own.status_code == 200
     assert len(own.json()["items"]) == 1
     assert own.json()["items"][0]["providerName"] == "Synthetic Clinic A"
+
+
+async def test_search_tolerates_typos_but_not_unrelated_words(
+    client: AsyncClient, register_and_login: RegisterAndLogin, app_database_url: str
+) -> None:
+    await register_and_login(email="tl-fuzzy@example.com")
+    pid = await _patient_id(client)
+    await rh.insert_entry(
+        app_database_url,
+        patient_id=pid,
+        occurred_at=datetime(2025, 3, 1, tzinfo=UTC),
+        note_text="Started metformin for glycaemic control",
+    )
+    typo = await client.get(f"/api/v1/patients/{pid}/entries", params={"q": "metformn"})
+    assert typo.status_code == 200
+    assert len(typo.json()["items"]) == 1
+    unrelated = await client.get(f"/api/v1/patients/{pid}/entries", params={"q": "fracture"})
+    assert unrelated.json()["items"] == []

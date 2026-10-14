@@ -18,10 +18,12 @@ import enBreakGlass from "./messages/en/breakGlass.json";
 import enClinicianHome from "./messages/en/clinicianHome.json";
 import enClinicianRecords from "./messages/en/clinicianRecords.json";
 import enConsent from "./messages/en/consent.json";
+import enEmergency from "./messages/en/emergency.json";
 import enEntry from "./messages/en/entry.json";
 import enErrors from "./messages/en/errors.json";
 import enNotifications from "./messages/en/notifications.json";
 import enProfile from "./messages/en/profile.json";
+import enSettings from "./messages/en/settings.json";
 import enTimeline from "./messages/en/timeline.json";
 import hiCommon from "./messages/hi/common.json";
 import hiAdmin from "./messages/hi/admin.json";
@@ -32,10 +34,12 @@ import hiBreakGlass from "./messages/hi/breakGlass.json";
 import hiClinicianHome from "./messages/hi/clinicianHome.json";
 import hiClinicianRecords from "./messages/hi/clinicianRecords.json";
 import hiConsent from "./messages/hi/consent.json";
+import hiEmergency from "./messages/hi/emergency.json";
 import hiEntry from "./messages/hi/entry.json";
 import hiErrors from "./messages/hi/errors.json";
 import hiNotifications from "./messages/hi/notifications.json";
 import hiProfile from "./messages/hi/profile.json";
+import hiSettings from "./messages/hi/settings.json";
 import hiTimeline from "./messages/hi/timeline.json";
 import taCommon from "./messages/ta/common.json";
 import taAdmin from "./messages/ta/admin.json";
@@ -46,10 +50,12 @@ import taBreakGlass from "./messages/ta/breakGlass.json";
 import taClinicianHome from "./messages/ta/clinicianHome.json";
 import taClinicianRecords from "./messages/ta/clinicianRecords.json";
 import taConsent from "./messages/ta/consent.json";
+import taEmergency from "./messages/ta/emergency.json";
 import taEntry from "./messages/ta/entry.json";
 import taErrors from "./messages/ta/errors.json";
 import taNotifications from "./messages/ta/notifications.json";
 import taProfile from "./messages/ta/profile.json";
+import taSettings from "./messages/ta/settings.json";
 import taTimeline from "./messages/ta/timeline.json";
 import mlCommon from "./messages/ml/common.json";
 import mlAdmin from "./messages/ml/admin.json";
@@ -60,10 +66,12 @@ import mlBreakGlass from "./messages/ml/breakGlass.json";
 import mlClinicianHome from "./messages/ml/clinicianHome.json";
 import mlClinicianRecords from "./messages/ml/clinicianRecords.json";
 import mlConsent from "./messages/ml/consent.json";
+import mlEmergency from "./messages/ml/emergency.json";
 import mlEntry from "./messages/ml/entry.json";
 import mlErrors from "./messages/ml/errors.json";
 import mlNotifications from "./messages/ml/notifications.json";
 import mlProfile from "./messages/ml/profile.json";
+import mlSettings from "./messages/ml/settings.json";
 import mlTimeline from "./messages/ml/timeline.json";
 
 import { mergeCatalogs, pruneEmpty, type Catalog } from "./catalog";
@@ -79,10 +87,12 @@ const CATALOGS: Record<string, Catalog> = {
     clinicianHome: enClinicianHome,
     clinicianRecords: enClinicianRecords,
     consent: enConsent,
+    emergency: enEmergency,
     entry: enEntry,
     errors: enErrors,
     notifications: enNotifications,
     profile: enProfile,
+    settings: enSettings,
     timeline: enTimeline,
   },
   hi: {
@@ -95,10 +105,12 @@ const CATALOGS: Record<string, Catalog> = {
     clinicianHome: hiClinicianHome,
     clinicianRecords: hiClinicianRecords,
     consent: hiConsent,
+    emergency: hiEmergency,
     entry: hiEntry,
     errors: hiErrors,
     notifications: hiNotifications,
     profile: hiProfile,
+    settings: hiSettings,
     timeline: hiTimeline,
   },
   ta: {
@@ -111,10 +123,12 @@ const CATALOGS: Record<string, Catalog> = {
     clinicianHome: taClinicianHome,
     clinicianRecords: taClinicianRecords,
     consent: taConsent,
+    emergency: taEmergency,
     entry: taEntry,
     errors: taErrors,
     notifications: taNotifications,
     profile: taProfile,
+    settings: taSettings,
     timeline: taTimeline,
   },
   ml: {
@@ -127,10 +141,12 @@ const CATALOGS: Record<string, Catalog> = {
     clinicianHome: mlClinicianHome,
     clinicianRecords: mlClinicianRecords,
     consent: mlConsent,
+    emergency: mlEmergency,
     entry: mlEntry,
     errors: mlErrors,
     notifications: mlNotifications,
     profile: mlProfile,
+    settings: mlSettings,
     timeline: mlTimeline,
   },
 };

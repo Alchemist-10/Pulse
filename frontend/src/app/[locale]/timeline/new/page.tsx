@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { use, useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
 import { useTranslations } from "next-intl";
@@ -344,6 +345,7 @@ export default function NewEntryPage({
 
   return (
     <section className="mx-auto max-w-lg animate-in fade-in-0 slide-in-from-bottom-1 space-y-8 duration-300 motion-reduce:animate-none">
+      <BackButton fallback="/timeline" />
       <div className="flex flex-col gap-1">
         <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
           {t(corrects ? "correction.title" : "new.title")}
