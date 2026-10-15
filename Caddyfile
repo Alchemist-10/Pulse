@@ -1,6 +1,4 @@
-98.70.56.100:443 {
-	tls internal
-
+:80 {
 	handle /api/* {
 		request_body {
 			max_size 27MB
