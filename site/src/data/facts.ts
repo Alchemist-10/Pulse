@@ -7,7 +7,7 @@ export const blob = (p: string) => `${REPO}/blob/main/${p}`;
 export const tree = (p: string) => `${REPO}/tree/main/${p}`;
 
 export const stats = {
-  endpoints: 54, // decorators in backend/app/modules/*/routes.py + app/main.py
+  endpoints: 55, // decorators in backend/app/modules/*/routes.py + app/main.py
   modules: 11, // backend/app/modules/*
   roles: 4, // app/core/authz.py:11-15
   permissions: 18, // app/core/authz.py:18-67
@@ -15,14 +15,14 @@ export const stats = {
   errorCodes: 21, // app/core/errors.py:8-33
   auditActions: 19, // app/modules/audit/models.py:28-47
   migrations: 10, // app/db/migrations/versions/0001..0010
-  adrs: 17, // docs/adr/0001..0017
+  adrs: 18, // docs/adr/0001..0018
   locales: 4, // frontend/src/i18n/routing.ts:5
-  catalogKeys: 652, // leaf keys per locale, frontend/src/i18n/messages/{en,hi,ta,ml}/*.json
-  catalogFiles: 16, // per locale
-  pages: 29, // frontend/src/app/[locale]/**/page.tsx
-  backendTests: 285, // `uv run pytest` (testcontainers Postgres + Redis)
-  e2eSpecs: 14, // frontend/e2e/*.spec.ts (mocked API)
-  e2eTests: 79, // `npx playwright test --list`
+  catalogKeys: 707, // leaf keys per locale, frontend/src/i18n/messages/{en,hi,ta,ml}/*.json
+  catalogFiles: 17, // per locale
+  pages: 30, // frontend/src/app/[locale]/**/page.tsx
+  backendTests: 312, // `uv run pytest` (testcontainers Postgres + Redis)
+  e2eSpecs: 15, // frontend/e2e/*.spec.ts (mocked API)
+  e2eTests: 80, // `npx playwright test --list`
   liveSpecs: 1, // frontend/e2e-live/demo-spine.live.spec.ts, real stack, no mocks
   ciLints: 4, // backend/scripts/lint_{cross_module_imports,module_sql,entry_query,actor_first}.py
   composeServices: 6, // compose.yaml
@@ -32,7 +32,7 @@ export const roles = [
   {
     id: "PATIENT",
     name: "Patient",
-    owns: "Owns the record. Reads their own timeline, grants and revokes consent, keeps an emergency card with a QR, sees every access in their audit log, reads analytics and notifications.",
+    owns: "Owns the record. Reads their own timeline, grants and revokes consent, keeps an emergency card with a QR, sees every access in their audit log, reads analytics and notifications, and asks plain-language questions of their own record.",
     cannot: "Cannot file or edit clinical entries.",
     permissions: 14,
   },

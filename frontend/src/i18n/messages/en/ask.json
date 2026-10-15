@@ -1,0 +1,86 @@
+{
+  "title": "Ask your record",
+  "subtitle": "Questions are answered by fixed rules from your own record. No AI model sees your data, and nothing you ask is stored.",
+  "placeholder": "e.g. What is my latest HbA1c?",
+  "inputLabel": "Your question",
+  "send": "Ask",
+  "thinking": "Looking…",
+  "emptyTitle": "Try asking",
+  "you": "You",
+  "answer": "Pulse",
+  "newer": "Newest answer first",
+  "examples": {
+    "LATEST_LAB": "What is my latest HbA1c?",
+    "LAB_TREND": "Is my HbA1c trend going up?",
+    "MEDICATIONS": "What medicines am I taking?",
+    "ALLERGIES": "Do I have any allergies?",
+    "CONDITIONS": "What conditions am I diagnosed with?",
+    "WHAT_CHANGED": "What changed in the last 30 days?",
+    "WHO_ACCESSED": "Who viewed my records this month?",
+    "EMERGENCY_PREVIEW": "What would a paramedic see?"
+  },
+  "answers": {
+    "unmatched": "I can only answer questions of these kinds:",
+    "lab": {
+      "no_tests": "No lab results are on your record yet.",
+      "unknown_test": "I could not tell which test you meant. Tests on your record: {tests}."
+    },
+    "medications": {
+      "none": "No active medications are on your record."
+    },
+    "conditions": {
+      "none": "No diagnoses are on your record."
+    },
+    "allergies": {
+      "none": "No allergies are set on your emergency card."
+    },
+    "changed": {
+      "none": "Nothing was added to your record in the last {days} days."
+    },
+    "access": {
+      "none": "Nobody else has viewed your record in the last {days} days."
+    }
+  },
+  "lab": {
+    "latest": "Latest result",
+    "observed": "Recorded {date}",
+    "range": "Reference range {low} to {high}",
+    "abnormal": "Outside reference range",
+    "normal": "Within reference range"
+  },
+  "lists": {
+    "medications": "Active medications",
+    "conditions": "Diagnoses",
+    "allergies": "Allergies (from your emergency card)"
+  },
+  "changes": {
+    "added": "Added in the last {days} days",
+    "corrected": "Corrected entries",
+    "none": "None"
+  },
+  "access": {
+    "title": "{count} views by other people in the last {days} days",
+    "truncated": "Showing the most recent {count}. Open the access log for the full history.",
+    "openLog": "Open access log",
+    "entryType": "Entry type: {type}"
+  },
+  "emergency": {
+    "title": "This is what a paramedic scanning your QR would see",
+    "notSetUp": "Your emergency card is not set up, so a paramedic would see nothing.",
+    "edit": "Edit emergency card"
+  },
+  "receipt": {
+    "summary": "Show your work",
+    "source": "Read from",
+    "filter": {
+      "accessible_entries": "Your medical entries, through the consent filter",
+      "audit_projection": "Your access log",
+      "emergency_card": "Your emergency card",
+      "none": "Nothing was read"
+    },
+    "entries": "Entries used: {count}",
+    "logged": "This question was recorded in your access log as an analytics view. The question text was not kept.",
+    "notLogged": "Nothing was read, so nothing was logged."
+  },
+  "error": "Could not answer that. Try again."
+}

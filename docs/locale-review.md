@@ -55,3 +55,11 @@ them, both flagged at the time they were made rather than smoothed over:
 
 A reviewer should start with these two before doing a general pass, since
 they were flagged as judgment calls rather than confirmed translations.
+
+## Ask your record (ADR-0018)
+
+Added after the review above and not yet reviewed by native speakers:
+
+- `frontend/src/i18n/messages/{hi,ta,ml}/ask.json`: interface copy, including the example questions on the suggestion chips.
+- `backend/app/modules/ask/intents.py`: the hi, ta and ml phrase lexicons. These are self-written trigger phrases. Dravidian suffixes are absorbed by prefix matching, which a native reader should test with natural phrasings, since a phrase that sounds right but is not in the lexicon returns the "I can only answer these" fallback.
+

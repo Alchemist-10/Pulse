@@ -48,6 +48,7 @@
     "audit": "Access log",
     "notifications": "Notifications",
     "analytics": "Analytics",
+    "ask": "Ask",
     "profile": "Profile",
     "patients": "Patients",
     "admin": "Admin",

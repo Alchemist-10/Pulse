@@ -127,6 +127,14 @@ export const adrGroups: AdrGroup[] = [
         overLabel: "Replaces", // 0017 intro paragraph
         consequence: "A Clinician who needs records in an emergency still needs consent; the card carries what is safe to share without it.", // 0017 "Consequences"
       },
+      {
+        n: "0018",
+        slug: "adr/0018-rule-based-ask-your-record",
+        claim: "A patient can ask questions of their own record. A fixed intent matcher answers them through the existing services, nothing is stored, and each answer shows what it was read from.",
+        over: "A language model that retrieves and summarises, which cannot be shown to respect the consent filter.",
+        overLabel: "Replaces", // 0018 "Consequences", last bullet
+        consequence: "Coverage is bounded by the phrase lexicons, and the Hindi, Tamil and Malayalam ones are unreviewed.", // 0018 "Consequences"
+      },
     ],
   },
   {

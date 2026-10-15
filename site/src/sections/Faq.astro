@@ -52,6 +52,11 @@ const faqs = [
     links: [{ t: "ADR-0013", s: "adr/0013-error-codes-not-messages" }, { t: "Locale review", s: "locale-review" }],
   },
   {
+    q: "Is there an AI chatbot over the record?",
+    a: "There is a question box, and no model behind it. A fixed set of phrase lexicons maps a question to one of eight intents, and each intent runs an existing query through the same consent filter as the timeline. Nothing you ask is stored, an answer that reads the record is logged once with the intent name and never the question, and every answer has a receipt showing what it was read from. The cost is coverage: it answers those eight kinds of question and says so otherwise.",
+    links: [{ t: "ADR-0018", s: "adr/0018-rule-based-ask-your-record" }, { t: "Locale review", s: "locale-review" }],
+  },
+  {
     q: "What is not implemented?",
     a: `Not built: ${notImplemented.join("; ")}. Hindi, Tamil and Malayalam have not been reviewed by a native speaker. No compliance certification or real-patient readiness is claimed.`,
     links: [{ t: "Workflows", s: "workflows" }, { t: "Verification and operations", s: "verification-and-operations" }],

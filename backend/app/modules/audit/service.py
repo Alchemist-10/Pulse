@@ -67,6 +67,8 @@ class AuditMetadata:
     provider_name: str | None = None
     count: int | None = None
     justification: str | None = None
+    # Ask-your-record intent name (an enum value, never the question text).
+    intent: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {k: v for k, v in asdict(self).items() if v is not None}
