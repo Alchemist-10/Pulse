@@ -6,7 +6,7 @@ import "@fontsource/noto-sans/500.css";
 import "@fontsource/noto-sans/700.css";
 import "@fontsource/noto-sans-mono/400.css";
 import "../styles/global.css";
-import { stats, notImplemented, seed, REPO, team, course } from "../data/facts";
+import { stats, seed, REPO, team, course } from "../data/facts";
 const names = team.map((m) => m.name).join(", ");
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -56,12 +56,20 @@ const layers = [
   ["models + schemas", "Shape", "SQLAlchemy tables and the Pydantic API contract."],
 ];
 const decisions = [
-  ["0003", "Opaque Redis sessions", "JWT", "Logout and role changes take effect on the server at once."],
-  ["0006", "One query builder for consent", "Per-endpoint checks", "A filter that is missing cannot be forgotten in sixty places."],
+  ["0003", "Opaque Redis sessions", "JWT", "Logout and role changes apply server-side, at once."],
+  ["0006", "One query builder for consent", "Per-endpoint checks", "A filter cannot be forgotten in sixty places."],
   ["0007", "Administrators read no clinical data", "A superuser role", "The audit log is safe for admins to see."],
-  ["0008", "Append-only audit by GRANT", "Convention", "The application role cannot update or delete history."],
-  ["0001", "Joined-table entry inheritance", "One wide table or JSONB", "Typed columns, honest indexes, no clinical JSON."],
-  ["0018", "Rule-based ask-your-record", "A language model", "Every answer is provably through the consent filter."],
+  ["0008", "Append-only audit by GRANT", "Convention", "The app role cannot update or delete history."],
+  ["0001", "Joined-table entry inheritance", "One wide table or JSONB", "Typed columns, no clinical JSON."],
+  ["0018", "Rule-based ask-your-record", "A language model", "Every answer passes the consent filter."],
+];
+const faqs = [
+  ["Why not JWT?", "Opaque Redis sessions are checked on the server, so logout and role changes take effect at once."],
+  ["Why a monolith, not microservices?", "One laptop-scale deployment with no scaling need. Module boundaries are linted as if extraction were coming."],
+  ["Why 404 instead of 403?", "A 403 confirms the record exists, which reveals that a person is a patient here at all."],
+  ["Is there an AI chatbot?", "No model. Fixed rules map a question to a query that goes through the same consent filter."],
+  ["Why not translate diagnoses?", "The interface is localised, clinical text is not. Translating it would invent a medical claim."],
+  [`Is any data real?`, `None. Synthea plus an Indian overlay gives ${seed.patients} synthetic patients, committed to the repo.`],
 ];
 const patterns = [
   ["Modular monolith", "11 modules, one deployable, one database."],
@@ -383,9 +391,10 @@ const total = 18;
           <p class="kicker">Decisions, {stats.adrs} recorded</p>
           <h2>We chose, and wrote down what we gave up</h2>
           <div class="adrs">
+            <div class="adr head"><span>ADR</span><span>Chosen</span><span>Over</span><span>Because</span></div>
             {decisions.map(([n, c, o, w], i) => (
               <div class="adr rv" data-at={Math.floor(i / 2) + 1}>
-                <span class="num">ADR {n}</span><b>{c}</b><span class="over">over {o}</span><span class="why">{w}</span>
+                <span class="num">{n}</span><b>{c}</b><span class="over">{o}</span><span class="why">{w}</span>
               </div>
             ))}
           </div>
@@ -414,23 +423,14 @@ const total = 18;
           </div>
         </section>
 
-        <!-- 17 · Limits -->
-        <section class="slide s-two" data-builds="2" data-t="slide" aria-label="Limits and next steps">
-          <div>
-            <p class="kicker">Honest limits</p>
-            <h2>What is not built</h2>
-            <ul class="plain">
-              {notImplemented.slice(0, 5).map((t) => <li class="rv" data-at="1">{t}</li>)}
-            </ul>
-          </div>
-          <div>
-            <p class="kicker">Caveats</p>
-            <h2>What to trust, and what not</h2>
-            <ul class="plain">
-              <li class="rv" data-at="2">Hindi, Tamil and Malayalam are unreviewed by native speakers.</li>
-              <li class="rv" data-at="2">All {seed.patients} patients are synthetic. No real data, ever.</li>
-              <li class="rv" data-at="2">No compliance certification is claimed.</li>
-            </ul>
+        <!-- 17 · FAQ -->
+        <section class="slide s-plain" data-builds="3" data-t="slide" aria-label="Questions and answers">
+          <p class="kicker">FAQ</p>
+          <h2>Questions we expect</h2>
+          <div class="faq">
+            {faqs.map(([q, a], i) => (
+              <div class="qa rv" data-at={Math.floor(i / 2) + 1}><h3>{q}</h3><p>{a}</p></div>
+            ))}
           </div>
         </section>
 
@@ -631,12 +631,17 @@ const total = 18;
   .pill.ok { background: var(--consent-active-surface); color: var(--consent-active); }
   .pill.bad { background: var(--critical-surface); color: var(--critical); }
 
-  .adrs { grid-template-columns: repeat(2, 1fr); }
-  .adr { display: grid; gap: 4px; }
-  .adr .num { font-size: 16px; font-family: var(--font-mono); color: var(--muted-foreground); }
-  .adr b { font-size: 24px; }
+  .adrs { grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+  .adr { display: grid; grid-template-columns: 60px 380px 230px 1fr; gap: 16px; align-items: center; padding: 9px 20px; }
+  .adr.head { background: transparent; border: 0; box-shadow: none; padding-top: 0; padding-bottom: 0; font-size: 17px; font-weight: 500; color: var(--muted-foreground); }
+  .adr .num { font-size: 17px; font-family: var(--font-mono); color: var(--muted-foreground); }
+  .adr b { font-size: 20px; line-height: 1.2; }
   .adr .over { font-size: 18px; color: var(--primary); }
-  .adr .why { font-size: 19px; color: var(--muted-foreground); }
+  .adr .why { font-size: 18px; line-height: 1.3; color: var(--muted-foreground); }
+  .faq { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 20px; }
+  .qa { border: 1px solid var(--border); background: var(--card); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow-card); }
+  .qa h3 { font-size: 22px; color: var(--primary); }
+  .qa p { margin: 0; font-size: 19px; line-height: 1.35; color: var(--muted-foreground); }
 
   /* HUD */
   .hud { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 8px 12px;
