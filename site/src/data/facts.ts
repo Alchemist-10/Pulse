@@ -151,12 +151,17 @@ export const notImplemented = [
   "SMS delivery",
 ] as const; // docs/workflows/README.md, verified by audit 2026-10-14
 
-/** Team credits. Placeholder until the team confirms names and slices. */
+/** Team credits. Names from the slice tickets #18-#21 and the course presentation. */
 export const team = [
-  { name: "Team member", slice: "Database", issue: 18 },
-  { name: "Team member", slice: "Backend", issue: 19 },
-  { name: "Team member", slice: "Frontend", issue: 20 },
-  { name: "Team member", slice: "Platform", issue: 21 },
+  { name: "Shivansh Neekhra", slice: "Database", issue: 18 },
+  { name: "Akshay VS", slice: "Backend", issue: 19 },
+  { name: "Bharadwaj B Chand", slice: "Frontend", issue: 20 },
+  { name: "Srimoneyshankar Ajith", slice: "Platform, integration and review", issue: 21 },
 ] as const;
 
-export const course = { name: "Course name", institute: "Institute", guide: "Professor" } as const; // placeholder
+export const course = {
+  name: "CSE312 Software Architecture Principles and Practices",
+  institute: "Indian Institute of Information Technology, Kottayam",
+  guide: "Dr. Dhakshayani J",
+  team: "Team 1",
+} as const;

@@ -1,0 +1,794 @@
+---
+// Click-through presentation of Pulse: story first, then the architecture.
+// Every number comes from facts.ts. The QR is illustrative, not scannable.
+import "@fontsource/noto-sans/400.css";
+import "@fontsource/noto-sans/500.css";
+import "@fontsource/noto-sans/700.css";
+import "@fontsource/noto-sans-mono/400.css";
+import "../styles/global.css";
+import { stats, notImplemented, seed, REPO, team, course } from "../data/facts";
+const names = team.map((m) => m.name).join(", ");
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Deterministic pseudo-QR: three finder squares plus seeded noise.
+const N = 21;
+let seedN = 7;
+const rnd = () => ((seedN = (seedN * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const finder = (x: number, y: number) =>
+  [[0, 0], [N - 7, 0], [0, N - 7]].some(([fx, fy]) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7);
+const finderOn = (x: number, y: number) => {
+  const [fx, fy] = [[0, 0], [N - 7, 0], [0, N - 7]].find(([a, b]) => x >= a && x < a + 7 && y >= b && y < b + 7)!;
+  const dx = x - fx, dy = y - fy;
+  return dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
+};
+const qr: { x: number; y: number }[] = [];
+for (let y = 0; y < N; y++)
+  for (let x = 0; x < N; x++) {
+    const near = (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9);
+    if (finder(x, y) ? finderOn(x, y) : !near && rnd() > 0.52) qr.push({ x, y });
+  }
+
+const functional = [
+  ["Accounts", "Register, verify email, step-up password check for sensitive actions."],
+  ["Timeline", "Five entry kinds. Corrections add a new entry, never overwrite."],
+  ["Filing", "Provider staff file entries and documents, even for unregistered patients."],
+  ["Consent", "Scoped by entry type and date window, optional expiry, revoked at once."],
+  ["Access log", "Every read listed for the patient, with notifications."],
+  ["Emergency card", "Patient-written card, QR, 60-minute break-glass with a reason."],
+  ["Analytics", "Lab trends, medications, visits, computed at request time."],
+  ["Ask your record", "Plain questions answered by fixed rules, in four languages."],
+];
+const nonFunctional = [
+  ["Privacy", "Consent filter on every clinical read. Denied reads are 404, not 403."],
+  ["Auditability", "Audit table is append-only by database GRANT."],
+  ["Security", "Argon2id, opaque Redis sessions, CSRF origin guard, default-deny routes."],
+  ["Integrity", "No in-place edits. No clinical values in JSONB."],
+  ["Usability", "Four locales, mobile-first, colour never carries meaning alone."],
+  ["Maintainability", "Modular monolith with import and SQL boundaries enforced in CI."],
+  ["Testability", "Integration tests on real PostgreSQL, negative tests first."],
+  ["Deployability", `docker compose up, ${stats.composeServices} services, seeded.`],
+];
+const layers = [
+  ["routes.py", "HTTP only", "Parse, validate, delegate. No business logic."],
+  ["service.py", "Business rules", "Consent, permissions, transactions. No SQL, no framework."],
+  ["repository.py", "All SQL", "One query builder for clinical reads."],
+  ["models + schemas", "Shape", "SQLAlchemy tables and the Pydantic API contract."],
+];
+const decisions = [
+  ["0003", "Opaque Redis sessions", "JWT", "Logout and role changes take effect on the server at once."],
+  ["0006", "One query builder for consent", "Per-endpoint checks", "A filter that is missing cannot be forgotten in sixty places."],
+  ["0007", "Administrators read no clinical data", "A superuser role", "The audit log is safe for admins to see."],
+  ["0008", "Append-only audit by GRANT", "Convention", "The application role cannot update or delete history."],
+  ["0001", "Joined-table entry inheritance", "One wide table or JSONB", "Typed columns, honest indexes, no clinical JSON."],
+  ["0018", "Rule-based ask-your-record", "A language model", "Every answer is provably through the consent filter."],
+];
+const patterns = [
+  ["Modular monolith", "11 modules, one deployable, one database."],
+  ["Layered, repository", "routes, service, repository. SQL lives in one place."],
+  ["Ports and adapters", "Storage, notification, identity behind interfaces."],
+  ["Contract first", "OpenAPI generates the TypeScript types. Stubs before code."],
+  ["Fitness functions", "Route coverage plus 4 lints fail the build on a violated rule."],
+  ["Negative tests first", "Revoked, expired, wrong scope, admin: each must return nothing."],
+];
+const quality = [
+  [stats.backendTests, "backend tests on real PostgreSQL"],
+  [stats.e2eTests, "browser tests, plus 1 live run on the real stack"],
+  [stats.endpoints, "endpoints, every one declares a permission"],
+  [stats.modules, "modules with enforced boundaries"],
+  [stats.adrs, "decision records with alternatives"],
+  [stats.catalogKeys, "interface strings in each of 4 languages"],
+];
+const total = 18;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pulse, the presentation</title>
+    <meta name="description" content="A click-through presentation of Pulse: a patient-owned lifelong health record, told as a story and then as an architecture." />
+    <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("pulse-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body class="present">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M12 10v5M12 18v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></symbol>
+    </svg>
+
+    <div class="viewport" id="viewport">
+      <div class="stage" id="stage">
+
+        <!-- 1 · Title -->
+        <section class="slide s-title" data-builds="0" data-t="fade" aria-label="Title">
+          <svg class="ecg" viewBox="0 0 1280 200" preserveAspectRatio="none" aria-hidden="true">
+            <path class="ecg__line" data-at="0" d="M0 100 H430 l20 -10 l20 10 H520 l14 18 l26 -120 l26 150 l16 -48 H700 q40 -50 80 0 H1280" />
+          </svg>
+          <div class="title-block">
+            <p class="kicker">{course.name}</p>
+            <h1>Pulse</h1>
+            <p class="lede">A lifelong health record that the patient owns.</p>
+            <p class="team">{names}</p>
+            <p class="inst">{course.institute}, {course.team}</p>
+            <p class="inst">Guide: {course.guide}</p>
+          </div>
+        </section>
+
+        <!-- 2 · Accident -->
+        <section class="slide s-scene" data-builds="2" data-t="slide" aria-label="Story: the accident">
+          <svg class="scene" viewBox="0 0 1280 720" aria-hidden="true">
+            <g transform="translate(0 90)"><g data-at="1" class="world">
+              <rect x="0" y="500" width="1280" height="150" class="road" />
+              <path d="M0 575 H1280" class="lane" />
+              <g class="lamp"><path d="M1200 500 V330" class="pole" /><circle cx="1200" cy="322" r="14" class="bulb" /><path d="M1200 336 L1140 500 H1260 Z" class="beam" /></g>
+              <g class="ravi" data-at="1" id="ravi">
+                <g class="walk">
+                  <circle cx="0" cy="-92" r="15" />
+                  <path d="M0 -76 V-30 M0 -64 L-18 -40 M0 -64 L18 -40 M0 -30 L-14 0 M0 -30 L14 0" />
+                </g>
+              </g>
+              <g class="car" data-at="1" id="car">
+                <path d="M0 62 V30 Q0 14 18 12 L70 8 L110 -22 H210 L252 8 L300 14 Q320 18 320 36 V62 Z" class="car__body" />
+                <path d="M122 -14 H198 L228 8 H100 Z" class="car__glass" />
+                <circle cx="80" cy="64" r="22" class="wheel" /><circle cx="250" cy="64" r="22" class="wheel" />
+                <path d="M320 40 L560 4 V76 L320 56 Z" class="car__beam" />
+              </g>
+              <g class="burst" data-at="1" transform="translate(990 520)">
+                <path d="M0 -70 L16 -26 L60 -48 L34 -8 L80 6 L30 22 L50 64 L8 40 L-6 84 L-24 36 L-70 58 L-40 14 L-86 -6 L-34 -22 L-52 -66 L-12 -38 Z" />
+              </g>
+            </g></g>
+          </svg>
+          <div class="copy">
+            <p class="kicker rv on" data-at="0">A story</p>
+            <h2 class="rv" data-at="0" data-out="2">9:42 pm. Ravi, 34, is walking home.</h2>
+            <h2 class="rv warn" data-at="2">Hit by a car. Unconscious. No ID.</h2>
+            <ul class="asks rv" data-at="2">
+              <li>Blood group?</li><li>Allergies?</li><li>Medicines?</li><li>Who to call?</li>
+            </ul>
+            <p class="lede rv" data-at="2">Nobody can answer. The record is in three hospitals, and none of them are here.</p>
+          </div>
+        </section>
+
+        <!-- 3 · Scan -->
+        <section class="slide s-scene" data-builds="3" data-t="slide" aria-label="Story: the QR on the phone">
+          <svg class="scene" viewBox="0 0 1280 720" aria-hidden="true">
+            <rect x="0" y="560" width="1280" height="160" class="road" />
+            <g class="hospital"><rect x="40" y="470" width="260" height="90" rx="8" class="bld" /><rect x="150" y="486" width="40" height="12" class="crossH" /><rect x="164" y="472" width="12" height="40" class="crossH" /><rect x="70" y="510" width="30" height="50" class="door" /><rect x="240" y="510" width="30" height="50" class="door" /></g>
+            <g class="ambulance" data-at="0">
+              <rect x="0" y="470" width="260" height="96" rx="12" class="amb" />
+              <rect x="190" y="486" width="52" height="40" class="car__glass" />
+              <rect x="40" y="498" width="70" height="14" class="crossH" /><rect x="68" y="470" width="14" height="70" class="crossH" />
+              <circle cx="60" cy="570" r="20" class="wheel" /><circle cx="200" cy="570" r="20" class="wheel" />
+              <rect x="120" y="456" width="44" height="14" rx="4" class="siren" />
+            </g>
+            <g transform="translate(150 0)"><g class="phone-back rv" data-at="1">
+              <rect x="820" y="90" width="280" height="520" rx="36" class="phone" />
+              <circle cx="880" cy="150" r="22" class="cam" /><circle cx="934" cy="150" r="12" class="cam" />
+              <rect x="860" y="250" width="200" height="270" rx="14" class="sticker" />
+              <text x="960" y="284" text-anchor="middle" class="stk">In case of emergency</text>
+              <g transform="translate(886 300) scale(7)" class="qr">
+                {qr.map((c) => <rect x={c.x} y={c.y} width="1" height="1" />)}
+              </g>
+            </g></g>
+            <g transform="translate(150 0)"><g class="scanner rv" data-at="2">
+              <rect x="540" y="230" width="190" height="360" rx="28" class="phone2" />
+              <rect x="556" y="252" width="158" height="316" rx="14" class="screen" />
+              <rect x="556" y="252" width="158" height="4" class="sweep" />
+              <text x="635" y="545" text-anchor="middle" class="stk">Scanning</text>
+            </g></g>
+            <g transform="translate(1110 560)"><g class="ok rv" data-at="3">
+              <circle r="38" class="okc" /><use href="#i-check" x="-22" y="-22" width="44" height="44" />
+            </g></g>
+          </svg>
+          <div class="copy">
+            <p class="kicker rv on" data-at="0">At the hospital</p>
+            <h2 class="rv" data-at="0">The ambulance has no record. The phone does.</h2>
+            <p class="lede rv" data-at="1">Ravi made an emergency card and put its QR on the back of his phone.</p>
+            <p class="lede rv" data-at="2">The paramedic scans it, signed in to the hospital system.</p>
+            <p class="lede rv" data-at="3">Only the card opens. His record stays closed.</p>
+          </div>
+        </section>
+
+        <!-- 4 · Card -->
+        <section class="slide s-split" data-builds="4" data-t="slide" aria-label="Story: the emergency card">
+          <div class="copy">
+            <p class="kicker">Four seconds later</p>
+            <h2>The doctor knows what to avoid.</h2>
+            <ul class="ticks">
+              <li class="rv" data-at="2"><svg class="ic"><use href="#i-check" /></svg>No penicillin. Asthma inhaler on hand.</li>
+              <li class="rv" data-at="3"><svg class="ic"><use href="#i-check" /></svg>Wife called from the card.</li>
+              <li class="rv" data-at="4"><svg class="ic"><use href="#i-lock" /></svg>Nothing else opened. The scan is logged and Ravi is notified.</li>
+            </ul>
+          </div>
+          <div class="phone-ui">
+            <div class="phone-ui__bar">Emergency card, Ravi Menon</div>
+            <div class="row rv" data-at="0"><span>Blood type</span><b>O+</b></div>
+            <div class="row crit rv" data-at="1"><span><svg class="ic"><use href="#i-alert" /></svg>Allergy</span><b>Penicillin</b></div>
+            <div class="row rv" data-at="1"><span>Condition</span><b>Asthma</b></div>
+            <div class="row rv" data-at="2"><span>Medication</span><b>Salbutamol inhaler</b></div>
+            <div class="row rv" data-at="3"><span>Next of kin</span><b>Asha Menon, wife<br /><small>+91 90000 00000</small></b></div>
+          </div>
+        </section>
+
+        <!-- 5 · Priya -->
+        <section class="slide s-split" data-builds="3" data-t="zoom" aria-label="Story: ask your record">
+          <div class="copy">
+            <p class="kicker">A smaller moment</p>
+            <h2>New city, new doctor. Priya forgets her tablets.</h2>
+            <div class="bubble doc rv" data-at="0">"Which medicines are you on?"</div>
+            <div class="bubble pat rv" data-at="1">"A small white one, for sugar?"</div>
+            <p class="lede rv" data-at="3">No AI model. Fixed rules over her own record. Nothing she asks is stored.</p>
+          </div>
+          <div class="phone-ui">
+            <div class="phone-ui__bar">Ask your record</div>
+            <div class="typed rv" data-at="2"><span class="typing">What medicines am I taking?</span></div>
+            <div class="answer rv" data-at="2">
+              <b>Active medications</b>
+              <ul><li>Metformin 500 mg, twice daily</li><li>Amlodipine 5 mg, once daily</li></ul>
+            </div>
+            <div class="receipt rv" data-at="3"><svg class="ic"><use href="#i-check" /></svg>Read from your entries through the consent filter. 2 entries. Logged.</div>
+          </div>
+        </section>
+
+        <!-- 6 · Introduction -->
+        <section class="slide s-plain" data-builds="4" data-t="slide" aria-label="Introduction">
+          <p class="kicker">Introduction</p>
+          <h2>Pulse is a lifelong health record with a simple rule: the patient decides.</h2>
+          <div class="roles">
+            <div class="role rv" data-at="1"><h3>Patients</h3><p>Own the record, grant and revoke consent, see every access.</p></div>
+            <div class="role rv" data-at="2"><h3>Providers</h3><p>File entries and documents, including for people who never registered.</p></div>
+            <div class="role rv" data-at="3"><h3>Clinicians</h3><p>Read only inside an active consent. The role alone grants nothing.</p></div>
+            <div class="role rv" data-at="4"><h3>Administrators</h3><p>Keep identities clean. Can never read clinical data.</p></div>
+          </div>
+          <p class="foot rv on" data-at="0">Built for India: four languages, synthetic data only, never a real patient.</p>
+        </section>
+
+        <!-- 7 · Problem and objectives -->
+        <section class="slide s-two" data-builds="2" data-t="slide" aria-label="Problem statement and objectives">
+          <div>
+            <p class="kicker">Problem statement</p>
+            <h2>Health history is scattered, and the patient is the last to know who saw it.</h2>
+            <ul class="plain">
+              <li class="rv" data-at="0">Records sit in separate hospitals and on paper.</li>
+              <li class="rv" data-at="0">Emergency staff have nothing to go on.</li>
+              <li class="rv" data-at="1">Access is implied. Withdrawing it is not a thing.</li>
+              <li class="rv" data-at="1">Nobody can say who read what.</li>
+            </ul>
+          </div>
+          <div>
+            <p class="kicker">Objectives</p>
+            <ol class="obj">
+              <li class="rv" data-at="2"><b>Own.</b> One record that follows the patient for life.</li>
+              <li class="rv" data-at="2"><b>Consent.</b> Enforced on every read, revoked immediately.</li>
+              <li class="rv" data-at="2"><b>Account.</b> Every access recorded and visible to the patient.</li>
+              <li class="rv" data-at="2"><b>Reach.</b> Four languages, an emergency path, mobile first.</li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- 8 · Functional -->
+        <section class="slide s-plain" data-builds="3" data-t="slide" aria-label="Functional requirements">
+          <p class="kicker">Requirements</p>
+          <h2>What it does</h2>
+          <div class="grid4">
+            {functional.map(([t, d], i) => (
+              <div class="cell rv" data-at={Math.floor(i / 3)}><h3>{t}</h3><p>{d}</p></div>
+            ))}
+          </div>
+        </section>
+
+        <!-- 9 · Non-functional -->
+        <section class="slide s-plain" data-builds="3" data-t="slide" aria-label="Non-functional requirements">
+          <p class="kicker">Requirements</p>
+          <h2>What it must stay true to</h2>
+          <div class="grid4">
+            {nonFunctional.map(([t, d], i) => (
+              <div class="cell rv" data-at={Math.floor(i / 3)}><h3>{t}</h3><p>{d}</p></div>
+            ))}
+          </div>
+        </section>
+
+        <!-- 10 · Architecture overview -->
+        <section class="slide s-plain" data-builds="4" data-t="zoom" aria-label="System architecture">
+          <p class="kicker">System architecture</p>
+          <h2>One origin, one backend, one database</h2>
+          <svg class="arch" viewBox="0 0 1120 440" role="img" aria-label="Browser to Caddy to Next.js and FastAPI, which uses PostgreSQL, Redis and three adapters">
+            <g class="node rv" data-at="0"><rect x="10" y="165" width="150" height="80" rx="12" /><text x="85" y="200" text-anchor="middle">Browser</text><text x="85" y="224" text-anchor="middle" class="sub">PWA, 4 locales</text></g>
+            <path class="wire dr" data-at="0" d="M160 205 H235" />
+            <g class="node rv" data-at="0"><rect x="235" y="165" width="150" height="80" rx="12" /><text x="310" y="200" text-anchor="middle">Caddy</text><text x="310" y="224" text-anchor="middle" class="sub">same origin</text></g>
+            <path class="wire dr" data-at="1" d="M385 190 C430 190 430 100 470 100" />
+            <text class="lbl rv" data-at="1" x="402" y="118">/*</text>
+            <path class="wire dr" data-at="1" d="M385 220 C430 220 430 300 470 300" />
+            <text class="lbl rv" data-at="1" x="396" y="290">/api/*</text>
+            <g class="node rv" data-at="1"><rect x="470" y="55" width="220" height="90" rx="12" /><text x="580" y="92" text-anchor="middle">Next.js 16</text><text x="580" y="118" text-anchor="middle" class="sub">screens, next-intl</text></g>
+            <g class="node big rv" data-at="1"><rect x="470" y="215" width="330" height="205" rx="14" /><text x="635" y="245" text-anchor="middle">FastAPI, modular monolith</text>
+              {["auth","users","patients","providers","records","consent","audit","notifications","analytics","admin","ask"].map((m, i) => (
+                <g><rect x={486 + (i % 3) * 108} y={256 + Math.floor(i / 3) * 40} width="100" height="32" rx="8" class="chip" /><text x={536 + (i % 3) * 108} y={277 + Math.floor(i / 3) * 40} text-anchor="middle" class="chip-t">{m}</text></g>
+              ))}
+            </g>
+            <path class="wire dr" data-at="2" d="M800 280 H880" />
+            <path class="wire dr" data-at="2" d="M800 345 H880" />
+            <g class="node rv" data-at="2"><rect x="880" y="240" width="230" height="80" rx="12" /><text x="995" y="274" text-anchor="middle">PostgreSQL 18</text><text x="995" y="298" text-anchor="middle" class="sub">all durable data</text></g>
+            <g class="node rv" data-at="2"><rect x="880" y="325" width="230" height="80" rx="12" /><text x="995" y="359" text-anchor="middle">Redis 8</text><text x="995" y="383" text-anchor="middle" class="sub">sessions only, never truth</text></g>
+            <path class="wire dr" data-at="3" d="M800 235 C850 235 850 120 880 120" />
+            <g class="node rv" data-at="3"><rect x="880" y="60" width="230" height="120" rx="12" /><text x="995" y="92" text-anchor="middle">Adapters</text><text x="995" y="120" text-anchor="middle" class="sub">StorageProvider</text><text x="995" y="142" text-anchor="middle" class="sub">NotificationProvider</text><text x="995" y="164" text-anchor="middle" class="sub">IdentityProvider</text></g>
+            <circle class="packet" data-at="4" r="7" />
+          </svg>
+        </section>
+
+        <!-- 11 · Layers -->
+        <section class="slide s-two" data-builds="4" data-t="slide" aria-label="Layers inside a module">
+          <div>
+            <p class="kicker">Inside a module</p>
+            <h2>Each layer has one job, and one thing it may not do</h2>
+            <p class="lede rv" data-at="4">Modules talk through service interfaces, never each other's tables. A CI lint fails the build if they do.</p>
+          </div>
+          <div class="stack">
+            {layers.map(([f, h, d], i) => (
+              <div class="layer rv" data-at={i + 1}><code>{f}</code><b>{h}</b><span>{d}</span></div>
+            ))}
+          </div>
+        </section>
+
+        <!-- 12 · One query -->
+        <section class="slide s-two wide" data-builds="4" data-t="slide" aria-label="The consent query">
+          <div>
+            <p class="kicker">The rule everything rests on</p>
+            <h2>Every clinical read starts from one function</h2>
+            <ul class="plain">
+              <li class="rv" data-at="1"><b>The patient</b> sees their own entries.</li>
+              <li class="rv" data-at="2"><b>Provider staff</b> see only what their provider authored.</li>
+              <li class="rv" data-at="3"><b>A clinician</b> sees what an active consent allows.</li>
+              <li class="rv" data-at="4"><b>Anyone else</b> gets false(). Default deny.</li>
+            </ul>
+          </div>
+          <pre class="code"><code><span class="l">async def accessible_entries(session, actor, patient_id):</span>
+<span class="l rv" data-at="1">    if await actor_owns_patient(session, actor, patient_id):
+        conditions.append(MedicalEntry.patient_id == patient_id)</span>
+<span class="l rv" data-at="2">    if provider_id is not None:
+        conditions.append(and_(MedicalEntry.patient_id == patient_id,
+            MedicalEntry.source_provider_id == provider_id))</span>
+<span class="l rv" data-at="3">    if actor.role is Role.CLINICIAN:
+        conditions.append(and_(..., clinical_access_predicate(
+            patient_id, actor.user_id, entry_type, occurred_at)))</span>
+<span class="l rv" data-at="4">    if not conditions:
+        conditions.append(false())</span>
+<span class="l">    return select(MedicalEntry).where(or_(*conditions))</span></code></pre>
+        </section>
+
+        <!-- 13 · Consent -->
+        <section class="slide s-plain" data-builds="3" data-t="slide" aria-label="Consent and revocation">
+          <p class="kicker">Consent engine</p>
+          <h2>Revoking is one tap, and the next read is refused</h2>
+          <div class="flow">
+            <div class="step rv" data-at="0"><span class="n">1</span><h3>Patient grants</h3><p>Password re-check. Scoped to entry types and a date window.</p><span class="pill ok"><svg class="ic"><use href="#i-check" /></svg>Consent active</span></div>
+            <div class="step rv" data-at="1"><span class="n">2</span><h3>Clinician reads</h3><p>The filter passes. The access is logged once.</p><span class="pill ok"><svg class="ic"><use href="#i-check" /></svg>200, entries</span></div>
+            <div class="step rv" data-at="2"><span class="n">3</span><h3>Patient revokes</h3><p>No password prompt. The permission row is deleted in the same transaction.</p><span class="pill bad"><svg class="ic"><use href="#i-x" /></svg>Consent revoked</span></div>
+            <div class="step rv" data-at="3"><span class="n">4</span><h3>Same clinician reads</h3><p>Nothing cached, so the very next query denies it.</p><span class="pill bad"><svg class="ic"><use href="#i-lock" /></svg>404, not 403</span></div>
+          </div>
+          <p class="foot rv" data-at="3">A 403 would confirm the person is a patient here. A 404 says nothing.</p>
+        </section>
+
+        <!-- 14 · Decisions -->
+        <section class="slide s-plain" data-builds="3" data-t="slide" aria-label="Key decisions">
+          <p class="kicker">Decisions, {stats.adrs} recorded</p>
+          <h2>We chose, and wrote down what we gave up</h2>
+          <div class="adrs">
+            {decisions.map(([n, c, o, w], i) => (
+              <div class="adr rv" data-at={Math.floor(i / 2) + 1}>
+                <span class="num">ADR {n}</span><b>{c}</b><span class="over">over {o}</span><span class="why">{w}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <!-- 15 · Patterns -->
+        <section class="slide s-plain" data-builds="2" data-t="slide" aria-label="Patterns and practices">
+          <p class="kicker">Patterns and practices</p>
+          <h2>Architecture the build enforces</h2>
+          <div class="grid3">
+            {patterns.map(([t, d], i) => (
+              <div class="cell rv" data-at={i < 3 ? 1 : 2}><h3>{t}</h3><p>{d}</p></div>
+            ))}
+          </div>
+          <p class="foot rv on" data-at="0">A rule that only lives in a document gets broken by accident. These live in CI.</p>
+        </section>
+
+        <!-- 16 · Quality -->
+        <section class="slide s-plain" data-builds="1" data-t="zoom" aria-label="Verification">
+          <p class="kicker">Verification</p>
+          <h2>The risk is one missed filter, so that is what we test</h2>
+          <div class="grid3 nums">
+            {quality.map(([n, l]) => (
+              <div class="cell num rv" data-at="1"><b class="big" data-count={n}>0</b><p>{l}</p></div>
+            ))}
+          </div>
+        </section>
+
+        <!-- 17 · Limits -->
+        <section class="slide s-two" data-builds="2" data-t="slide" aria-label="Limits and next steps">
+          <div>
+            <p class="kicker">Honest limits</p>
+            <h2>What is not built</h2>
+            <ul class="plain">
+              {notImplemented.slice(0, 5).map((t) => <li class="rv" data-at="1">{t}</li>)}
+            </ul>
+          </div>
+          <div>
+            <p class="kicker">Caveats</p>
+            <h2>What to trust, and what not</h2>
+            <ul class="plain">
+              <li class="rv" data-at="2">Hindi, Tamil and Malayalam are unreviewed by native speakers.</li>
+              <li class="rv" data-at="2">All {seed.patients} patients are synthetic. No real data, ever.</li>
+              <li class="rv" data-at="2">No compliance certification is claimed.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 18 · Close -->
+        <section class="slide s-title" data-builds="0" data-t="fade" aria-label="Close">
+          <div class="title-block">
+            <p class="kicker">Pulse</p>
+            <h1 class="close">Patients own their history. Clinicians read it with consent. Every access is recorded.</h1>
+            <p class="team">{names}</p>
+            <p class="inst">{course.institute}, {course.team}. Guide: {course.guide}</p>
+            <p class="inst"><a href={REPO}>{REPO.replace("https://", "")}</a></p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <nav class="hud" aria-label="Slides">
+      <a class="hud__btn" href={`${base}/`} aria-label="Leave the presentation">Exit</a>
+      <button class="hud__btn" id="prev" type="button" aria-label="Previous">&lsaquo;</button>
+      <ol class="dots" id="dots">
+        {Array.from({ length: total }, (_, i) => <li><button type="button" data-go={i} aria-label={`Slide ${i + 1}`}></button></li>)}
+      </ol>
+      <button class="hud__btn" id="next" type="button" aria-label="Next">&rsaquo;</button>
+      <span class="count" id="count" aria-live="polite">1 / {total}</span>
+      <button class="hud__btn" id="fs" type="button" aria-label="Toggle fullscreen">Full screen</button>
+    </nav>
+  </body>
+</html>
+
+<style is:global>
+  body.present { margin: 0; height: 100dvh; overflow: hidden; background-attachment: fixed; user-select: none; }
+  .viewport { position: fixed; inset: 0; }
+  .stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform: translate(-50%, -50%) scale(var(--s, 1)); transform-origin: center; }
+
+  .slide { position: absolute; inset: 0; padding: 56px 80px 80px; visibility: hidden; opacity: 0;
+    transition: opacity 0.5s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s linear 0.6s; }
+  .slide.is-active { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; z-index: 2; }
+  .slide.is-past { transform: translateX(-7%); }
+  .slide.is-future { transform: translateX(7%); }
+  .slide[data-t="zoom"].is-past { transform: scale(1.06); }
+  .slide[data-t="zoom"].is-future { transform: scale(0.94); }
+  .slide[data-t="fade"].is-past, .slide[data-t="fade"].is-future { transform: none; }
+
+  .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.5s var(--ease-out), transform 0.55s var(--ease-out); }
+  .rv.on { opacity: 1; transform: none; }
+  svg .rv { transform: none; }
+
+  .kicker { margin: 0 0 12px; font-size: 20px; font-weight: 500; color: var(--primary); }
+  .slide h2 { margin: 0 0 20px; font-size: 44px; line-height: 1.12; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; max-width: 22ch; }
+  .s-two h2, .s-plain h2 { max-width: 42ch; }
+  .slide h3 { margin: 0 0 6px; font-size: 24px; font-weight: 700; }
+  .slide p, .slide li { font-size: 22px; line-height: 1.4; }
+  .lede { font-size: 26px !important; color: var(--muted-foreground); max-width: 30ch; margin: 0 0 12px; }
+  .foot { position: absolute; left: 80px; bottom: 100px; margin: 0; color: var(--muted-foreground); font-size: 20px !important; }
+  .warn { color: var(--critical); }
+
+  /* title */
+  .s-title { display: grid; place-items: start; padding-top: 70px; }
+  .title-block { position: relative; z-index: 2; }
+  .s-title h1 { margin: 0; font-size: 150px; line-height: 1; letter-spacing: -0.03em; color: var(--primary); }
+  .s-title h1.close { font-size: 56px; letter-spacing: -0.01em; max-width: 20ch; line-height: 1.15; color: var(--foreground); margin-bottom: 28px; }
+  .s-title .lede { margin-top: 8px; }
+  .team { margin: 28px 0 4px; font-weight: 500; }
+  .inst { margin: 0; color: var(--muted-foreground); }
+  .inst a { color: var(--primary); }
+  .ecg { position: absolute; left: 0; right: 0; bottom: 56px; width: 100%; height: 120px; opacity: 0.9; }
+  .ecg__line { fill: none; stroke: var(--primary); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 2400; stroke-dashoffset: 2400; }
+  .slide.is-active .ecg__line { animation: draw 2.8s var(--ease-out) 0.3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* scenes */
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .s-scene .copy { position: absolute; left: 80px; top: 56px; max-width: 560px; z-index: 2; }
+  .s-scene .lede { font-size: 22px !important; max-width: 36ch; }
+  .road { fill: var(--foreground); opacity: 0.12; }
+  .lane { stroke: var(--foreground); opacity: 0.35; stroke-width: 4; stroke-dasharray: 36 30; animation: lane 1.6s linear infinite; }
+  @keyframes lane { to { stroke-dashoffset: -66; } }
+  .pole { stroke: var(--foreground); stroke-width: 8; opacity: 0.5; }
+  .bulb { fill: var(--chart-4); }
+  .beam { fill: var(--chart-4); opacity: 0.16; }
+  .ravi { transform: translate(1010px, 520px); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 1.15s; }
+  .ravi.on { transform: translate(1120px, 560px) rotate(86deg); }
+  .ravi .walk { animation: bob 0.7s ease-in-out infinite; }
+  .ravi.on .walk { animation: none; }
+  .ravi circle, .ravi path { stroke: var(--foreground); stroke-width: 7; stroke-linecap: round; fill: none; }
+  .ravi circle { fill: var(--card); }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+  .car { transform: translate(-560px, 452px); transition: transform 1.15s cubic-bezier(0.55, 0, 0.9, 0.55); }
+  .car.on { transform: translate(650px, 452px); }
+  .car__body { fill: var(--primary); }
+  .car__glass { fill: var(--card); opacity: 0.85; }
+  .wheel { fill: var(--foreground); }
+  .car__beam { fill: var(--chart-4); opacity: 0.22; }
+  .burst { opacity: 0; }
+  .burst path { fill: var(--critical); }
+  .burst.on { animation: burst 0.7s ease-out 1.1s forwards; }
+  @keyframes burst { 0% { opacity: 0; transform: translate(990px, 520px) scale(0.2); } 30% { opacity: 1; transform: translate(990px, 520px) scale(1.1); } 100% { opacity: 0; transform: translate(990px, 520px) scale(1.5); } }
+  .world.on { animation: shake 0.45s linear 1.15s; }
+  @keyframes shake { 20% { transform: translate(-8px, 3px); } 40% { transform: translate(8px, -4px); } 60% { transform: translate(-5px, 2px); } 80% { transform: translate(4px, -2px); } }
+  .asks { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 0 0 20px; list-style: none; }
+  .asks li { border: 1px solid var(--critical); color: var(--critical); border-radius: 999px; padding: 6px 16px; font-size: 20px; }
+
+  .bld { fill: var(--card); stroke: var(--border); stroke-width: 2; }
+  .crossH { fill: var(--critical); }
+  .door { fill: var(--muted); }
+  .ambulance { transform: translateX(-340px); transition: transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .ambulance.on { transform: translateX(330px); }
+  .amb { fill: var(--card); stroke: var(--foreground); stroke-width: 3; }
+  .siren { fill: var(--critical); animation: siren 0.7s steps(2) infinite; }
+  @keyframes siren { 50% { fill: var(--chart-3); } }
+  .phone { fill: var(--secondary); stroke: var(--foreground); stroke-width: 4; }
+  .cam { fill: var(--foreground); opacity: 0.7; }
+  .sticker { fill: var(--card); stroke: var(--border); stroke-width: 2; }
+  .stk { font-size: 17px; font-weight: 700; fill: var(--foreground); }
+  .qr rect { fill: var(--foreground); }
+  .phone2 { fill: var(--card); stroke: var(--primary); stroke-width: 5; }
+  .screen { fill: var(--primary-soft); }
+  .sweep { fill: var(--primary); animation: sweep 1.4s ease-in-out infinite alternate; }
+  @keyframes sweep { to { transform: translateY(300px); } }
+  .okc { fill: var(--consent-active-surface); stroke: var(--consent-active); stroke-width: 4; }
+  .ok { color: var(--consent-active); }
+
+  /* split / phone ui */
+  .s-split { display: grid; grid-template-columns: 1fr 440px; gap: 64px; align-items: center; }
+  .s-split .copy { max-width: 560px; }
+  .ticks { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 14px; }
+  .ticks li { display: flex; gap: 12px; align-items: flex-start; }
+  .ic { width: 24px; height: 24px; flex: none; color: var(--consent-active); margin-top: 3px; }
+  .phone-ui { border: 3px solid var(--foreground); border-radius: 36px; background: var(--card); padding: 24px 22px; box-shadow: var(--shadow-card); min-height: 470px; }
+  .phone-ui__bar { font-weight: 700; font-size: 20px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 4px; border-bottom: 1px solid var(--border); font-size: 20px; }
+  .row span { color: var(--muted-foreground); display: inline-flex; gap: 8px; align-items: center; }
+  .row b { text-align: right; }
+  .row small { font-weight: 400; color: var(--muted-foreground); font-size: 16px; }
+  .row.crit { background: var(--critical-surface); border-radius: 12px; }
+  .row.crit span, .row.crit b { color: var(--critical); }
+  .row.crit .ic { color: var(--critical); margin: 0; }
+  .bubble { padding: 14px 20px; border-radius: 20px; font-size: 24px; margin: 14px 0; max-width: 420px; }
+  .bubble.doc { background: var(--primary-soft); border-bottom-left-radius: 4px; }
+  .bubble.pat { background: var(--muted); border-bottom-right-radius: 4px; margin-left: 60px; }
+  .typed { background: var(--muted); border-radius: 14px; padding: 12px 16px; font-size: 20px; }
+  .typing { display: inline-block; overflow: hidden; white-space: nowrap; width: 0; vertical-align: bottom; }
+  .typed.on .typing { animation: typing 1.3s steps(27) 0.2s forwards; }
+  @keyframes typing { to { width: 100%; } }
+  .answer { margin-top: 16px; background: var(--primary-soft); border-radius: 14px; padding: 14px 18px; font-size: 20px; }
+  .answer ul { margin: 8px 0 0; padding-left: 20px; }
+  .answer li { font-size: 20px; }
+  .receipt { margin-top: 14px; display: flex; gap: 10px; font-size: 17px; color: var(--muted-foreground); }
+
+  /* plain layouts */
+  .s-plain, .s-two { display: block; }
+  .s-two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-content: start; }
+  .s-two.wide { grid-template-columns: 0.8fr 1.2fr; }
+  .roles, .grid4, .grid3, .adrs { display: grid; gap: 18px; margin-top: 24px; }
+  .roles { grid-template-columns: repeat(4, 1fr); }
+  .grid4 { grid-template-columns: repeat(4, 1fr); }
+  .grid3 { grid-template-columns: repeat(3, 1fr); }
+  .role, .cell, .adr, .step { border: 1px solid var(--border); background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-card); }
+  .cell p, .role p { font-size: 19px; margin: 0; color: var(--muted-foreground); }
+  .cell h3 { font-size: 22px; color: var(--primary); }
+  .plain, .obj { padding-left: 24px; margin: 8px 0 0; display: grid; gap: 14px; }
+  .obj b { color: var(--primary); }
+  .nums .num { text-align: left; }
+  .big { display: block; font-size: 64px; line-height: 1; color: var(--primary); font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+
+  .arch { width: 100%; height: 440px; margin-top: 0; }
+  .node rect { fill: var(--card); stroke: var(--border); stroke-width: 2; }
+  .node.big rect:first-child { fill: var(--primary-soft); stroke: var(--primary); stroke-width: 2.5; }
+  .node text { fill: var(--foreground); font-size: 21px; font-weight: 700; }
+  .node .sub { font-size: 16px; font-weight: 400; fill: var(--muted-foreground); }
+  .chip { fill: var(--card); stroke: var(--border); }
+  .chip-t { font-size: 15px !important; font-weight: 500 !important; }
+  .wire { fill: none; stroke: var(--primary); stroke-width: 3; stroke-dasharray: 400; stroke-dashoffset: 400; transition: stroke-dashoffset 0.7s var(--ease-out); }
+  .wire.on { stroke-dashoffset: 0; }
+  .lbl { font-size: 15px; font-family: var(--font-mono); fill: var(--muted-foreground); }
+  .packet { fill: var(--critical); opacity: 0; offset-path: path("M85 205 L310 205 L470 300 L635 330 L880 280"); offset-distance: 0%; }
+  .packet.on { opacity: 1; animation: packet 3.2s ease-in-out infinite; }
+  @keyframes packet { to { offset-distance: 100%; } }
+
+  .stack { display: grid; gap: 14px; align-content: center; }
+  .layer { display: grid; grid-template-columns: 170px 1fr; grid-template-rows: auto auto; column-gap: 18px; padding: 18px 22px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--border); border-left: 6px solid var(--primary); }
+  .layer code { grid-row: span 2; align-self: center; font-family: var(--font-mono); font-size: 17px; }
+  .layer b { font-size: 22px; }
+  .layer span { font-size: 18px; color: var(--muted-foreground); }
+
+  .code { margin: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; font-family: var(--font-mono); font-size: 15.5px; line-height: 1.5; white-space: pre-wrap; align-self: center; }
+  .code .l { display: block; }
+  .code .rv { background: var(--primary-soft); border-radius: 6px; }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 28px; }
+  .step { position: relative; padding-top: 28px; }
+  .step .n { position: absolute; top: -16px; left: 18px; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); display: grid; place-items: center; font-weight: 700; }
+  .step p { font-size: 19px; color: var(--muted-foreground); min-height: 110px; margin: 0 0 12px; }
+  .pill { display: inline-flex; gap: 8px; align-items: center; padding: 6px 14px; border-radius: 999px; font-size: 18px; font-weight: 500; }
+  .pill .ic { margin: 0; width: 20px; height: 20px; color: inherit; }
+  .pill.ok { background: var(--consent-active-surface); color: var(--consent-active); }
+  .pill.bad { background: var(--critical-surface); color: var(--critical); }
+
+  .adrs { grid-template-columns: repeat(2, 1fr); }
+  .adr { display: grid; gap: 4px; }
+  .adr .num { font-size: 16px; font-family: var(--font-mono); color: var(--muted-foreground); }
+  .adr b { font-size: 24px; }
+  .adr .over { font-size: 18px; color: var(--primary); }
+  .adr .why { font-size: 19px; color: var(--muted-foreground); }
+
+  /* HUD */
+  .hud { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 8px 12px;
+    border-radius: 999px; background: var(--glass-fill); border: 1px solid var(--glass-border); backdrop-filter: blur(10px); z-index: 10; transition: opacity 0.4s; }
+  .hud.idle { opacity: 0.0; }
+  .hud:hover, .hud:focus-within { opacity: 1; }
+  .hud__btn { font: inherit; font-size: 15px; font-weight: 500; color: var(--foreground); background: transparent; border: 1px solid var(--border); border-radius: 999px;
+    min-height: 40px; min-width: 40px; padding: 0 14px; white-space: nowrap; cursor: pointer; text-decoration: none; display: inline-grid; place-items: center; }
+  .hud__btn:hover { background: var(--accent); }
+  .hud__btn:focus-visible, .dots button:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+  .dots { display: flex; gap: 2px; list-style: none; margin: 0; padding: 0; }
+  .dots button { width: 18px; height: 40px; background: transparent; border: 0; padding: 0; cursor: pointer; position: relative; }
+  .dots button::after { content: ""; position: absolute; left: 3px; right: 3px; top: 17px; height: 6px; border-radius: 3px; background: var(--input); transition: background 0.3s, transform 0.3s; }
+  .dots button.done::after { background: var(--primary-soft); }
+  .dots button.cur::after { background: var(--primary); transform: scaleY(1.4); }
+  .count { font-size: 15px; min-width: 52px; text-align: center; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) { .count, #fs { display: none; } .dots button { width: 10px; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .rv, .wire, .ambulance, .car, .ravi { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+    .lane, .siren, .sweep, .packet, .ravi .walk, .world, .burst, .ecg__line, .typing { animation: none !important; }
+    .ecg__line { stroke-dashoffset: 0; }
+    .typing { width: 100%; }
+  }
+</style>
+
+<script>
+  const slides = [...document.querySelectorAll<HTMLElement>(".slide")];
+  const stage = document.getElementById("stage")!;
+  const hud = document.querySelector<HTMLElement>(".hud")!;
+  const count = document.getElementById("count")!;
+  const dots = [...document.querySelectorAll<HTMLButtonElement>("[data-go]")];
+  const total = slides.length;
+  const builds = slides.map((s) => Number(s.dataset.builds || 0));
+
+  let i = 0;
+  let b = 0;
+
+  const fit = () => {
+    const s = Math.min(innerWidth / 1280, innerHeight / 720);
+    stage.style.setProperty("--s", String(s));
+  };
+
+  const runCount = (el: HTMLElement) => {
+    const target = Number(el.dataset.count);
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 1100);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString("en-IN");
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  const applyBuild = (slide: HTMLElement, upTo: number) => {
+    slide.querySelectorAll<HTMLElement | SVGElement>("[data-at]").forEach((el) => {
+      const at = Number(el.getAttribute("data-at"));
+      const out = el.getAttribute("data-out");
+      const on = at <= upTo && (out === null || upTo < Number(out));
+      const was = el.classList.contains("on");
+      el.classList.toggle("on", on);
+      if (on && !was) {
+        const c = el.querySelector<HTMLElement>("[data-count]") ?? (el.matches("[data-count]") ? (el as HTMLElement) : null);
+        if (c) runCount(c);
+      }
+    });
+  };
+
+  const show = (nextI: number, nextB: number) => {
+    const changed = nextI !== i;
+    i = nextI;
+    b = nextB;
+    slides.forEach((s, k) => {
+      s.classList.toggle("is-active", k === i);
+      s.classList.toggle("is-past", k < i);
+      s.classList.toggle("is-future", k > i);
+      if (k !== i) s.querySelectorAll(".on").forEach((el) => el.classList.remove("on"));
+    });
+    if (changed) {
+      slides[i].querySelectorAll(".on").forEach((el) => el.classList.remove("on"));
+      void slides[i].offsetWidth;
+      requestAnimationFrame(() => applyBuild(slides[i], b));
+    } else {
+      applyBuild(slides[i], b);
+    }
+    count.textContent = `${i + 1} / ${total}`;
+    dots.forEach((d, k) => {
+      d.classList.toggle("cur", k === i);
+      d.classList.toggle("done", k < i);
+    });
+    history.replaceState(null, "", `#${i + 1}`);
+  };
+
+  const next = () => {
+    if (b < builds[i]) show(i, b + 1);
+    else if (i < total - 1) show(i + 1, 0);
+  };
+  const prev = () => {
+    if (b > 0) show(i, b - 1);
+    else if (i > 0) show(i - 1, builds[i - 1]);
+  };
+
+  addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); next(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === "Home") show(0, 0);
+    else if (e.key === "End") show(total - 1, builds[total - 1]);
+    else if (e.key.toLowerCase() === "f") toggleFs();
+  });
+
+  stage.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("a, button")) return;
+    next();
+  });
+
+  let x0: number | null = null;
+  addEventListener("pointerdown", (e) => { x0 = e.clientX; });
+  addEventListener("pointerup", (e) => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) > 60) (dx < 0 ? next : prev)();
+  });
+
+  document.getElementById("next")!.addEventListener("click", next);
+  document.getElementById("prev")!.addEventListener("click", prev);
+  dots.forEach((d) => d.addEventListener("click", () => show(Number(d.dataset.go), 0)));
+
+  const toggleFs = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void document.documentElement.requestFullscreen?.();
+  };
+  document.getElementById("fs")!.addEventListener("click", toggleFs);
+
+  let idle: number | undefined;
+  const wake = () => {
+    hud.classList.remove("idle");
+    clearTimeout(idle);
+    idle = window.setTimeout(() => hud.classList.add("idle"), 2800);
+  };
+  addEventListener("mousemove", wake);
+  addEventListener("keydown", wake);
+  wake();
+
+  addEventListener("resize", fit);
+  addEventListener("hashchange", () => {
+    const n = Number(location.hash.slice(1)) - 1;
+    if (n >= 0 && n < total && n !== i) show(n, 0);
+  });
+
+  fit();
+  const start = Number(location.hash.slice(1)) - 1;
+  show(start >= 0 && start < total ? start : 0, 0);
+</script>
