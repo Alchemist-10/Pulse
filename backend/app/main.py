@@ -22,6 +22,7 @@ from app.core.redis import close_redis
 from app.db.session import get_session
 from app.modules.admin.routes import router as admin_router
 from app.modules.analytics.routes import router as analytics_router
+from app.modules.ask.routes import router as ask_router
 from app.modules.audit.routes import router as audit_router
 from app.modules.auth.dependencies import public
 from app.modules.auth.routes import router as auth_router
@@ -65,6 +66,7 @@ app.include_router(emergency_router)
 app.include_router(audit_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
+app.include_router(ask_router)
 app.include_router(admin_router)
 app.include_router(users_router)
 

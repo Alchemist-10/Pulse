@@ -12,6 +12,7 @@ import { routing } from "./routing";
 import enCommon from "./messages/en/common.json";
 import enAdmin from "./messages/en/admin.json";
 import enAnalytics from "./messages/en/analytics.json";
+import enAsk from "./messages/en/ask.json";
 import enAuth from "./messages/en/auth.json";
 import enAudit from "./messages/en/audit.json";
 import enBreakGlass from "./messages/en/breakGlass.json";
@@ -28,6 +29,7 @@ import enTimeline from "./messages/en/timeline.json";
 import hiCommon from "./messages/hi/common.json";
 import hiAdmin from "./messages/hi/admin.json";
 import hiAnalytics from "./messages/hi/analytics.json";
+import hiAsk from "./messages/hi/ask.json";
 import hiAuth from "./messages/hi/auth.json";
 import hiAudit from "./messages/hi/audit.json";
 import hiBreakGlass from "./messages/hi/breakGlass.json";
@@ -44,6 +46,7 @@ import hiTimeline from "./messages/hi/timeline.json";
 import taCommon from "./messages/ta/common.json";
 import taAdmin from "./messages/ta/admin.json";
 import taAnalytics from "./messages/ta/analytics.json";
+import taAsk from "./messages/ta/ask.json";
 import taAuth from "./messages/ta/auth.json";
 import taAudit from "./messages/ta/audit.json";
 import taBreakGlass from "./messages/ta/breakGlass.json";
@@ -60,6 +63,7 @@ import taTimeline from "./messages/ta/timeline.json";
 import mlCommon from "./messages/ml/common.json";
 import mlAdmin from "./messages/ml/admin.json";
 import mlAnalytics from "./messages/ml/analytics.json";
+import mlAsk from "./messages/ml/ask.json";
 import mlAuth from "./messages/ml/auth.json";
 import mlAudit from "./messages/ml/audit.json";
 import mlBreakGlass from "./messages/ml/breakGlass.json";
@@ -81,6 +85,7 @@ const CATALOGS: Record<string, Catalog> = {
     ...enCommon,
     admin: enAdmin,
     analytics: enAnalytics,
+    ask: enAsk,
     auth: enAuth,
     audit: enAudit,
     breakGlass: enBreakGlass,
@@ -99,6 +104,7 @@ const CATALOGS: Record<string, Catalog> = {
     ...hiCommon,
     admin: hiAdmin,
     analytics: hiAnalytics,
+    ask: hiAsk,
     auth: hiAuth,
     audit: hiAudit,
     breakGlass: hiBreakGlass,
@@ -117,6 +123,7 @@ const CATALOGS: Record<string, Catalog> = {
     ...taCommon,
     admin: taAdmin,
     analytics: taAnalytics,
+    ask: taAsk,
     auth: taAuth,
     audit: taAudit,
     breakGlass: taBreakGlass,
@@ -135,6 +142,7 @@ const CATALOGS: Record<string, Catalog> = {
     ...mlCommon,
     admin: mlAdmin,
     analytics: mlAnalytics,
+    ask: mlAsk,
     auth: mlAuth,
     audit: mlAudit,
     breakGlass: mlBreakGlass,

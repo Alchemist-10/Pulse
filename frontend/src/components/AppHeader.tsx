@@ -43,6 +43,7 @@ type NavKey =
   | "audit"
   | "notifications"
   | "analytics"
+  | "ask"
   | "settings"
   | "scan"
   | "patients"
@@ -55,6 +56,7 @@ const NAV: Record<Role, { key: NavKey; href: string }[]> = {
     { key: "consent", href: "/consent" },
     { key: "audit", href: "/audit" },
     { key: "analytics", href: "/analytics" },
+    { key: "ask", href: "/ask" },
     { key: "settings", href: "/settings" },
   ],
   CLINICIAN: [

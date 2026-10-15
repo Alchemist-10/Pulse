@@ -263,3 +263,16 @@ Appended as patterns land. Not written at the end.
 **Replaces:** "The demo works" as a rehearsal hope. The graded spine (staff files, patient grants with step-up, clinician reads via the plan-004 consented-patients list, audit view, revoke, immediate lockout) is now a CI fact.
 
 **Worth knowing:** The live spec is rerun-safe by construction: unique display names per run, a `.first()` on discovery links, and the revoke loop clears *all* active grants to the target clinician — a long-lived demo volume accumulates stale grants from rehearsals, and any survivor defeats the lockout assertion. The `e2e/` mocked suite stays the fast feedback loop; the live spec costs a stack build and runs only in its own CI job.
+
+---
+
+## Ask your record is a matcher over services, not a new data path (ADR-0018)
+
+**What:** `modules/ask` maps a question to an intent with per-locale lexicons and `difflib`, then calls `records`, `audit` and `emergency` services. It owns no tables and persists nothing.
+
+**Why here:** The project's central promise is that every read passes the consent filter and is recorded. A chat built on its own queries or a stored transcript would create a second path around both. Composing existing services means consent, 404 semantics and the administrator bar apply for free, and the negative tests are the same shape as the timeline's.
+
+**Replaces:** An LLM retrieval layer, which cannot be proven to respect the consent filter and would make "who saw my data" harder to answer.
+
+**Worth knowing:** `AuditMetadata` is a closed dataclass, so recording the intent needed one new field (`intent`) rather than a free-form dict. The audit table is append-only, so tests must filter by patient id instead of expecting a clean table.
+

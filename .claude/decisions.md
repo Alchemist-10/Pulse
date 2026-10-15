@@ -152,3 +152,6 @@ Context: break-glass opened the whole record for 60 minutes; Patients wanted a s
 Options: keep unscoped break-glass; two tiers; card-only break-glass.
 Chosen: card-only break-glass plus Patient-controlled QR (ADR-0017). Consent expiry made optional.
 Rejected: unscoped record access without consent; public no-login QR.
+
+## Ask your record: rule-based, stateless (ADR-0018)
+Chosen: deterministic intent matcher over existing services, no LLM, no persisted chat. Audited as `ANALYTICS_VIEWED` with intent only.
